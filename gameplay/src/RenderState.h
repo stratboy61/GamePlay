@@ -169,6 +169,50 @@ public:
         DEPTH_ALWAYS = GL_ALWAYS
     };
 
+
+	/**
+     * Defines the supported stencil compare functions.
+     *
+     * Stencil compare functions specify the comparison that takes place between the
+     * incoming pixel's stencil value and the stencil value already in the stencil buffer.
+     * If the compare function passes, the new pixel will be drawn.
+     *
+     * The intial depth compare function is GL_EQUAL.
+     */
+    enum StencilFunction
+    {
+        STENCIL_NEVER = GL_NEVER,
+        STENCIL_LESS = GL_LESS,
+        STENCIL_EQUAL = GL_EQUAL,
+        STENCIL_LEQUAL = GL_LEQUAL,
+        STENCIL_GREATER = GL_GREATER,
+        STENCIL_NOTEQUAL = GL_NOTEQUAL,
+        STENCIL_GEQUAL = GL_GEQUAL,
+        STENCIL_ALWAYS = GL_ALWAYS
+    };
+
+	/**
+     * Defines the supported stencil operation.
+     *
+     * Stencil compare functions specify the comparison that takes place between the
+     * incoming pixel's stencil value and the stencil value already in the stencil buffer.
+     * If the compare function passes, the new pixel will be drawn.
+     *
+     * The intial depth compare function is DEPTH_LESS.
+     */
+    enum StencilOp
+    {
+        STENCIL_KEEP = GL_KEEP,
+        STENCIL_ZERO = GL_ZERO,
+        STENCIL_REPLACE = GL_REPLACE,
+        STENCIL_INCR = GL_INCR,
+        STENCIL_INCR_WARP = GL_INCR_WRAP,
+        STENCIL_DECR = GL_DECR,
+        STENCIL_DECR_WRAP = GL_DECR_WRAP,
+        STENCIL_INVERT = GL_INVERT
+    };
+
+
     /**
      * Defines culling criteria for front-facing, back-facing and both-side 
      * facets.
@@ -245,6 +289,13 @@ public:
          */
         void setCullFaceSide(CullFaceSide side);
 
+		/** 
+         * Toggles Color writing.
+         *
+         * @param enabled true to enable, false to disable.
+         */
+        void setColorWrite(bool enabled);
+
         /**
          * Toggles depth testing.
          *
@@ -270,6 +321,48 @@ public:
          * @param func The depth function.
          */
         void setDepthFunction(DepthFunction func);
+
+
+		/**
+         * Toggles stencil testing.
+         *
+         * By default, depth testing is disabled.
+         *
+         * @param enabled true to enable, false to disable.
+         */
+        void setStencilTest(bool enabled);
+
+        /** 
+         * Toggles stencil writing.
+         *
+         * @param enabled true to enable, false to disable.
+         */
+        void setStencilWrite(bool enabled);
+
+		/**
+         * Sets the stencil function to use when stencil testing is enabled.
+         *
+         * When not explicitly set and when stencil testing is enabled, the default
+         * depth function is STENCIL_EQUAL.
+         *
+         * @param func The stencil function.
+         */
+        void setStencilFunction(StencilFunction func, GLint ref, GLuint mask);
+		//void setStencilRef( GLint ref);
+		//void setStencilMask( GLuint mask);
+
+		/**
+         * Sets the stencil operation to use when stencil testing is enabled.
+         *
+         * When not explicitly set and when stencil testing is enabled, the default
+         * stencil operation is (STENCIL_KEEP. STENCIL_KEEP, STENCIL_KEEP)
+         *
+         * @param func The stencil function.
+         */
+       // void setOpStencilTestFail(StencilOp  sFail);
+		//void setOpDepthTestFail( StencilOp  dpFail);
+		//void setOpStencilAndDepthTestPass( StencilOp  dpPass);
+		void setStencilOp(StencilOp sFail, StencilOp dpFail, StencilOp dpPass);
 
         /**
          * Sets a render state from the given name and value strings.
@@ -305,18 +398,35 @@ public:
         static void restore(long stateOverrideBits);
 
         static void enableDepthWrite();
+		static void enableColorWrite();
+		static void enableStencilWrite();
 
         void cloneInto(StateBlock* state);
 
+
+
         // States
         bool _cullFaceEnabled;
-        bool _depthTestEnabled;
+        CullFaceSide _cullFaceSide;
+		
+		bool _depthTestEnabled;
         bool _depthWriteEnabled;
+		bool _colorWriteEnabled;
         DepthFunction _depthFunction;
-        bool _blendEnabled;
+		
+		bool _stencilWriteEnabled;
+		bool _stencilTestEnabled;
+		StencilFunction _stencilFunction;
+		GLint _stencilRef;
+		GLuint _stencilMask;
+		StencilOp _stencilTestFailOp;
+		StencilOp _depthTestFailOp;
+		StencilOp _stencilAndDepthTestPassOp;
+        
+		bool _blendEnabled;
         Blend _blendSrc;
         Blend _blendDst;
-        CullFaceSide _cullFaceSide;
+        
         long _bits;
 
         static StateBlock* _defaultState;

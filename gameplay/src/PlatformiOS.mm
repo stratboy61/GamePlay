@@ -82,6 +82,7 @@ int getUnicode(int key);
     GLuint defaultFramebuffer;
     GLuint colorRenderbuffer;
     GLuint depthRenderbuffer;
+    GLuint stencilRenderbuffer;
     GLint framebufferWidth;
     GLint framebufferHeight;
     GLuint multisampleFramebuffer;
@@ -179,6 +180,7 @@ int getUnicode(int key);
         defaultFramebuffer = 0;
         colorRenderbuffer = 0;
         depthRenderbuffer = 0;
+        stencilRenderbuffer = 0;
         framebufferWidth = 0;
         framebufferHeight = 0;
         multisampleFramebuffer = 0;
@@ -305,8 +307,15 @@ int getUnicode(int key);
     {
         GL_ASSERT( glGenRenderbuffers(1, &depthRenderbuffer) );
         GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer) );
-        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, framebufferWidth, framebufferHeight) );
+        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, /*GL_DEPTH_COMPONENT24_OES*/GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight) );
         GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer) );
+        GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer) );
+                
+     /*   GL_ASSERT( glGenRenderbuffers(1, &stencilRenderbuffer) );
+        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, stencilRenderbuffer) );
+        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight) );
+        GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilRenderbuffer) );
+      */
     }
     
     // Sanity check, ensure that the framebuffer is valid
@@ -345,6 +354,11 @@ int getUnicode(int key);
         {
             GL_ASSERT( glDeleteRenderbuffers(1, &depthRenderbuffer) );
             depthRenderbuffer = 0;
+        }
+        if (stencilRenderbuffer)
+        {
+            GL_ASSERT( glDeleteRenderbuffers(1, &stencilRenderbuffer) );
+            stencilRenderbuffer = 0;
         }
         if (multisampleFramebuffer)
         {

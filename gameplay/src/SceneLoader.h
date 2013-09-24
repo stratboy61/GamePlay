@@ -27,7 +27,7 @@ private:
      * 
      * @param url The URL pointing to the Properties object defining the scene.
      */
-    static Scene* load(const char* url);
+    static Scene* load(const char* url, bool keepData = false);
     
     /**
      * Helper structures and functions for SceneLoader::load(const char*).
@@ -77,7 +77,7 @@ private:
         std::map<std::string, std::string> _tags;
     };
 
-    Scene* loadInternal(const char* url);
+    Scene* loadInternal(const char* url, bool keepData);
 
     void addSceneAnimation(const char* animationID, const char* targetID, const char* url);
 
@@ -99,7 +99,7 @@ private:
 
     PhysicsConstraint* loadHingeConstraint(const Properties* constraint, PhysicsRigidBody* rbA, PhysicsRigidBody* rbB);
 
-    Scene* loadMainSceneData(const Properties* sceneProperties);
+    Scene* loadMainSceneData(const Properties* sceneProperties, bool keepData = false);
 
     void loadPhysics(Properties* physics, Scene* scene);
 

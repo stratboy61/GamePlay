@@ -372,7 +372,7 @@ bool Bundle::readMatrix(float* m)
     return _stream->read(m, sizeof(float), 16) == 16;
 }
 
-Scene* Bundle::loadScene(const char* id)
+Scene* Bundle::loadScene(const char* id, bool keepData)
 {
     clearLoadSession();
 
@@ -411,7 +411,7 @@ Scene* Bundle::loadScene(const char* id)
         // Read each child directly into the scene.
         for (unsigned int i = 0; i < childrenCount; i++)
         {
-            Node* node = readNode(scene, NULL);
+            Node* node = readNode(scene, NULL, keepData);
             if (node)
             {
                 scene->addNode(node);
@@ -670,7 +670,7 @@ bool Bundle::skipNode()
     return true;
 }
 
-Node* Bundle::readNode(Scene* sceneContext, Node* nodeContext)
+Node* Bundle::readNode(Scene* sceneContext, Node* nodeContext, bool keepData)
 {
     const char* id = getIdFromOffset();
     GP_ASSERT(id);
@@ -800,7 +800,7 @@ Node* Bundle::readNode(Scene* sceneContext, Node* nodeContext)
     }
 
     // Read model.
-    Model* model = readModel(node->getId());
+    Model* model = readModel(node->getId(), keepData);
     if (model)
     {
         node->setModel(model);
@@ -951,12 +951,12 @@ Light* Bundle::readLight()
     return light;
 }
 
-Model* Bundle::readModel(const char* nodeId)
+Model* Bundle::readModel(const char* nodeId, bool keepData)
 {
     std::string xref = readString(_stream);
     if (xref.length() > 1 && xref[0] == '#') // TODO: Handle full xrefs
     {
-        Mesh* mesh = loadMesh(xref.c_str() + 1, nodeId);
+        Mesh* mesh = loadMesh(xref.c_str() + 1, nodeId, keepData);
         if (mesh)
         {
             Model* model = Model::create(mesh);
@@ -1335,12 +1335,12 @@ Animation* Bundle::readAnimationChannelData(Animation* animation, const char* id
     return animation;
 }
 
-Mesh* Bundle::loadMesh(const char* id)
+Mesh* Bundle::loadMesh(const char* id, bool keepData)
 {
-    return loadMesh(id, NULL);
+    return loadMesh(id, NULL, keepData);
 }
 
-Mesh* Bundle::loadMesh(const char* id, const char* nodeId)
+Mesh* Bundle::loadMesh(const char* id, const char* nodeId, bool keepData)
 {
     GP_ASSERT(_stream);
     GP_ASSERT(id);
@@ -1382,7 +1382,7 @@ Mesh* Bundle::loadMesh(const char* id, const char* nodeId)
     mesh->_url += "#";
     mesh->_url += id;
 
-    mesh->setVertexData((float*)meshData->vertexData, 0, meshData->vertexCount);
+    mesh->setVertexData((float*)meshData->vertexData, 0, meshData->vertexCount, keepData);
 
     mesh->_boundingBox.set(meshData->boundingBox);
     mesh->_boundingSphere.set(meshData->boundingSphere);
@@ -1400,7 +1400,7 @@ Mesh* Bundle::loadMesh(const char* id, const char* nodeId)
             SAFE_DELETE(meshData);
             return NULL;
         }
-        part->setIndexData(partData->indexData, 0, partData->indexCount);
+        part->setIndexData(partData->indexData, 0, partData->indexCount, keepData);
     }
 
     SAFE_DELETE(meshData);

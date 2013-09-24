@@ -63,7 +63,7 @@ public:
      * @return true if the part is dynamic; false otherwise.
      */
     bool isDynamic() const;
-
+    void setDynamic(bool val);
     /**
      * Sets the specified index data into the mapped index buffer.
      *
@@ -72,8 +72,16 @@ public:
      * @param indexCount The number of indices to be set.
      * @script{ignore}
      */
-    void setIndexData(const void* indexData, unsigned int indexStart, unsigned int indexCount);
+    void setIndexData(const void* indexData, unsigned int indexStart, unsigned int indexCount, bool keepData = false);
 
+    
+    /**
+     * Returns index buffer for the mesh part.
+     *
+     * @return The index buffer object.
+     */
+    std::vector<int>& getIndexBufferData();
+    
 private:
 
     /**
@@ -105,6 +113,9 @@ private:
     unsigned int _indexCount;
     IndexBufferHandle _indexBuffer;
     bool _dynamic;
+    
+    //int* _indexData;
+    std::vector<int> _indexData;
 };
 
 }

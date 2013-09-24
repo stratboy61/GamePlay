@@ -95,7 +95,7 @@ Scene* Scene::create(const char* id)
     return new Scene(id);
 }
 
-Scene* Scene::load(const char* filePath)
+Scene* Scene::load(const char* filePath, bool keepData)
 {
     if (endsWith(filePath, ".gpb", true))
     {
@@ -103,12 +103,12 @@ Scene* Scene::load(const char* filePath)
         Bundle* bundle = Bundle::create(filePath);
         if (bundle)
         {
-            scene = bundle->loadScene();
+            scene = bundle->loadScene(NULL, keepData);
             SAFE_RELEASE(bundle);
         }
         return scene;
     }
-    return SceneLoader::load(filePath);
+    return SceneLoader::load(filePath, keepData);
 }
 
 Scene* Scene::getScene(const char* id)

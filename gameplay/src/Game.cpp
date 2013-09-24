@@ -438,6 +438,8 @@ void Game::clear(ClearFlags flags, const Vector4& clearColor, float clearDepth, 
             _clearStencil = clearStencil;
         }
         bits |= GL_STENCIL_BUFFER_BIT;
+        
+        RenderState::StateBlock::enableStencilWrite();
     }
     glClear(bits);
 }

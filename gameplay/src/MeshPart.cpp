@@ -15,6 +15,13 @@ MeshPart::~MeshPart()
     {
         glDeleteBuffers(1, &_indexBuffer);
     }
+    
+   // typename std::vector<int*>::iterator it;
+   // for (it = _indexData.begin(); it != _indexData.end(); it++) {
+   //     SAFE_DELETE(*it);
+   // }
+   // if (_indexData)
+   //     delete[] _indexData;
 }
 
 MeshPart* MeshPart::create(Mesh* mesh, unsigned int meshIndex, Mesh::PrimitiveType primitiveType,
@@ -81,13 +88,24 @@ IndexBufferHandle MeshPart::getIndexBuffer() const
 {
     return _indexBuffer;
 }
+    
+std::vector<int>& MeshPart::getIndexBufferData()
+{
+    return _indexData;
+}
 
 bool MeshPart::isDynamic() const
 {
     return _dynamic;
 }
 
-void MeshPart::setIndexData(const void* indexData, unsigned int indexStart, unsigned int indexCount)
+    
+void MeshPart::setDynamic(bool val)
+{
+    _dynamic = val;
+}
+    
+void MeshPart::setIndexData(const void* indexData, unsigned int indexStart, unsigned int indexCount, bool keepData)
 {
     GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer) );
 
@@ -121,6 +139,51 @@ void MeshPart::setIndexData(const void* indexData, unsigned int indexStart, unsi
 
         GL_ASSERT( glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexStart * indexSize, indexCount * indexSize, indexData) );
     }
+    
+    //save IndexBuffer Array
+    if (keepData)
+    {
+       // _indexData = new int[indexCount];
+       // memcpy(_indexData, indexData, indexCount*sizeof(int));
+        
+        int value;
+        for (unsigned int i = 0; i < indexCount; i++)
+        {
+            switch (_indexFormat)
+            {
+                case Mesh::INDEX8:
+                {
+                    char* p = (GLchar*)indexData;
+                    _indexData.push_back(p[i]);
+                } break;
+                case Mesh::INDEX16:
+                {
+                    short* p = (GLshort*)indexData;
+                    _indexData.push_back(p[i]);
+                } break;
+                case Mesh::INDEX32:
+                {
+                    int* p = (GLint*)indexData;
+                    _indexData.push_back(p[i]);
+                } break;
+            }
+            
+           // char* p = (char*)indexData;
+           // memcpy(&value,p+i*indexSize, sizeof(int));
+           // _indexData.push_back(value);
+        }
+    
+    }
+    
+/*  
+    for (unsigned int i = 0; i < indexCount; ++i)
+    {
+        char* p = (char*)indexData;
+       _indexData[i] = *(p + i*sizeof(int));
+    }
+*/
+
 }
 
 }
+    

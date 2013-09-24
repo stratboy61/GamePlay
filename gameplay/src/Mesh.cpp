@@ -251,6 +251,10 @@ bool Mesh::isDynamic() const
     return _dynamic;
 }
 
+void Mesh::setDynamic(bool val)
+{
+    _dynamic = val;
+}
 
 Mesh::PrimitiveType Mesh::getPrimitiveType() const
 {
@@ -262,7 +266,13 @@ void Mesh::setPrimitiveType(PrimitiveType type)
     _primitiveType = type;
 }
 
-void Mesh::setVertexData(const float* vertexData, unsigned int vertexStart, unsigned int vertexCount)
+    
+std::vector<float>& Mesh::getVertexBufferData()
+{
+    return _vertexData;
+}
+
+void Mesh::setVertexData(const float* vertexData, unsigned int vertexStart, unsigned int vertexCount, bool keepData)
 {
     GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer) );
 
@@ -278,6 +288,15 @@ void Mesh::setVertexData(const float* vertexData, unsigned int vertexStart, unsi
         }
 
         GL_ASSERT( glBufferSubData(GL_ARRAY_BUFFER, vertexStart * _vertexFormat.getVertexSize(), vertexCount * _vertexFormat.getVertexSize(), vertexData) );
+    }
+    
+    //save VertexBuffer Array
+    if (keepData)
+    {
+        for (unsigned int i = 0; i < vertexCount*_vertexFormat.getVertexSize()/4; i++)
+        {
+            _vertexData.push_back(vertexData[i]);
+        }
     }
 }
 

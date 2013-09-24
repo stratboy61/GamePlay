@@ -42,7 +42,7 @@ public:
      * @return The loaded scene, or NULL if the scene could not be loaded.
      * @script{create}
      */
-    Scene* loadScene(const char* id = NULL);
+    Scene* loadScene(const char* id = NULL, bool keepData = false);
 
     /**
      * Loads a node with the specified ID from the bundle.
@@ -62,7 +62,7 @@ public:
      * @return The loaded mesh, or NULL if the mesh could not be loaded.
      * @script{create}
      */
-    Mesh* loadMesh(const char* id);
+    Mesh* loadMesh(const char* id, bool keepData = false);
 
     /**
      * Loads a font with the specified ID from the bundle.
@@ -236,7 +236,7 @@ private:
      * 
      * @return The loaded mesh, or NULL if the mesh could not be loaded.
      */
-    Mesh* loadMesh(const char* id, const char* nodeId);
+    Mesh* loadMesh(const char* id, const char* nodeId, bool keepData = false);
 
     /**
      * Reads an unsigned int from the current file position.
@@ -323,7 +323,7 @@ private:
      * 
      * @return A pointer to new node or NULL if there was an error.
      */
-    Node* readNode(Scene* sceneContext, Node* nodeContext);
+    Node* readNode(Scene* sceneContext, Node* nodeContext, bool keepData = false);
 
     /**
      * Reads a camera from the current file position.
@@ -344,7 +344,7 @@ private:
      * 
      * @return A pointer to a new model or NULL if there was an error.
      */
-    Model* readModel(const char* nodeId);
+    Model* readModel(const char* nodeId, bool keepData = false);
 
     /**
      * Reads mesh data from the current file position.

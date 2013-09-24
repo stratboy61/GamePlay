@@ -14,6 +14,13 @@
 #define RS_DEPTH_WRITE 16
 #define RS_DEPTH_FUNC 32
 #define RS_CULL_FACE_SIDE 64
+#define RS_COLOR_WRITE 128
+#define RS_STENCIL_TEST 256 
+#define RS_STENCIL_WRITE 512
+#define RS_STENCIL_FUNC 1024
+#define RS_STENCIL_OP 2048
+
+
 
 namespace gameplay
 {
@@ -500,8 +507,8 @@ void RenderState::cloneInto(RenderState* renderState, NodeCloneContext& context)
 
 RenderState::StateBlock::StateBlock()
     : _cullFaceEnabled(false), _depthTestEnabled(false), _depthWriteEnabled(true), _depthFunction(RenderState::DEPTH_LESS),
-      _blendEnabled(false), _blendSrc(RenderState::BLEND_ONE), _blendDst(RenderState::BLEND_ZERO),
-      _bits(0L)
+      _blendEnabled(false), _blendSrc(RenderState::BLEND_ONE), _blendDst(RenderState::BLEND_ZERO), _bits(0L),
+	  _colorWriteEnabled(true), _stencilTestEnabled(false), _stencilWriteEnabled(true), _stencilFunction(STENCIL_ALWAYS), _stencilRef(0), _stencilMask(1), _stencilTestFailOp(STENCIL_KEEP), _depthTestFailOp(STENCIL_KEEP), _stencilAndDepthTestPassOp(STENCIL_KEEP)
 {
 }
 
@@ -576,10 +583,43 @@ void RenderState::StateBlock::bindNoRestore()
         GL_ASSERT( glDepthMask(_depthWriteEnabled ? GL_TRUE : GL_FALSE) );
         _defaultState->_depthWriteEnabled = _depthWriteEnabled;
     }
+	if ((_bits & RS_COLOR_WRITE) && (_colorWriteEnabled != _defaultState->_colorWriteEnabled))
+    {
+        GL_ASSERT( glColorMask(_colorWriteEnabled ? GL_TRUE : GL_FALSE, _colorWriteEnabled ? GL_TRUE : GL_FALSE, _colorWriteEnabled ? GL_TRUE : GL_FALSE, _colorWriteEnabled ? GL_TRUE : GL_FALSE) );
+        _defaultState->_colorWriteEnabled = _colorWriteEnabled;
+    }
     if ((_bits & RS_DEPTH_FUNC) && (_depthFunction != _defaultState->_depthFunction))
     {
         GL_ASSERT( glDepthFunc((GLenum)_depthFunction) );
         _defaultState->_depthFunction = _depthFunction;
+    }
+	if ((_bits & RS_STENCIL_TEST) && (_stencilTestEnabled != _defaultState->_stencilTestEnabled))
+    {
+        if (_stencilTestEnabled) 
+            GL_ASSERT( glEnable(GL_STENCIL_TEST) );
+        else 
+            GL_ASSERT( glDisable(GL_STENCIL_TEST) );
+        _defaultState->_stencilTestEnabled = _stencilTestEnabled;
+    }
+	if ((_bits & RS_STENCIL_WRITE) && (_stencilWriteEnabled != _defaultState->_stencilWriteEnabled))
+    {
+        GL_ASSERT( glStencilMask(_stencilWriteEnabled ? GL_TRUE : GL_FALSE) );
+        _defaultState->_stencilWriteEnabled = _stencilWriteEnabled;
+    }
+
+	if ((_bits & RS_STENCIL_FUNC) && (_stencilFunction != _defaultState->_stencilFunction || _stencilRef != _defaultState->_stencilRef || _stencilMask != _defaultState->_stencilMask))
+    {
+        GL_ASSERT( glStencilFunc((GLenum)_stencilFunction, _stencilRef, _stencilMask ));
+        _defaultState->_stencilFunction = _stencilFunction;
+		_defaultState->_stencilRef = _stencilRef;
+		_defaultState->_stencilMask = _stencilMask;
+    }
+	if ((_bits & RS_STENCIL_OP) && (_stencilTestFailOp != _defaultState->_stencilTestFailOp || _depthTestFailOp != _defaultState->_depthTestFailOp || _stencilAndDepthTestPassOp != _defaultState->_stencilAndDepthTestPassOp))
+    {
+        GL_ASSERT( glStencilOp((GLenum)_stencilTestFailOp, (GLenum)_depthTestFailOp, (GLenum)_stencilAndDepthTestPassOp ));
+        _defaultState->_stencilTestFailOp = _stencilTestFailOp;
+		_defaultState->_depthTestFailOp = _depthTestFailOp;
+		_defaultState->_stencilAndDepthTestPassOp = _stencilAndDepthTestPassOp;
     }
 
     _defaultState->_bits |= _bits;
@@ -633,11 +673,45 @@ void RenderState::StateBlock::restore(long stateOverrideBits)
         _defaultState->_bits &= ~RS_DEPTH_WRITE;
         _defaultState->_depthWriteEnabled = true;
     }
+	 if (!(stateOverrideBits & RS_COLOR_WRITE) && (_defaultState->_bits & RS_COLOR_WRITE))
+    {
+        GL_ASSERT( glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE) );
+        _defaultState->_bits &= ~RS_COLOR_WRITE;
+        _defaultState->_colorWriteEnabled = true;
+    }
     if (!(stateOverrideBits & RS_DEPTH_FUNC) && (_defaultState->_bits & RS_DEPTH_FUNC))
     {
         GL_ASSERT( glDepthFunc((GLenum)GL_LESS) );
         _defaultState->_bits &= ~RS_DEPTH_FUNC;
         _defaultState->_depthFunction = RenderState::DEPTH_LESS;
+    }
+	if (!(stateOverrideBits & RS_STENCIL_TEST) && (_defaultState->_bits & RS_STENCIL_TEST))
+    {
+        GL_ASSERT( glDisable(GL_STENCIL_TEST) );
+        _defaultState->_bits &= ~RS_STENCIL_TEST;
+        _defaultState->_stencilTestEnabled = false;
+    }
+	 if (!(stateOverrideBits & RS_STENCIL_WRITE) && (_defaultState->_bits & RS_STENCIL_WRITE))
+    {
+        GL_ASSERT( glStencilMask(GL_TRUE) );
+        _defaultState->_bits &= ~RS_STENCIL_WRITE;
+        _defaultState->_stencilWriteEnabled = true;
+    }
+	if (!(stateOverrideBits & RS_STENCIL_FUNC) && (_defaultState->_bits & RS_STENCIL_FUNC))
+    {
+        GL_ASSERT( glStencilFunc((GLenum)GL_EQUAL,0,1 ) );
+        _defaultState->_bits &= ~RS_STENCIL_FUNC;
+        _defaultState->_stencilFunction = RenderState::STENCIL_EQUAL;
+		_defaultState->_stencilRef = 0;
+        _defaultState->_stencilMask = 1;
+    }
+	if (!(stateOverrideBits & RS_STENCIL_OP) && (_defaultState->_bits & RS_STENCIL_OP))
+    {
+        GL_ASSERT( glStencilOp((GLenum)GL_KEEP,GL_KEEP,GL_KEEP ) );
+        _defaultState->_bits &= ~RS_STENCIL_OP;
+        _defaultState->_stencilTestFailOp = RenderState::STENCIL_KEEP;
+		_defaultState->_depthTestFailOp = RenderState::STENCIL_KEEP;
+        _defaultState->_stencilAndDepthTestPassOp = RenderState::STENCIL_KEEP;
     }
 }
 
@@ -656,6 +730,36 @@ void RenderState::StateBlock::enableDepthWrite()
     }
 }
 
+void RenderState::StateBlock::enableStencilWrite()
+{
+    GP_ASSERT(_defaultState);
+
+    // Internal method used by Game::clear() to restore stencil writing before a
+    // clear operation. This is necessary if the last code to draw before the
+    // next frame leaves stencil writing disabled.
+    if (!_defaultState->_stencilWriteEnabled)
+    {
+        GL_ASSERT( glStencilMask(GL_TRUE) );
+        _defaultState->_bits &= ~RS_STENCIL_WRITE;
+        _defaultState->_stencilWriteEnabled = true;
+    }
+}
+
+void RenderState::StateBlock::enableColorWrite()
+{
+    GP_ASSERT(_defaultState);
+
+    // Internal method used by Game::clear() to restore depth writing before a
+    // clear operation. This is necessary if the last code to draw before the
+    // next frame leaves depth writing disabled.
+    if (!_defaultState->_colorWriteEnabled)
+    {
+        GL_ASSERT( glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE) );
+        _defaultState->_bits &= ~RS_COLOR_WRITE;
+        _defaultState->_colorWriteEnabled = true;
+    }
+}
+
 void RenderState::StateBlock::cloneInto(StateBlock* state)
 {
     GP_ASSERT(state);
@@ -664,7 +768,21 @@ void RenderState::StateBlock::cloneInto(StateBlock* state)
     state->_depthTestEnabled = _depthTestEnabled;
     state->_depthWriteEnabled = _depthWriteEnabled;
     state->_depthFunction = _depthFunction;
-    state->_blendEnabled = _blendEnabled;
+	
+	state->_stencilTestEnabled = _stencilTestEnabled;
+    state->_stencilWriteEnabled = _stencilWriteEnabled;
+
+	state->_stencilFunction = _stencilFunction;
+	state->_stencilRef = _stencilRef;
+	state->_stencilMask = _stencilMask;
+	
+	state->_stencilTestFailOp = _stencilTestFailOp;
+	state->_depthTestFailOp = _depthTestFailOp;
+	state->_stencilAndDepthTestPassOp = _stencilAndDepthTestPassOp;
+
+	state->_colorWriteEnabled = _colorWriteEnabled;
+    
+	state->_blendEnabled = _blendEnabled;
     state->_blendSrc = _blendSrc;
     state->_blendDst = _blendDst;
     state->_cullFaceSide = _cullFaceSide;
@@ -757,6 +875,67 @@ static RenderState::DepthFunction parseDepthFunc(const char* value)
     }
 }
 
+
+static RenderState::StencilFunction parseStencilFunc(const char* value)
+{
+    GP_ASSERT(value);
+
+    // Convert string to uppercase for comparison
+    std::string upper(value);
+    std::transform(upper.begin(), upper.end(), upper.begin(), (int(*)(int))toupper);
+    if (upper == "NEVER")
+        return RenderState::STENCIL_NEVER;
+    else if (upper == "LESS")
+        return RenderState::STENCIL_LESS;
+    else if (upper == "EQUAL")
+        return RenderState::STENCIL_EQUAL;
+    else if (upper == "LEQUAL")
+        return RenderState::STENCIL_LEQUAL;
+    else if (upper == "GREATER")
+        return RenderState::STENCIL_GREATER;
+    else if (upper == "NOTEQUAL")
+        return RenderState::STENCIL_NOTEQUAL;
+    else if (upper == "GEQUAL")
+        return RenderState::STENCIL_GEQUAL;
+    else if (upper == "ALWAYS")
+        return RenderState::STENCIL_ALWAYS;
+    else
+    {
+        GP_ERROR("Unsupported depth function value (%s). Will default to DEPTH_LESS if errors are treated as warnings)", value);
+        return RenderState::STENCIL_LESS;
+    }
+}
+
+static RenderState::StencilFunction parseStencilRef(const char* value)
+{
+    GP_ASSERT(value);
+
+    // Convert string to uppercase for comparison
+    std::string upper(value);
+    std::transform(upper.begin(), upper.end(), upper.begin(), (int(*)(int))toupper);
+    if (upper == "NEVER")
+        return RenderState::STENCIL_NEVER;
+    else if (upper == "LESS")
+        return RenderState::STENCIL_LESS;
+    else if (upper == "EQUAL")
+        return RenderState::STENCIL_EQUAL;
+    else if (upper == "LEQUAL")
+        return RenderState::STENCIL_LEQUAL;
+    else if (upper == "GREATER")
+        return RenderState::STENCIL_GREATER;
+    else if (upper == "NOTEQUAL")
+        return RenderState::STENCIL_NOTEQUAL;
+    else if (upper == "GEQUAL")
+        return RenderState::STENCIL_GEQUAL;
+    else if (upper == "ALWAYS")
+        return RenderState::STENCIL_ALWAYS;
+    else
+    {
+        GP_ERROR("Unsupported depth function value (%s). Will default to DEPTH_LESS if errors are treated as warnings)", value);
+        return RenderState::STENCIL_LESS;
+    }
+}
+
 static RenderState::CullFaceSide parseCullFaceSide(const char* value)
 {
     GP_ASSERT(value);
@@ -775,6 +954,46 @@ static RenderState::CullFaceSide parseCullFaceSide(const char* value)
         GP_ERROR("Unsupported cull face side value (%s). Will default to BACK if errors are treated as warnings)", value);
         return RenderState::CULL_FACE_SIDE_BACK;
     }
+}
+
+static RenderState::StencilOp parseStencilTestFailOp(const char* value)
+{
+    GP_ASSERT(value);
+
+    // Convert string to uppercase for comparison
+    std::string upper(value);
+    std::transform(upper.begin(), upper.end(), upper.begin(), (int(*)(int))toupper);
+    if (upper == "KEEP")
+        return RenderState::STENCIL_KEEP;
+    else if (upper == "ZERO")
+        return RenderState::STENCIL_ZERO;
+    else if (upper == "REPLACE")
+        return RenderState::STENCIL_REPLACE;
+    else if (upper == "INCR")
+        return RenderState::STENCIL_INCR;
+    else if (upper == "INCR_WARP")
+        return RenderState::STENCIL_INCR_WARP;
+    else if (upper == "DECR")
+        return RenderState::STENCIL_DECR;
+    else if (upper == "DECR_WRAP")
+        return RenderState::STENCIL_DECR_WRAP;
+    else if (upper == "INVERT")
+        return RenderState::STENCIL_INVERT;
+    else
+    {
+        GP_ERROR("Unsupported stencilOp value (%s). Will default to STENCIL_KEEP if errors are treated as warnings)", value);
+        return RenderState::STENCIL_KEEP;
+    }
+}
+
+static RenderState::StencilOp parseDepthTestFailOp(const char* value)
+{
+	return parseStencilTestFailOp(value);
+}
+
+static RenderState::StencilOp parseStencilAndDepthTestPassOp(const char* value)
+{
+	return parseStencilTestFailOp(value);
 }
 
 void RenderState::StateBlock::setState(const char* name, const char* value)
@@ -813,7 +1032,35 @@ void RenderState::StateBlock::setState(const char* name, const char* value)
     {
         setDepthFunction(parseDepthFunc(value));
     }
-    else
+	else if (strcmp(name, "colorWrite") == 0)
+    {
+        setColorWrite(parseBoolean(value));
+    }
+/*	else if (strcmp(name, "stencilFunction") == 0)
+    {
+        setStencilFunction(parseStencilFunc(value));
+    }
+	else if (strcmp(name, "stencilRef") == 0)
+    {
+        setStencilRef(atoi(value));
+    }
+	else if (strcmp(name, "stencilMask") == 0)
+    {
+        setStencilMask(atoi(value));
+    }
+	else if (strcmp(name, "stencilTestFailOp") == 0)
+    {
+        setOpStencilTestFail(parseStencilTestFailOp(value));
+    }
+	else if (strcmp(name, "depthTestFailOp") == 0)
+    {
+        setOpDepthTestFail(parseDepthTestFailOp(value));
+    }
+	else if (strcmp(name, "stencilAndDepthTestPassOp") == 0)
+    {
+        setOpStencilAndDepthTestPass(parseStencilAndDepthTestPassOp(value));
+    }
+*/    else
     {
         GP_ERROR("Unsupported render state string '%s'.", name);
     }
@@ -913,6 +1160,20 @@ void RenderState::StateBlock::setDepthWrite(bool enabled)
     }
 }
 
+
+void RenderState::StateBlock::setColorWrite(bool enabled)
+{
+    _colorWriteEnabled = enabled;
+    if (enabled)
+    {
+        _bits &= ~RS_COLOR_WRITE;
+    }
+    else
+    {
+        _bits |= RS_COLOR_WRITE;
+    }
+}
+
 void RenderState::StateBlock::setDepthFunction(DepthFunction func)
 {
     _depthFunction = func;
@@ -927,4 +1188,140 @@ void RenderState::StateBlock::setDepthFunction(DepthFunction func)
     }
 }
 
+
+void RenderState::StateBlock::setStencilWrite(bool enabled)
+{
+    _stencilWriteEnabled = enabled;
+    if (enabled)
+    {
+        _bits &= ~RS_STENCIL_WRITE;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_WRITE;
+    }
+}
+
+void RenderState::StateBlock::setStencilTest(bool enabled)
+{
+    _stencilTestEnabled = enabled;
+    if (!enabled)
+    {
+        _bits &= ~RS_STENCIL_TEST;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_TEST;
+    }
+}
+
+
+void RenderState::StateBlock::setStencilFunction(StencilFunction func, GLint ref, GLuint mask)
+{
+    _stencilFunction = func;
+	_stencilRef = ref;
+	_stencilMask = mask;
+
+    if (_stencilFunction == STENCIL_EQUAL && _stencilRef == 0 && _stencilMask == 1)
+    {
+        // Default stencil function
+        _bits &= ~RS_STENCIL_FUNC;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_FUNC;
+    }
+}
+
+/*void RenderState::StateBlock::setStencilRef( GLint ref)
+{
+    _stencilRef = ref;
+    if (_stencilRef == 0)
+    {
+        // Default blend func
+        _bits &= ~RS_STENCIL_FUNC;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_FUNC;
+    }
+}
+
+void RenderState::StateBlock::setStencilMask( GLuint ref)
+{
+    _stencilMask = ref;
+    if (_stencilMask == 0)
+    {
+        // Default blend func
+        _bits &= ~RS_STENCIL_FUNC;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_FUNC;
+    }
+}
+*/
+
+void RenderState::StateBlock::setStencilOp(StencilOp sFail, StencilOp dpFail, StencilOp dpPass)
+{
+
+	 _stencilTestFailOp = sFail;
+	 _depthTestFailOp = dpFail;
+	 _stencilAndDepthTestPassOp = dpPass;
+
+	  if (_stencilTestFailOp == GL_KEEP && _depthTestFailOp == GL_KEEP && _stencilAndDepthTestPassOp == GL_KEEP)
+    {
+        // Default stencil function
+        _bits &= ~RS_STENCIL_OP;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_OP;
+    }
+
+}
+
+/*
+void RenderState::StateBlock::setOpStencilTestFail(StencilOp sFail)
+{
+    _stencilTestFailOp = sFail;
+    if (_stencilTestFailOp == GL_KEEP)
+    {
+        // Default stencil function
+        _bits &= ~RS_STENCIL_OP;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_OP;
+    }
+}
+
+void RenderState::StateBlock::setOpDepthTestFail(StencilOp dpFail)
+{
+    _depthTestFailOp = dpFail;
+    if (_depthTestFailOp == GL_KEEP)
+    {
+        // Default stencil function
+        _bits &= ~RS_STENCIL_OP;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_OP;
+    }
+}
+
+void RenderState::StateBlock::setOpStencilAndDepthTestPass(StencilOp dpPass)
+{
+    _stencilAndDepthTestPassOp = dpPass;
+    if (_stencilAndDepthTestPassOp == GL_KEEP)
+    {
+        // Default stencil function
+        _bits &= ~RS_STENCIL_OP;
+    }
+    else
+    {
+        _bits |= RS_STENCIL_OP;
+    }
+}
+*/
 }

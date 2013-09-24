@@ -176,7 +176,7 @@ public:
      * @return true if the mesh is dynamic; false otherwise.
      */
     bool isDynamic() const;
-
+    void setDynamic(bool val);
     /**
      * Returns the primitive type of the vertices in the mesh.
      *
@@ -207,7 +207,7 @@ public:
      * @param vertexStart The index of the starting vertex (0 by default).
      * @param vertexCount The number of vertices to be set (default is 0, for all vertices).
      */
-    void setVertexData(const float* vertexData, unsigned int vertexStart = 0, unsigned int vertexCount = 0);
+    void setVertexData(const float* vertexData, unsigned int vertexStart = 0, unsigned int vertexCount = 0, bool keepData = false);
 
     /**
      * Creates and adds a new part of primitive data defining how the vertices are connected.
@@ -300,6 +300,15 @@ public:
      */
     virtual ~Mesh();
 
+    
+    /**
+     * Returns a handle to the vertex buffer for the mesh.
+     *
+     * @return The vertex buffer object handle.
+     */
+    std::vector<float>& getVertexBufferData();
+    
+    
 private:
 
     /**
@@ -327,6 +336,10 @@ private:
     bool _dynamic;
     BoundingBox _boundingBox;
     BoundingSphere _boundingSphere;
+    
+    std::vector<float> _vertexData;
+    
+    
 };
 
 }

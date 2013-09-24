@@ -13,13 +13,13 @@ namespace gameplay
 extern void calculateNamespacePath(const std::string& urlString, std::string& fileString, std::vector<std::string>& namespacePath);
 extern Properties* getPropertiesFromNamespacePath(Properties* properties, const std::vector<std::string>& namespacePath);
 
-Scene* SceneLoader::load(const char* url)
+Scene* SceneLoader::load(const char* url, bool keepData)
 {
     SceneLoader loader;
-    return loader.loadInternal(url);
+    return loader.loadInternal(url, keepData);
 }
 
-Scene* SceneLoader::loadInternal(const char* url)
+Scene* SceneLoader::loadInternal(const char* url, bool keepData)
 {
     // Get the file part of the url that we are loading the scene from.
     std::string urlStr = url ? url : "";
@@ -59,7 +59,7 @@ Scene* SceneLoader::loadInternal(const char* url)
     if (!_gpbPath.empty())
     {
         // Load scene from bundle
-        scene = loadMainSceneData(sceneProperties);
+        scene = loadMainSceneData(sceneProperties, keepData);
         if (!scene)
         {
             GP_ERROR("Failed to load main scene from bundle.");
@@ -867,7 +867,7 @@ PhysicsConstraint* SceneLoader::loadHingeConstraint(const Properties* constraint
     return physicsConstraint;
 }
 
-Scene* SceneLoader::loadMainSceneData(const Properties* sceneProperties)
+Scene* SceneLoader::loadMainSceneData(const Properties* sceneProperties, bool keepData)
 {
     GP_ASSERT(sceneProperties);
 
@@ -880,7 +880,7 @@ Scene* SceneLoader::loadMainSceneData(const Properties* sceneProperties)
     }
 
     // TODO: Support loading a specific scene from a GPB file using the URL syntax (i.e. "res/scene.gpb#myscene").
-    Scene* scene = bundle->loadScene(NULL);
+    Scene* scene = bundle->loadScene(NULL, keepData);
     if (!scene)
     {
         GP_ERROR("Failed to load scene from '%s'.", _gpbPath.c_str());

@@ -43,7 +43,7 @@ public:
      *      could not be loaded from the given file.
      * @script{create}
      */
-    static Scene* load(const char* filePath);
+    static Scene* load(const char* filePath, bool keepData = false);
 
     /**
      * Gets a currently active scene.
