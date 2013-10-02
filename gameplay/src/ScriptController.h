@@ -3,8 +3,7 @@
 
 #include "Base.h"
 #include "Game.h"
-//#include "Gamepad.h"
-#include "Control.h"
+#include "Gamepad.h"
 
 namespace gameplay
 {
@@ -29,6 +28,14 @@ struct LuaObject
     void* instance;
     /** Whether object is owned by Lua. */
     bool owns;
+};
+
+template <typename T>
+struct Data
+{
+    Data() : value(NULL), refCount(0) { }
+    T* value;
+    int refCount;
 };
 
 /**
@@ -90,14 +97,7 @@ public:
 
 private:
 
-    struct Data
-    {
-        Data() : value(NULL), refCount(0) { }
-        T* value;
-        int refCount;
-    };
-
-    Data* _data;
+    Data<T>* _data;
 };
 
 /**
@@ -350,7 +350,6 @@ class ScriptController
     friend class Platform;
 
 public:
-
     /**
      * Loads the given script file and executes its global code.
      * 
@@ -367,30 +366,6 @@ public:
      * @return The function that the URL references.
      */
     std::string loadUrl(const char* url);
-
-    /**
-     * Registers the given script callback.
-     *
-     * The 'callback' parameter must be one of the supported global callback
-     * event functions. The following strings are accepted: initialize, finalize,
-     * update, render, resizeEvent, keyEvent, touchEvent, mouseEvent, gamepadEvent.
-     * Signatures for the registered script function must match that of the
-     * corresponding signatures of these events on the Game class.
-     *
-     * @param callback The script callback to register for.
-     * @param function The name of the script function to register.
-     */
-    void registerCallback(const char* callback, const char* function);
-
-    /**
-     * Unregisters the given script callback.
-     *
-     * @param callback The script callback to unregister for.
-     * @param function The name of the script function to unregister.
-     *
-     * @see registerCallback(const char*, const char*)
-     */
-    void unregisterCallback(const char* callback, const char* function);
 
     /**
      * Calls the specified no-parameter Lua function.
@@ -754,11 +729,36 @@ public:
      * @param str2 The second string to print on the same line as str1.
      */
     static void print(const char* str1, const char* str2);
+    
+    
+    /**
+     * Registers the given script callback.
+     *
+     * The 'callback' parameter must be one of the supported global callback
+     * event functions. The following strings are accepted: initialize, finalize,
+     * update, render, resizeEvent, keyEvent, touchEvent, mouseEvent, gamepadEvent.
+     * Signatures for the registered script function must match that of the
+     * corresponding signatures of these events on the Game class.
+     *
+     * @param callback The script callback to register for.
+     * @param function The name of the script function to register.
+     */
+    void registerCallback(const char* callback, const char* function);
+    
+    /**
+     * Unregisters the given script callback.
+     *
+     * @param callback The script callback to unregister for.
+     * @param function The name of the script function to unregister.
+     *
+     * @see registerCallback(const char*, const char*)
+     */
+    void unregisterCallback(const char* callback, const char* function);
 
 private:
 
     /**
-     * Represents a callback function that can be registered for.
+     * Represents a Lua callback function binding.
      */
     enum ScriptCallback
     {
@@ -823,6 +823,7 @@ private:
      */
     void render(float elapsedTime);
 
+    
     /**
      * Script callback for game resize events.
      *
@@ -830,7 +831,7 @@ private:
      * @param height The new height of the game window content area.
      */
     void resizeEvent(unsigned int width, unsigned int height);
-
+    
     /**
      * Script keyboard callback on key events.
      *
@@ -870,6 +871,7 @@ private:
      */
     bool mouseEvent(Mouse::MouseEvent evt, int x, int y, int wheelDelta);
 
+    
     /**
      * Script callback for Gesture::SWIPE events.
      *
@@ -883,7 +885,7 @@ private:
      * @see Gesture::SWIPE_DIRECTION_RIGHT
      */
     void gestureSwipeEvent(int x, int y, int direction);
-
+    
     /**
      * Script callback for Gesture::PINCH events.
      *
@@ -892,7 +894,7 @@ private:
      * @param scale The scale of the pinch.
      */
     void gesturePinchEvent(int x, int y, float scale);
-
+    
     /**
      * Script callback for Gesture::TAP events.
      *
@@ -900,15 +902,23 @@ private:
      * @param y The y-coordinate of the tap.
      */
     void gestureTapEvent(int x, int y);
-
+    
     /**
      * Script gamepad callback on gamepad events.
      *
      * @param evt The gamepad event that occurred.
      * @param gamepad the gamepad the event occurred on
      */
+    
+    /**
+     * Script gamepad callback on gamepad events.
+     *
+     * @param evt The gamepad event that occurred.
+     * @param gamepad the gamepad the event occurred on
+     */
+    //void gamepadEvent(Gamepad::GamepadEvent evt, Gamepad* gamepad);
     void gamepadEvent(Gamepad::GamepadEvent evt, Gamepad* gamepad, unsigned int analogIndex = 0);
-
+    
     /**
      * Calls the specified Lua function using the given parameters.
      * 
@@ -936,6 +946,17 @@ private:
     void executeFunctionHelper(int resultCount, const char* func, const char* args, va_list* list);
 
     /**
+     * Registers the given script callback.
+     * 
+     * @param callback The script callback to register for.
+     * @param function The name of the function within the Lua script to call.
+     */
+    //void registerCallback(ScriptCallback callback, const std::string& function);
+
+    
+    
+    
+    /**
      * Converts the given string to a valid script callback enumeration value
      * or to ScriptController::INVALID_CALLBACK if there is no valid conversion.
      * 
@@ -948,29 +969,29 @@ private:
     /**
      * Converts a Gameplay userdata value to the type with the given class name.
      * This function will change the metatable of the userdata value to the metatable that matches the given string.
-     * 
+     *
      * Example:
      * <code>
      * local launchButton = form:getControl("launch")
      * convert(launchButton, "Button")
      * print("Button text: " .. launchButton:getText())
      * </code>
-     * 
+     *
      * <code>
      * -- The signature of the lua function:
      * -- param: object    A userdata object that represents a Gameplay object.
      * -- param: className The name of the class to convert the object to. (Examples: "Button", "PhysicsRigidBody")
      * function convert(object, className)
      * </code>
-     * 
+     *
      * @param state The Lua state.
-     * 
+     *
      * @return The number of values being returned by this function.
-     * 
+     *
      * @script{ignore}
      */
     static int convert(lua_State* state);
-
+    
     // Friend functions (used by Lua script bindings).
     friend void ScriptUtil::registerLibrary(const char* name, const luaL_Reg* functions);
     friend void ScriptUtil::registerConstantBool(const std::string& name, bool value, const std::vector<std::string>& scopePath);
@@ -997,7 +1018,7 @@ private:
     lua_State* _lua;
     unsigned int _returnCount;
     std::map<std::string, std::vector<std::string> > _hierarchy;
-    std::vector<std::string> _callbacks[CALLBACK_COUNT];
+    /*std::string**/std::vector<std::string> _callbacks[CALLBACK_COUNT];
     std::set<std::string> _loadedScripts;
     std::vector<luaStringEnumConversionFunction> _stringFromEnum;
 };

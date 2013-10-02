@@ -164,18 +164,18 @@ void PhysicsController::drawDebug(const Matrix& viewProjection)
     _debugDrawer->end();
 }
 
-bool PhysicsController::rayTest(const Ray& ray, float distance, PhysicsController::HitResult* result, PhysicsController::HitFilter* filter)
+bool PhysicsController::rayTest(const Ray& ray, float distance, PhysicsController::HitResult* result, const PhysicsController::HitFilter* filter)
 {
     class RayTestCallback : public btCollisionWorld::ClosestRayResultCallback
     {
     private:
 
-        HitFilter* filter;
+        const HitFilter* filter;
         HitResult hitResult;
 
     public:
 
-        RayTestCallback(const btVector3& rayFromWorld, const btVector3& rayToWorld, PhysicsController::HitFilter* filter)
+        RayTestCallback(const btVector3& rayFromWorld, const btVector3& rayToWorld, const PhysicsController::HitFilter* filter)
             : btCollisionWorld::ClosestRayResultCallback(rayFromWorld, rayToWorld), filter(filter)
         {
         }
@@ -1422,12 +1422,12 @@ PhysicsController::HitFilter::~HitFilter()
 {
 }
 
-bool PhysicsController::HitFilter::filter(PhysicsCollisionObject* object)
+bool PhysicsController::HitFilter::filter(PhysicsCollisionObject* object) const
 {
     return false;
 }
 
-bool PhysicsController::HitFilter::hit(const PhysicsController::HitResult& result)
+bool PhysicsController::HitFilter::hit(const PhysicsController::HitResult& result) const
 {
     return true;
 }

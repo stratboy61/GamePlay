@@ -123,7 +123,7 @@ public:
          * 
          * @return True if the object should be filtered out, or false to include the object in the test (default).
          */
-        virtual bool filter(PhysicsCollisionObject* object);
+        virtual bool filter(PhysicsCollisionObject* object) const;
 
         /**
          * Called when a ray or sweep test collides with a collision object.
@@ -139,7 +139,7 @@ public:
          * @return True (default) to continue with default behavior where closer
          *      objects are processed, false to process all intersecting objects.
          */
-        virtual bool hit(const HitResult& result);
+        virtual bool hit(const HitResult& result) const;
     };
 
     /**
@@ -307,7 +307,7 @@ public:
      *
      * @return True if the ray test collided with a physics object, false otherwise.
      */
-    bool rayTest(const Ray& ray, float distance, PhysicsController::HitResult* result = NULL, PhysicsController::HitFilter* filter = NULL);
+    bool rayTest(const Ray& ray, float distance, PhysicsController::HitResult* result = NULL, const PhysicsController::HitFilter* filter = NULL);
 
     /**
      * Performs a sweep test of the given collision object on the physics world.
