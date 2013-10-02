@@ -67,6 +67,8 @@ void Vertex::writeBinary(FILE* file) const
         writeVectorBinary(blendWeights, file);
         writeVectorBinary(blendIndices, file);
     }
+
+	// Add Color Test Github
 }
 
 void Vertex::writeText(FILE* file) const
