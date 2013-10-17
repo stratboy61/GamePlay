@@ -423,6 +423,12 @@ private:
     std::list<ListenerEvent*>* _listeners;              // Ordered collection of listeners on the clip.
     std::list<ListenerEvent*>::iterator* _listenerItr;  // Iterator that points to the next listener event to be triggered.
     std::vector<ScriptListener*>* _scriptListeners;     // Collection of listeners that are bound to Lua script functions.
+
+    
+    // Optimisation with cached value for determine min/max of current clip + index
+	int m_lastmin;
+	int m_lastmax;
+	int m_lastIndex;
 };
 
 }

@@ -85,7 +85,7 @@ namespace gameplay
 
 Curve* Curve::create(unsigned int pointCount, unsigned int componentCount)
 {
-    return new Curve(pointCount, componentCount);
+	return new Curve(pointCount, componentCount);
 }
 
 Curve::Curve(unsigned int pointCount, unsigned int componentCount)
@@ -179,14 +179,13 @@ void Curve::setTangent(unsigned int index, InterpolationType type, float* inValu
 void Curve::evaluate(float time, float* dst) const
 {
     assert(dst);
-
     evaluate(time, 0.0f, 1.0f, 0.0f, dst);
 }
 
-void Curve::evaluate(float time, float startTime, float endTime, float loopBlendTime, float* dst) const
+void Curve::evaluate(float time, float startTime, float endTime, float loopBlendTime, float* dst,  int* lastmin, int* lastmax, int* lastIndex) const
 {
     assert(dst && startTime >= 0.0f && startTime <= endTime && endTime <= 1.0f && loopBlendTime >= 0.0f);
-
+	
     // If there's only one point on the curve, return its value.
     if (_pointCount == 1)
     {
@@ -196,12 +195,24 @@ void Curve::evaluate(float time, float startTime, float endTime, float loopBlend
 
     unsigned int min = 0;
     unsigned int max = _pointCount - 1;
+	
     float localTime = time;
     if (startTime > 0.0f || endTime < 1.0f)
     {
         // Evaluating a sub section of the curve
-        min = determineIndex(startTime, 0, max);
-        max = determineIndex(endTime, min, max);
+        if (lastmin!= NULL && lastmax!= NULL && *lastmin != -1 && (*lastmax) != -1)
+		{
+			min = *lastmin;
+			max = *lastmax;
+		}
+		else
+		{
+			min = determineIndex(startTime, 0, max, 0);
+			max = determineIndex(endTime, min, max, 0);
+		}
+
+		*lastmin = min;
+		*lastmax = max;
 
         // Convert time to fall within the subregion
         localTime = _points[min].time + (_points[max].time - _points[min].time) * time;
@@ -237,10 +248,10 @@ void Curve::evaluate(float time, float startTime, float endTime, float loopBlend
     if (localTime > _points[max].time)
     {
         // Looping forward
-        index = max;
-        from = &_points[max];
-        to = &_points[min];
-
+		index = max;
+		from = &_points[max];
+		to = &_points[min];
+		
         // Calculate the fractional time between the two points.
         t = (localTime - from->time) / loopBlendTime;
     }
@@ -257,8 +268,10 @@ void Curve::evaluate(float time, float startTime, float endTime, float loopBlend
     else
     {
         // Locate the points we are interpolating between using a binary search.
-        index = determineIndex(localTime, min, max);
-        from = &_points[index];
+       	index = determineIndex(localTime, min, max, lastIndex);
+		*lastIndex = index;
+
+		from = &_points[index];
         to = &_points[index == max ? index : index+1];
 
         // Calculate the fractional time between the two points.
@@ -1220,13 +1233,17 @@ void Curve::interpolateQuaternion(float s, float* from, float* to, float* dst) c
         Quaternion::slerp(to[0], to[1], to[2], to[3], from[0], from[1], from[2], from[3], s, dst, dst + 1, dst + 2, dst + 3);
 }
 
-int Curve::determineIndex(float time, unsigned int min, unsigned int max) const
+int Curve::determineIndex(float time, unsigned int min, unsigned int max, int* lastIndex) const
 {
     unsigned int mid;
 
-    // Do a binary search to determine the index.
+	// Do a binary search to determine the index.
     do 
     {
+		// check Cached value
+		if (lastIndex != NULL && (*lastIndex)!= -1 && (time >= _points[*lastIndex].time && time < _points[*lastIndex + 1].time))
+            return (*lastIndex);
+
         mid = (min + max) >> 1;
 
         if (time >= _points[mid].time && time < _points[mid + 1].time)

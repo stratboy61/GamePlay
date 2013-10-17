@@ -24,6 +24,8 @@ AnimationClip::AnimationClip(const char* id, Animation* animation, unsigned long
         GP_ASSERT(_animation->_channels[i]->getCurve());
         _values.push_back(new AnimationValue(_animation->_channels[i]->getCurve()->getComponentCount()));
     }
+
+	m_lastmin = m_lastmax = m_lastIndex = -1;
 }
 
 AnimationClip::~AnimationClip()
@@ -538,7 +540,7 @@ bool AnimationClip::update(float elapsedTime)
 
         // Evaluate the point on Curve
         GP_ASSERT(channel->getCurve());
-        channel->getCurve()->evaluate(percentComplete, percentageStart, percentageEnd, percentageBlend, value->_value);
+        channel->getCurve()->evaluate(percentComplete, percentageStart, percentageEnd, percentageBlend, value->_value, &m_lastmin, &m_lastmax, &m_lastIndex);
 
         // Set the animation value on the target property.
         target->setAnimationPropertyValue(channel->_propertyId, value, _blendWeight);
