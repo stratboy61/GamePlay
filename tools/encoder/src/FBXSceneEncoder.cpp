@@ -1235,6 +1235,10 @@ Mesh* FBXSceneEncoder::loadMesh(FbxMesh* fbxMesh)
     // Find the blend weights and blend indices if this mesh is skinned.
     vector<vector<Vector2> > weights;
     bool hasSkin = loadBlendWeights(fbxMesh, weights);
+
+
+	vector<Vector4>  morphValues;
+    bool hasMorph = loadBlendShape(fbxMesh, morphValues);
     
     // Get list of uv sets for mesh
     FbxStringList uvSetNameList;
@@ -1274,6 +1278,11 @@ Mesh* FBXSceneEncoder::loadMesh(FbxMesh* fbxMesh)
             if (hasSkin)
             {
                 loadBlendData(weights[controlPointIndex], &vertex);
+            }
+
+			if (hasMorph)
+            {
+                loadMorphData(morphValues, &vertex, controlPointIndex);
             }
 
             // Determine which mesh part this vertex index should be added to based on the material that affects it.
@@ -1346,6 +1355,11 @@ Mesh* FBXSceneEncoder::loadMesh(FbxMesh* fbxMesh)
     {
         mesh->addVetexAttribute(BLENDWEIGHTS, Vertex::BLEND_WEIGHTS_COUNT);
         mesh->addVetexAttribute(BLENDINDICES, Vertex::BLEND_INDICES_COUNT);
+    }
+
+	if (vertex.hasMorph)
+    {
+        mesh->addVetexAttribute(TEXCOORD0 + 2, Vertex::MORPH_COUNT);
     }
 
     _gamePlayFile.addMesh(mesh);

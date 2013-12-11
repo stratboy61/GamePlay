@@ -99,6 +99,7 @@ void loadVertexColor(FbxMesh* fbxMesh, int vertexIndex, int controlPointIndex, V
  * @param vertex The vertex to copy the blend data to.
  */
 void loadBlendData(const std::vector<Vector2>& vertexWeights, Vertex* vertex);
+void loadMorphData(const std::vector<Vector4>& morphValues, Vertex* vertex, int controlPointIndex);
 
 /**
  * Loads the blend weights and blend indices from the given mesh.
@@ -111,6 +112,9 @@ void loadBlendData(const std::vector<Vector2>& vertexWeights, Vertex* vertex);
  * @return True if this mesh has a mesh skin, false otherwise.
  */
 bool loadBlendWeights(FbxMesh* fbxMesh, std::vector<std::vector<Vector2> >& weights);
+
+bool loadBlendShape(FbxMesh* fbxMesh, std::vector<Vector4>& weights);
+
 
 /**
  * Copies from an FBX matrix to a float[16] array.

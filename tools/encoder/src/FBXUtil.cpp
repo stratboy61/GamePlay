@@ -392,6 +392,25 @@ void loadVertexColor(FbxMesh* fbxMesh, int vertexIndex, int controlPointIndex, V
     }
 }
 
+void loadMorphData(const vector<Vector4>& morphValues, Vertex* vertex, int controlPointIndex)
+{
+	size_t size = morphValues.size();
+
+	vertex->hasMorph= true;
+
+	for (unsigned int i=0; i<size; i++)
+	{
+		if (morphValues.at(i).w == controlPointIndex)
+		{
+			vertex->morph.x = morphValues.at(i).x - vertex->position.x;
+			vertex->morph.y = morphValues.at(i).y - vertex->position.y;
+			vertex->morph.z = morphValues.at(i).z - vertex->position.z;
+		}
+	}
+
+	
+}
+
 void loadBlendData(const vector<Vector2>& vertexWeights, Vertex* vertex)
 {
     size_t size = vertexWeights.size();
@@ -463,6 +482,60 @@ bool loadBlendWeights(FbxMesh* fbxMesh, vector<vector<Vector2> >& weights)
         }
     }
     return fbxSkin != NULL;
+}
+
+
+bool loadBlendShape(FbxMesh* fbxMesh, vector<Vector4>& morphValues)
+{
+    assert(fbxMesh);
+    const int vertexCount = fbxMesh->GetControlPointsCount();
+
+    FbxBlendShape* fbxBlendShape = NULL;
+    const int deformerCount = fbxMesh->GetDeformerCount();
+    for (int i = 0; i < deformerCount; ++i)
+    {
+        FbxDeformer* deformer = fbxMesh->GetDeformer(i);
+        if (deformer->GetDeformerType() == FbxDeformer::eBlendShape)
+        {
+            fbxBlendShape = FbxCast<FbxBlendShape>(deformer);
+           
+            int blendShapeChannelCount = fbxBlendShape->GetBlendShapeChannelCount() ;
+            for (int j = 0; j < blendShapeChannelCount; ++j)
+            {
+				FbxBlendShapeChannel* blendShapeChannel = fbxBlendShape->GetBlendShapeChannel(j);
+                
+				int TargetShapeCount = blendShapeChannel->GetTargetShapeCount();
+				for (int k = 0; k < TargetShapeCount; ++k)
+				{
+					FbxShape* shape = blendShapeChannel->GetTargetShape(k);
+					assert(shape);
+					const int ControlPointIndicesCount = shape->GetControlPointIndicesCount();
+					for (int l = 0; l < ControlPointIndicesCount; ++l)
+					{
+						int index = shape->GetControlPointIndices()[l];
+						if (index >= vertexCount)
+						{
+							continue;
+						}
+
+						FbxGeometryBase* fbxMeshShape = FbxCast<FbxGeometryBase>(shape);
+						FbxVector4 position = fbxMeshShape->GetControlPointAt(index);
+						Vertex vertex;
+
+						vertex.position.x = (float)position[0];
+						vertex.position.y = (float)position[1];
+						vertex.position.z = (float)position[2];
+
+						morphValues.push_back(Vector4(vertex.position.x, vertex.position.y, vertex.position.z, (float)index));
+					}
+				}
+            }
+            // Only the first blendshape deformer will be loaded.
+            // There probably won't be more than one.
+            break;
+        }
+    }
+    return fbxBlendShape != NULL;
 }
 
 void findMinMaxTime(FbxAnimCurve* animCurve, float* startTime, float* stopTime, float* frameRate)

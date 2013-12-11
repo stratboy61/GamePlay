@@ -5,7 +5,7 @@ namespace gameplay
 {
 
 Vertex::Vertex(void)
-    : hasNormal(false), hasTangent(false), hasBinormal(false), hasDiffuse(false), hasWeights(false)
+    : hasNormal(false), hasTangent(false), hasBinormal(false), hasDiffuse(false), hasWeights(false), hasMorph(false)
 {
     for (unsigned int i = 0; i < MAX_UV_SETS; ++i)
         hasTexCoord[i] = false;
@@ -31,6 +31,8 @@ unsigned int Vertex::byteSize() const
     }
     if (hasWeights)
         count += BLEND_WEIGHTS_COUNT + BLEND_INDICES_COUNT;
+	if (hasMorph)
+        count += MORPH_COUNT;
     if (hasDiffuse)
         count += DIFFUSE_COUNT;
     return count * sizeof(float);
@@ -66,6 +68,10 @@ void Vertex::writeBinary(FILE* file) const
     {
         writeVectorBinary(blendWeights, file);
         writeVectorBinary(blendIndices, file);
+    }
+	if (hasMorph)
+    {
+        writeVectorBinary(morph, file);
     }
 
 	// Add Color Test Github
@@ -109,6 +115,11 @@ void Vertex::writeText(FILE* file) const
         writeVectorText(blendWeights, file);
         write("// blendIndices\n", file);
         writeVectorText(blendIndices, file);
+    }
+	if (hasMorph)
+    {
+        write("// MorphValues\n", file);
+        writeVectorText(morph, file);
     }
 }
 

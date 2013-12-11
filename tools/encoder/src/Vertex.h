@@ -25,6 +25,8 @@ public:
     static const unsigned int BLEND_WEIGHTS_COUNT = 4;
     static const unsigned int BLEND_INDICES_COUNT = 4;
 
+	static const unsigned int MORPH_COUNT = 3;
+
     /**
      * Constructor.
      */
@@ -45,7 +47,9 @@ public:
     Vector4 blendWeights;
     Vector4 blendIndices;
 
-    bool hasNormal, hasTangent, hasBinormal, hasTexCoord[MAX_UV_SETS], hasDiffuse, hasWeights;
+	Vector3 morph;
+
+    bool hasNormal, hasTangent, hasBinormal, hasTexCoord[MAX_UV_SETS], hasDiffuse, hasWeights, hasMorph;
 
     inline bool operator<(const Vertex& v) const
     {
@@ -63,12 +67,15 @@ public:
                             {
                                 if (blendIndices == v.blendIndices)
                                 {
-                                    for (unsigned int i = 0; i < MAX_UV_SETS; ++i)
-                                    {
-                                        if (!(texCoord[i] == v.texCoord[i]))
-                                            return texCoord[i] < v.texCoord[i];
-                                    }
-                                    return false;
+									if (morph == v.morph)
+									{
+										for (unsigned int i = 0; i < MAX_UV_SETS; ++i)
+										{
+											if (!(texCoord[i] == v.texCoord[i]))
+												return texCoord[i] < v.texCoord[i];
+										}
+										return false;
+									}
                                 }
                                 return blendIndices < v.blendIndices;
                             }
@@ -93,7 +100,7 @@ public:
                 return false;
         }
         return position==v.position && normal==v.normal && tangent==v.tangent && binormal==v.binormal &&
-            diffuse==v.diffuse && blendWeights==v.blendWeights && blendIndices==v.blendIndices;
+			diffuse==v.diffuse && blendWeights==v.blendWeights && blendIndices==v.blendIndices && morph==v.morph;
     }
 
     /**
