@@ -111,6 +111,8 @@ public:
 
     const char* getType() const;
 
+    inline SpriteBatch* getBatch() const { return _batch; }
+    
 protected:
 
     ImageControl();
