@@ -117,8 +117,27 @@ void AnimationController::update(float elapsedTime)
         }
         else if (clip->update(elapsedTime))
         {
-            clip->release();
-            clipIter = _runningClips.erase(clipIter);
+			if (clip->_locomotionClip)
+			{
+				std::list<AnimationClip*>::iterator clipIter2 = _runningClips.begin();
+				while (clipIter2 != _runningClips.end())
+				{
+					AnimationClip* clipSynch = (*clipIter2);
+					GP_ASSERT(clipSynch);
+		
+					if (clipSynch->_synchronized)
+					{
+						clipSynch->onEnd();
+						clipSynch->release();
+						clipIter2 = _runningClips.erase(clipIter2);
+					}
+
+					clipIter2++;
+				}
+			}
+
+			clip->release();
+			clipIter = _runningClips.erase(clipIter);
         }
         else
         {

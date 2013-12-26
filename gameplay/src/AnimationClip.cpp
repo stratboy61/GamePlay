@@ -13,7 +13,8 @@ AnimationClip::AnimationClip(const char* id, Animation* animation, unsigned long
     : _id(id), _animation(animation), _startTime(startTime), _endTime(endTime), _duration(_endTime - _startTime), 
       _stateBits(0x00), _repeatCount(1.0f), _loopBlendTime(0), _activeDuration(_duration * _repeatCount), _speed(1.0f), _timeStarted(0), 
       _elapsedTime(0), _crossFadeToClip(NULL), _crossFadeOutElapsed(0), _crossFadeOutDuration(0), _blendWeight(1.0f), 
-      _beginListeners(NULL), _endListeners(NULL), _listeners(NULL), _listenerItr(NULL), _scriptListeners(NULL)
+      _beginListeners(NULL), _endListeners(NULL), _listeners(NULL), _listenerItr(NULL), _scriptListeners(NULL), _locomotionClip(false),
+	  _synchronized(false), _restart(false)
 {
     GP_ASSERT(_animation);
     GP_ASSERT(0 <= startTime && startTime <= _animation->_duration && 0 <= endTime && endTime <= _animation->_duration);
@@ -189,7 +190,7 @@ bool AnimationClip::isPlaying() const
     return (isClipStateBitSet(CLIP_IS_PLAYING_BIT) && !isClipStateBitSet(CLIP_IS_PAUSED_BIT));
 }
 
-void AnimationClip::play()
+void AnimationClip::play(bool synchro, bool restart)
 {
     if (isClipStateBitSet(CLIP_IS_PLAYING_BIT))
     {
@@ -205,7 +206,8 @@ void AnimationClip::play()
             resetClipStateBit(CLIP_IS_MARKED_FOR_REMOVAL_BIT);
 
         // Set the state bit to restart.
-        setClipStateBit(CLIP_IS_RESTARTED_BIT);
+		if (restart)
+			setClipStateBit(CLIP_IS_RESTARTED_BIT);
     }
     else
     {
@@ -216,6 +218,9 @@ void AnimationClip::play()
     }
     
     _timeStarted = Game::getGameTime();
+	
+	_synchronized = synchro;
+	_restart = restart;
 }
 
 void AnimationClip::stop()
@@ -239,7 +244,7 @@ void AnimationClip::pause()
     }
 }
 
-void AnimationClip::crossFade(AnimationClip* clip, unsigned long duration)
+void AnimationClip::crossFade(AnimationClip* clip, unsigned long duration, bool restart)
 {
     GP_ASSERT(clip);
 
@@ -277,7 +282,7 @@ void AnimationClip::crossFade(AnimationClip* clip, unsigned long duration)
         play();
 
     // Start playing the cross fade clip.
-    _crossFadeToClip->play(); 
+    _crossFadeToClip->play(false, restart); 
 }
 
 void AnimationClip::addListener(AnimationClip::Listener* listener, unsigned long eventTime)
@@ -400,10 +405,12 @@ bool AnimationClip::update(float elapsedTime)
         {
             // Elapsed time is moving backwards, so wrap it back around the end when it falls below zero
             _elapsedTime = _activeDuration + _elapsedTime;
-
-            // TODO: account for _loopBlendTime
+			// TODO: account for _loopBlendTime
         }
     }
+
+	if (_synchronized)
+			return false;
 
     // Current time within a loop of the clip
     float currentTime = 0.0f;
@@ -514,7 +521,10 @@ bool AnimationClip::update(float elapsedTime)
             // Fade is done.
             _crossFadeToClip->_blendWeight = 1.0f;
             _blendWeight = 0.0f;
-            resetClipStateBit(CLIP_IS_STARTED_BIT);            
+			
+			if (!(_crossFadeToClip->_locomotionClip && _locomotionClip))
+				resetClipStateBit(CLIP_IS_STARTED_BIT);   
+
             resetClipStateBit(CLIP_IS_FADING_OUT_BIT);
             _crossFadeToClip->resetClipStateBit(CLIP_IS_FADING_IN_BIT);
             SAFE_RELEASE(_crossFadeToClip);
@@ -564,7 +574,8 @@ void AnimationClip::onBegin()
     setClipStateBit(CLIP_IS_STARTED_BIT);
     if (_speed >= 0)
     {
-        _elapsedTime = (Game::getGameTime() - _timeStarted) * _speed;
+		if (_restart)
+	       _elapsedTime = (Game::getGameTime() - _timeStarted) * _speed;
 
         if (_listeners)
             *_listenerItr = _listeners->begin();
