@@ -204,8 +204,13 @@ public:
     /**
      * Plays the AnimationClip.
      */
-    void play();
+    void play(bool synchro = false, bool restart = true);
 
+	void SetRestart(bool val) { _restart = val;}
+	void SetSynchronized(bool val) { _synchronized = val;}
+	
+	void SetLocomotionClip(bool val) { _locomotionClip = val;}
+	
     /**
      * Stops the AnimationClip.
      */
@@ -222,7 +227,7 @@ public:
      * @param clip The clip to fade into.
      * @param duration The duration of the fade.
      */
-    void crossFade(AnimationClip* clip, unsigned long duration);
+    void crossFade(AnimationClip* clip, unsigned long duration, bool restart = true);
 
     /**
      * Adds an animation begin listener.
@@ -424,6 +429,9 @@ private:
     std::list<ListenerEvent*>::iterator* _listenerItr;  // Iterator that points to the next listener event to be triggered.
     std::vector<ScriptListener*>* _scriptListeners;     // Collection of listeners that are bound to Lua script functions.
 
+	bool _synchronized;
+	bool _restart;
+	bool _locomotionClip;
     
     // Optimisation with cached value for determine min/max of current clip + index
 	int m_lastmin;
