@@ -790,7 +790,8 @@ void ScriptController::finalizeGame()
 	// Note that this does NOT free any global variables declared in scripts, since 
 	// they are stored in the global state and are still referenced. Only after 
 	// closing the state (lua_close) will those variables be released.
-    lua_gc(_lua, LUA_GCCOLLECT, 0);
+	if (_lua)
+		lua_gc(_lua, LUA_GCCOLLECT, 0);
 }
 
 void ScriptController::update(float elapsedTime)
