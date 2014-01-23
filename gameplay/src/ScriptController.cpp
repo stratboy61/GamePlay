@@ -741,7 +741,7 @@ void ScriptController::initialize()
         GP_ERROR("Failed to load custom dofile() function with error: '%s'.", lua_tostring(_lua, -1));
 
     // Write game command-line arguments to a global lua "arg" table
-    std::ostringstream args;
+    /*std::ostringstream args;
     int argc;
     char** argv;
     Game::getInstance()->getArguments(&argc, &argv);
@@ -755,7 +755,7 @@ void ScriptController::initialize()
     {
         if (luaL_dostring(_lua, argsStr.c_str()))
             GP_ERROR("Failed to pass command-line arguments with error: '%s'.", lua_tostring(_lua, -1));
-    }
+    }*/
 }
 
 void ScriptController::initializeGame()
@@ -790,7 +790,8 @@ void ScriptController::finalizeGame()
 	// Note that this does NOT free any global variables declared in scripts, since 
 	// they are stored in the global state and are still referenced. Only after 
 	// closing the state (lua_close) will those variables be released.
-    lua_gc(_lua, LUA_GCCOLLECT, 0);
+	if (_lua)
+		lua_gc(_lua, LUA_GCCOLLECT, 0);
 }
 
 void ScriptController::update(float elapsedTime)
