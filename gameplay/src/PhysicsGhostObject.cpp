@@ -95,6 +95,11 @@ void PhysicsGhostObject::transformChanged(Transform* transform, long cookie)
     GP_ASSERT(_motionState);
     GP_ASSERT(_ghostObject);
 
+	 Vector3 scale;
+    _node->getWorldMatrix().getScale(&scale);
+	_collisionShape->getShape()->setLocalScaling(BV(scale));
+	
+
     // Update the motion state with the transform from the node.
     _motionState->updateTransformFromNode();
 
