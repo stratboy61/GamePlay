@@ -793,21 +793,25 @@ private:
      */
     ~ScriptController();
 
+	public:
     /**
      * Callback for when the controller is initialized.
      */
     void initialize();
 
+	private:
     /**
      * Initializes the game using the appropriate callback script (if it was specified).
      */
     void initializeGame();
 
+	public:
     /*
      * Callback for when the controller is finalized.
      */
     void finalize();
 
+	private:
     /**
      * Finalizes the game using the appropriate callback script (if it was specified).
      */
