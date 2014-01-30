@@ -507,11 +507,6 @@ void Theme::setProjectionMatrix(const Matrix& matrix)
     }
 }
 
-SpriteBatch* Theme::getSpriteBatch() const
-{
-    return _spriteBatch;
-}
-
 /**************
  * Theme::UVs *
  **************/

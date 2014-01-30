@@ -333,7 +333,7 @@ public:
 	 */
 	inline Texture* getTexture() const			{ return _texture; }
 
-	SpriteBatch* getSpriteBatch() const;
+	SpriteBatch* getSpriteBatch() const { return _spriteBatch; }
 
 private:
 
