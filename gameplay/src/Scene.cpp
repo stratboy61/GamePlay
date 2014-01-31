@@ -114,7 +114,7 @@ Scene* Scene::load(const char* filePath, bool keepData)
 Scene* Scene::getScene(const char* id)
 {
     if (id == NULL)
-        return __sceneList.size() ? __sceneList[0] : NULL;
+        return __sceneList.size() ? __sceneList[__sceneList.size() - 1] : NULL;
 
     for (size_t i = 0, count = __sceneList.size(); i < count; ++i)
     {
