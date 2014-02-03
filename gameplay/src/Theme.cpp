@@ -91,7 +91,14 @@ Theme* Theme::create(const char* url)
     const char* textureFile = themeProperties->getString("texture");
     theme->_texture = Texture::create(textureFile, false);
     GP_ASSERT(theme->_texture);
-    theme->_spriteBatch = SpriteBatch::create(theme->_texture);
+	const char* vertexShaderFile = themeProperties->getString("vertexShader");
+	const char* fragmentShaderFile = themeProperties->getString("fragmentShader");
+	Effect *themeEffect = NULL;
+	if (vertexShaderFile != NULL && fragmentShaderFile != NULL) {
+		themeEffect = Effect::createFromFile(vertexShaderFile, fragmentShaderFile);
+	}
+    theme->_spriteBatch = SpriteBatch::create(theme->_texture, themeEffect);
+	SAFE_RELEASE(themeEffect);
     GP_ASSERT(theme->_spriteBatch);
     theme->_spriteBatch->getSampler()->setFilterMode(Texture::NEAREST, Texture::NEAREST);
 

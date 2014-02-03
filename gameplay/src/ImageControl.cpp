@@ -1,5 +1,6 @@
 #include "Base.h"
 #include "ImageControl.h"
+#include "Material.h"
 
 namespace gameplay
 {
@@ -50,7 +51,24 @@ void ImageControl::initialize(Theme::Style* style, Properties* properties)
     std::string path;
     if (properties->getPath("path", &path))
     {
-        setImage(path.c_str());
+		if (style != NULL) 
+		{ 
+			// Malek -- begin
+			Texture* texture = style->getTheme()->getTexture();
+			const char *themePath = texture->getPath();
+
+			if (path != themePath) {
+			// Malek --- end
+				setImage(path.c_str());
+			// Malek --- begin
+			}
+			else {
+				_batch = SpriteBatch::create(texture, style->getTheme()->getSpriteBatch()->getMaterial()->getTechnique()->getPassByIndex(0)->getEffect());
+				_tw = 1.0f / texture->getWidth();
+				_th = 1.0f / texture->getHeight();
+			}
+			// Malek --- end
+		}
     }
 
     if (properties->exists("srcRegion"))
@@ -76,6 +94,15 @@ void ImageControl::setImage(const char* path)
     _tw = 1.0f / texture->getWidth();
     _th = 1.0f / texture->getHeight();
     texture->release();
+}
+
+void ImageControl::setImage(Texture* texture)
+{
+    SAFE_DELETE(_batch);
+    _batch = SpriteBatch::create(texture);
+    _tw = 1.0f / texture->getWidth();
+    _th = 1.0f / texture->getHeight();
+    //texture->release();
 }
 
 void ImageControl::setRegionSrc(float x, float y, float width, float height)
