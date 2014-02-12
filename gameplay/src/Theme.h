@@ -328,6 +328,13 @@ public:
      */
     Theme::Style* getEmptyStyle();
 
+    /**
+     * Get the current texture.
+	 */
+	inline Texture* getTexture() const			{ return _texture; }
+
+	SpriteBatch* getSpriteBatch() const;
+
 private:
 
     /**
@@ -455,9 +462,7 @@ private:
      */
     Theme& operator=(const Theme&);
 
-    void setProjectionMatrix(const Matrix& matrix);
-
-    SpriteBatch* getSpriteBatch() const;
+    void setProjectionMatrix(const Matrix& matrix);    
 
     static void generateUVs(float tw, float th, float x, float y, float width, float height, UVs* uvs);
 
