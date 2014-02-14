@@ -459,7 +459,7 @@ void MaterialParameter::bind(Effect* effect)
         if (!_uniform)
         {
             // This parameter was not found in the specified effect, so do nothing.
-            GP_WARN("Warning: Material parameter '%s' not found in effect '%s'.", _name.c_str(), effect->getId());
+           // GP_WARN("Warning: Material parameter '%s' not found in effect '%s'.", _name.c_str(), effect->getId());
             return;
         }
     }

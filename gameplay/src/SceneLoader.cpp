@@ -133,7 +133,14 @@ Scene* SceneLoader::loadInternal(const char* url, bool keepData)
         {
             physics = ns;
             break;
-        }
+        } else if (strcmp(ns->getNamespace(), "tags") == 0) {
+		    // Apply scene tags
+			const char *name = 0;
+			while ((name = ns->getNextProperty()) != NULL) {
+				scene->setTag(name, ns->getString());
+			}
+			break;
+		}
     }
 
     // Load physics properties and constraints.
@@ -729,6 +736,9 @@ void SceneLoader::buildReferenceTables(Properties* sceneProperties)
             // Note: we don't load physics until the whole scene file has been 
             // loaded so that all node references (i.e. for constraints) can be resolved.
         }
+        else if (strcmp(ns->getNamespace(), "tags") == 0) {
+			// do nothing - see "Apply scene tags" comment
+		}
         else
         {
             // TODO: Should we ignore these items? They could be used for generic properties file inheritance.

@@ -61,7 +61,7 @@ static bool endsWith(const char* str, const char* suffix, bool ignoreCase)
 
 Scene::Scene(const char* id)
     : _id(id ? id : ""), _activeCamera(NULL), _firstNode(NULL), _lastNode(NULL), _nodeCount(0), 
-    _lightColor(1,1,1), _lightDirection(0,-1,0), _bindAudioListenerToCamera(true), _debugBatch(NULL)
+    _lightColor(1,1,1), _lightDirection(0,-1,0), _bindAudioListenerToCamera(true), _debugBatch(NULL), _tags(NULL)
 {
     __sceneList.push_back(this);
 }
@@ -83,6 +83,7 @@ Scene::~Scene()
     // Remove all nodes from the scene
     removeAllNodes();
     SAFE_DELETE(_debugBatch);
+	SAFE_DELETE(_tags);
 
     // Remove the scene from global list
     std::vector<Scene*>::iterator itr = std::find(__sceneList.begin(), __sceneList.end(), this);
@@ -321,6 +322,48 @@ unsigned int Scene::getNodeCount() const
 Node* Scene::getFirstNode() const
 {
     return _firstNode;
+}
+
+bool Scene::hasTag(const char* name) const
+{
+    GP_ASSERT(name);
+
+    return (_tags ? _tags->find(name) != _tags->end() : false);
+}
+
+const char* Scene::getTag(const char* name) const
+{
+    GP_ASSERT(name);
+
+    if (!_tags)
+        return NULL;
+
+    std::map<std::string, std::string>::const_iterator itr = _tags->find(name);
+    return (itr == _tags->end() ? NULL : itr->second.c_str());
+}
+
+void Scene::setTag(const char* name, const char* value)
+{
+    GP_ASSERT(name);
+
+    if (value == NULL)
+    {
+        // Removing tag
+        if (_tags)
+        {
+            _tags->erase(name);
+            if (_tags->size() == 0)
+                SAFE_DELETE(_tags);
+        }
+    }
+    else
+    {
+        // Setting tag
+        if (_tags == NULL)
+            _tags = new std::map<std::string, std::string>();
+
+        (*_tags)[name] = value;
+    }
 }
 
 Camera* Scene::getActiveCamera() const

@@ -231,6 +231,41 @@ public:
     void setLightDirection(const Vector3& direction);
 
     /**
+     * Determines if a custom tag with the specified name is set.
+     *
+     * @param name Name of the tag to query.
+     *
+     * @return true if the tag is set, false otherwise.
+     */
+    bool hasTag(const char* name) const;
+
+    /**
+     * Returns the value of the custom tag with the given name.
+     *
+     * @param name Name of the tag to return.
+     *
+     * @return The value of the given tag, or NULL if the tag is not set.
+     */
+    const char* getTag(const char* name) const;
+
+    /**
+     * Sets a custom tag on this Node.
+     *
+     * Custom tags can be used for a variety of purposes within a game. For example,
+     * a tag called "transparent" can be added to nodes, to indicate which nodes in
+     * a scene are transparent. This tag can then be read during rendering to sort
+     * transparent and opaque objects for correct drawing order. Another example
+     * is using a "visible" tag to mark nodes as invisible to be skipped during
+     * rendering.
+     *
+     * Setting a tag to NULL removes the tag from the Node.
+     *
+     * @param name Name of the tag to set.
+     * @param value Optional value of the tag (empty string by default).
+     */
+    void setTag(const char* name, const char* value = "");
+
+    /**
      * Visits each node in the scene and calls the specified method pointer.
      *
      * Calling this method invokes the specified method pointer for each node
@@ -345,6 +380,7 @@ private:
     Vector3 _lightDirection;
     bool _bindAudioListenerToCamera;
     MeshBatch* _debugBatch;
+    std::map<std::string, std::string>* _tags;
 };
 
 template <class T>
