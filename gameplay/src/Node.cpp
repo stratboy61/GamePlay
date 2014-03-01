@@ -1105,7 +1105,7 @@ PhysicsCollisionObject* Node::getCollisionObject() const
     return _collisionObject;
 }
 
-PhysicsCollisionObject* Node::setCollisionObject(PhysicsCollisionObject::Type type, const PhysicsCollisionShape::Definition& shape, PhysicsRigidBody::Parameters* rigidBodyParameters)
+PhysicsCollisionObject* Node::setCollisionObject(PhysicsCollisionObject::Type type, const PhysicsCollisionShape::Definition& shape, PhysicsRigidBody::Parameters* rigidBodyParameters, int group, int mask)
 {
     SAFE_DELETE(_collisionObject);
 
@@ -1113,13 +1113,13 @@ PhysicsCollisionObject* Node::setCollisionObject(PhysicsCollisionObject::Type ty
     {
     case PhysicsCollisionObject::RIGID_BODY:
         {
-            _collisionObject = new PhysicsRigidBody(this, shape, rigidBodyParameters ? *rigidBodyParameters : PhysicsRigidBody::Parameters());
+            _collisionObject = new PhysicsRigidBody(this, shape, rigidBodyParameters ? *rigidBodyParameters : PhysicsRigidBody::Parameters(), group, mask);
         }
         break;
 
     case PhysicsCollisionObject::GHOST_OBJECT:
         {
-            _collisionObject = new PhysicsGhostObject(this, shape);
+            _collisionObject = new PhysicsGhostObject(this, shape, group, mask);
         }
         break;
 
@@ -1157,7 +1157,7 @@ PhysicsCollisionObject* Node::setCollisionObject(PhysicsCollisionObject::Type ty
     return _collisionObject;
 }
 
-PhysicsCollisionObject* Node::setCollisionObject(const char* url)
+PhysicsCollisionObject* Node::setCollisionObject(const char* url, int group, int mask)
 {
     // Load the collision object properties from file.
     Properties* properties = Properties::create(url);
@@ -1167,13 +1167,13 @@ PhysicsCollisionObject* Node::setCollisionObject(const char* url)
         return NULL;
     }
 
-    PhysicsCollisionObject* collisionObject = setCollisionObject((strlen(properties->getNamespace()) > 0) ? properties : properties->getNextNamespace());
+    PhysicsCollisionObject* collisionObject = setCollisionObject((strlen(properties->getNamespace()) > 0) ? properties : properties->getNextNamespace(), group, mask);
     SAFE_DELETE(properties);
 
     return collisionObject;
 }
 
-PhysicsCollisionObject* Node::setCollisionObject(Properties* properties)
+PhysicsCollisionObject* Node::setCollisionObject(Properties* properties, int group, int mask)
 {
     SAFE_DELETE(_collisionObject);
 
@@ -1192,11 +1192,11 @@ PhysicsCollisionObject* Node::setCollisionObject(Properties* properties)
         }
         else if (strcmp(type, "GHOST_OBJECT") == 0)
         {
-            _collisionObject = PhysicsGhostObject::create(this, properties);
+            _collisionObject = PhysicsGhostObject::create(this, properties, group, mask);
         }
         else if (strcmp(type, "RIGID_BODY") == 0)
         {
-            _collisionObject = PhysicsRigidBody::create(this, properties);
+            _collisionObject = PhysicsRigidBody::create(this, properties, group, mask);
         }
         else if (strcmp(type, "VEHICLE") == 0)
         {
