@@ -794,6 +794,8 @@ public:
      */
     virtual void setAnimationPropertyValue(int propertyId, AnimationValue* value, float blendWeight = 1.0f);
 
+	inline Container *getParent(void) { return _parent; }
+
 protected:
 
     /**
