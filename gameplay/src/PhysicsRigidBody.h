@@ -396,8 +396,10 @@ private:
      *      a model attached to it prior to creating a rigid body for it.
      * @param shape The rigid body shape construction information.
      * @param parameters The rigid body construction parameters.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
      */
-    PhysicsRigidBody(Node* node, const PhysicsCollisionShape::Definition& shape, const Parameters& parameters);
+    PhysicsRigidBody(Node* node, const PhysicsCollisionShape::Definition& shape, const Parameters& parameters, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
      * Destructor.
@@ -414,10 +416,12 @@ private:
      * 
      * @param node The node to create a rigid body for; note that the node must have a model attached to it prior to creating a rigid body for it.
      * @param properties The properties object defining the rigid body.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
      * @param nspace The namespace expected (default is "RIGID_BODY").
      * @return The newly created rigid body, or <code>NULL</code> if the rigid body failed to load.
      */
-    static PhysicsRigidBody* create(Node* node, Properties* properties, const char* nspace = "RIGID_BODY");
+    static PhysicsRigidBody* create(Node* node, Properties* properties, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT, const char* nspace = "RIGID_BODY");
 
     // Adds a constraint to this rigid body.
     void addConstraint(PhysicsConstraint* constraint);

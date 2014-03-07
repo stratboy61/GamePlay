@@ -6,8 +6,8 @@
 namespace gameplay
 {
 
-PhysicsGhostObject::PhysicsGhostObject(Node* node, const PhysicsCollisionShape::Definition& shape)
-    : PhysicsCollisionObject(node), _ghostObject(NULL)
+PhysicsGhostObject::PhysicsGhostObject(Node* node, const PhysicsCollisionShape::Definition& shape, int group, int mask)
+    : PhysicsCollisionObject(node, group, mask), _ghostObject(NULL)
 {
     Vector3 centerOfMassOffset;
     PhysicsController* physicsController = Game::getInstance()->getPhysicsController();
@@ -44,7 +44,7 @@ PhysicsGhostObject::~PhysicsGhostObject()
     SAFE_DELETE(_ghostObject);
 }
 
-PhysicsGhostObject* PhysicsGhostObject::create(Node* node, Properties* properties)
+PhysicsGhostObject* PhysicsGhostObject::create(Node* node, Properties* properties, int group, int mask)
 {
     // Check if the properties is valid and has a valid namespace.
     if (!properties || !(strcmp(properties->getNamespace(), "collisionObject") == 0))
@@ -75,7 +75,7 @@ PhysicsGhostObject* PhysicsGhostObject::create(Node* node, Properties* propertie
     }
 
     // Create the ghost object.
-    PhysicsGhostObject* ghost = new PhysicsGhostObject(node, shape);
+    PhysicsGhostObject* ghost = new PhysicsGhostObject(node, shape, group, mask);
 
     return ghost;
 }

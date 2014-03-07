@@ -101,7 +101,7 @@ PhysicsVehicle* PhysicsVehicle::create(Node* node, Properties* properties)
 {
     // Note that the constructor for PhysicsRigidBody calls addCollisionObject and so
     // that is where the rigid body gets added to the dynamics world.
-    PhysicsRigidBody* rigidBody = PhysicsRigidBody::create(node, properties, "VEHICLE");
+    PhysicsRigidBody* rigidBody = PhysicsRigidBody::create(node, properties, PHYSICS_COLLISION_GROUP_DEFAULT, PHYSICS_COLLISION_MASK_DEFAULT, "VEHICLE");
     PhysicsVehicle* vehicle = new PhysicsVehicle(node, rigidBody);
 
     // Load the defined vehicle parameters.

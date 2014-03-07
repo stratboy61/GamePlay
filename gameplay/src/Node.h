@@ -552,9 +552,11 @@ public:
      *        PhysicsCollisionObject::VEHICLE, this must point to a valid rigid body
      *        parameters object containing information about the rigid body;
      *        otherwise, this parameter may be NULL.
+	 * @param group Group identifier of the object for collision filtering.
+     * @param mask Bitmask to filter groups of objects to collide with this one.
      */
     PhysicsCollisionObject* setCollisionObject(PhysicsCollisionObject::Type type, const PhysicsCollisionShape::Definition& shape = PhysicsCollisionShape::box(), 
-                                               PhysicsRigidBody::Parameters* rigidBodyParameters = NULL);
+                                               PhysicsRigidBody::Parameters* rigidBodyParameters = NULL, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
      * Sets the physics collision object for this node using the data from the Properties object defined at the specified URL, 
@@ -562,15 +564,19 @@ public:
      * (and "#<namespace-id>/<namespace-id>/.../<namespace-id>" is optional). 
      * 
      * @param url The URL pointing to the Properties object defining the physics collision object.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
      */
-    PhysicsCollisionObject* setCollisionObject(const char* url);
+    PhysicsCollisionObject* setCollisionObject(const char* url, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
      * Sets the physics collision object for this node from the given properties object.
      * 
      * @param properties The properties object defining the collision object.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
      */
-    PhysicsCollisionObject* setCollisionObject(Properties* properties);
+    PhysicsCollisionObject* setCollisionObject(Properties* properties, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
      * Returns the number of advertised descendants held in this node.

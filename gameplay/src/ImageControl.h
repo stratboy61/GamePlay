@@ -64,7 +64,7 @@ public:
      * @param image texture.
      */
     void setImage(Texture* texture);
-	
+
     /**
      * Set the source region of this ImageControl.  This is the region of the file,
      * in pixels, to use when drawing.

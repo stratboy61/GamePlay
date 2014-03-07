@@ -10,8 +10,8 @@
 namespace gameplay
 {
 
-PhysicsRigidBody::PhysicsRigidBody(Node* node, const PhysicsCollisionShape::Definition& shape, const Parameters& parameters)
-        : PhysicsCollisionObject(node), _body(NULL), _mass(parameters.mass), _constraints(NULL), _inDestructor(false)
+PhysicsRigidBody::PhysicsRigidBody(Node* node, const PhysicsCollisionShape::Definition& shape, const Parameters& parameters, int group, int mask)
+        : PhysicsCollisionObject(node, group, mask), _body(NULL), _mass(parameters.mass), _constraints(NULL), _inDestructor(false)
 {
     GP_ASSERT(Game::getInstance()->getPhysicsController());
     GP_ASSERT(_node);
@@ -158,7 +158,7 @@ void PhysicsRigidBody::applyTorqueImpulse(const Vector3& torque)
     }
 }
 
-PhysicsRigidBody* PhysicsRigidBody::create(Node* node, Properties* properties, const char* nspace)
+PhysicsRigidBody* PhysicsRigidBody::create(Node* node, Properties* properties, int group, int mask, const char* nspace)
 {
     // Check if the properties is valid and has a valid namespace.
     if (!properties || !(strcmp(properties->getNamespace(), "collisionObject") == 0))
@@ -245,7 +245,7 @@ PhysicsRigidBody* PhysicsRigidBody::create(Node* node, Properties* properties, c
     }
 
     // Create the rigid body.
-    PhysicsRigidBody* body = new PhysicsRigidBody(node, shape, parameters);
+    PhysicsRigidBody* body = new PhysicsRigidBody(node, shape, parameters, group, mask);
 
     if (gravity)
     {

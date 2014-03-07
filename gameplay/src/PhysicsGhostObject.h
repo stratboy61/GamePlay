@@ -42,8 +42,10 @@ protected:
      * 
      * @param node The node to attach the ghost object to.
      * @param shape The collision shape definition for the ghost object.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
      */
-    PhysicsGhostObject(Node* node, const PhysicsCollisionShape::Definition& shape);
+    PhysicsGhostObject(Node* node, const PhysicsCollisionShape::Definition& shape, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
      * Destructor.
@@ -57,8 +59,10 @@ protected:
      *      a model attached to it prior to creating a ghost object for it.
      * @param properties The properties object defining the ghost object (must have namespace equal to 'ghost').
      * @return The newly created ghost object, or <code>NULL</code> if the ghost object failed to load.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
      */
-    static PhysicsGhostObject* create(Node* node, Properties* properties);
+    static PhysicsGhostObject* create(Node* node, Properties* properties, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
      * Pointer to the Bullet ghost collision object.
