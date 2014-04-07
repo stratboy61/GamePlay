@@ -74,6 +74,15 @@ public:
     Uniform* getUniform(const char* name) const;
 
     /**
+     * Returns the uniform handle for the uniform with the specified name.
+     *
+     * @param name The name of the uniform to return.
+     *
+     * @return The uniform, or NULL if no such uniform exists.
+     */
+    Uniform* getUniform(const std::string& name) const;
+    
+    /**
      * Returns the specified active uniform.
      * 
      * @param index The index of the uniform to return.
@@ -222,6 +231,14 @@ public:
      */
     static Effect* getCurrentEffect();
 
+#if 0
+    struct UniformPair
+    {
+        std::string first;
+        Uniform* second;
+    };
+#endif
+    
 private:
 
     /**
@@ -244,7 +261,11 @@ private:
     GLuint _program;
     std::string _id;
     std::map<std::string, VertexAttribute> _vertexAttributes;
+#if 1
     std::map<std::string, Uniform*> _uniforms;
+#else
+    std::vector<UniformPair> _uniforms;
+#endif
     static Uniform _emptyUniform;
 };
 

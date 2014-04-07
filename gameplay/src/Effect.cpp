@@ -21,7 +21,11 @@ Effect::~Effect()
     __effectCache.erase(_id);
 
     // Free uniforms.
+#if 1
     for (std::map<std::string, Uniform*>::iterator itr = _uniforms.begin(); itr != _uniforms.end(); ++itr)
+#else
+    for (std::vector<UniformPair>::iterator itr = _uniforms.begin(); itr != _uniforms.end(); ++itr)
+#endif
     {
         SAFE_DELETE(itr->second);
     }
@@ -206,6 +210,26 @@ static void writeShaderToErrorFile(const char* filePath, const char* source)
     }
 }
 
+#if 0
+struct pair_uniform_str_less
+{
+    bool operator()(const Effect::UniformPair &lhs, const std::string &rhs) const
+    {
+        return lhs.first < rhs;
+    }
+        
+    bool operator()(const std::string &lhs, const Effect::UniformPair &rhs) const
+    {
+        return lhs < rhs.first;
+    }
+    
+    bool operator()(const Effect::UniformPair &lhs, const Effect::UniformPair &rhs) const
+    {
+        return lhs.first < rhs.first;
+    }
+};
+#endif
+    
 Effect* Effect::createFromSource(const char* vshPath, const char* vshSource, const char* fshPath, const char* fshSource, const char* defines)
 {
     GP_ASSERT(vshSource);
@@ -432,8 +456,13 @@ Effect* Effect::createFromSource(const char* vshPath, const char* vshSource, con
                 {
                     uniform->_index = 0;
                 }
-
+#if 1
                 effect->_uniforms[uniformName] = uniform;
+#else
+                UniformPair uniformPair = { std::string(uniformName), uniform };
+                std::vector<UniformPair>::iterator iter = std::lower_bound(effect->_uniforms.begin(), effect->_uniforms.end(), uniformPair, pair_uniform_str_less());
+                effect->_uniforms.insert(iter, uniformPair);
+#endif
             }
             SAFE_DELETE_ARRAY(uniformName);
         }
@@ -452,15 +481,31 @@ VertexAttribute Effect::getVertexAttribute(const char* name) const
     std::map<std::string, VertexAttribute>::const_iterator itr = _vertexAttributes.find(name);
     return (itr == _vertexAttributes.end() ? -1 : itr->second);
 }
-
+    
 Uniform* Effect::getUniform(const char* name) const
 {
+#if 1
     std::map<std::string, Uniform*>::const_iterator itr = _uniforms.find(name);
+#else
+    std::vector<UniformPair>::const_iterator itr = std::lower_bound(_uniforms.begin(), _uniforms.end(), name, pair_uniform_str_less());
+#endif
     return (itr == _uniforms.end() ? NULL : itr->second);
 }
 
+    
+Uniform* Effect::getUniform(const std::string& name) const
+{
+#if 1
+    std::map<std::string, Uniform*>::const_iterator itr = _uniforms.find(name);
+#else
+    std::vector<UniformPair>::const_iterator itr = std::lower_bound(_uniforms.begin(), _uniforms.end(), name, pair_uniform_str_less());
+#endif
+    return (itr == _uniforms.end() ? NULL : itr->second);
+}
+    
 Uniform* Effect::getUniform(unsigned int index) const
 {
+#if 1
     unsigned int i = 0;
     for (std::map<std::string, Uniform*>::const_iterator itr = _uniforms.begin(); itr != _uniforms.end(); ++itr, ++i)
     {
@@ -470,6 +515,9 @@ Uniform* Effect::getUniform(unsigned int index) const
         }
     }
     return NULL;
+#else
+    return _uniforms[index].second;
+#endif
 }
 
 unsigned int Effect::getUniformCount() const
