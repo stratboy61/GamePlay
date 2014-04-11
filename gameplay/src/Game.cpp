@@ -511,6 +511,14 @@ void Game::gestureTapEvent(int x, int y)
 {
 }
 
+void Game::gestureDoubleTapEvent(int x,int y)
+{
+}
+    
+void Game::deviceShakenEvent()
+{
+}
+    
 void Game::gamepadEvent(Gamepad::GamepadEvent evt, Gamepad* gamepad)
 {
 }

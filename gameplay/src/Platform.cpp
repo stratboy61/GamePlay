@@ -56,6 +56,16 @@ void Platform::gesturePinchEventInternal(int x, int y, float scale)
     Game::getInstance()->getScriptController()->gesturePinchEvent(x, y, scale);
 }
 
+void Platform::deviceShaken()
+{
+    Game::getInstance()->deviceShakenEvent();
+}
+
+void Platform::gestureDoubleTapEventInternal(int x, int y)
+{
+    Game::getInstance()->gestureDoubleTapEvent(x, y);
+}
+    
 void Platform::gestureTapEventInternal(int x, int y)
 {
     // TODO: Add support to Form for gestures

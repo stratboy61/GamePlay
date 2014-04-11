@@ -292,6 +292,8 @@ private:
      * Constructor.
      */
     Platform(const Platform& copy);
+    
+    static void deviceShaken();
 
 public:
 
@@ -337,6 +339,8 @@ public:
      */
     static void gestureTapEventInternal(int x, int y);
 
+    
+    static void gestureDoubleTapEventInternal(int x,int y);
     /**
      * Internal method used only from static code in various platform implementation.
      *
