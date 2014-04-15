@@ -94,8 +94,12 @@ int getUnicode(int key);
     BOOL oglDiscardSupported;
     
     UITapGestureRecognizer *_tapRecognizer;
+    UITapGestureRecognizer *_doubleTapRecognizer;
     UIPinchGestureRecognizer *_pinchRecognizer;
-    UISwipeGestureRecognizer *_swipeRecognizer;
+    UISwipeGestureRecognizer *_swipeRightRecognizer;
+    UISwipeGestureRecognizer *_swipeLeftRecognizer;
+    UISwipeGestureRecognizer *_swipeUpRecognizer;
+    UISwipeGestureRecognizer *_swipeDownRecognizer;
 }
 
 @property (readonly, nonatomic, getter=isUpdating) BOOL updating;
@@ -651,11 +655,13 @@ int getUnicode(int key);
 {
     switch(evt) {
         case Gesture::GESTURE_SWIPE:
-            return (_swipeRecognizer != NULL);
+            return (_swipeRightRecognizer != NULL);
         case Gesture::GESTURE_PINCH:
             return (_pinchRecognizer != NULL);
         case Gesture::GESTURE_TAP:
             return (_tapRecognizer != NULL);
+        case Gesture::GESTURE_DOUBLETAP:
+            return (_doubleTapRecognizer != NULL);
         default:
             break;
     }
@@ -664,29 +670,26 @@ int getUnicode(int key);
 
 - (void)registerGesture: (Gesture::GestureEvent) evt
 {
-    if((evt & Gesture::GESTURE_SWIPE) == Gesture::GESTURE_SWIPE && _swipeRecognizer == NULL)
+    if((evt & Gesture::GESTURE_SWIPE) == Gesture::GESTURE_SWIPE  && _swipeDownRecognizer == NULL && _swipeUpRecognizer == NULL && _swipeRightRecognizer == NULL && _swipeLeftRecognizer == NULL)
     {
         // right swipe (default)
-        _swipeRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        [self addGestureRecognizer:_swipeRecognizer];
-
+        _swipeRightRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+        [self addGestureRecognizer:_swipeRightRecognizer];
+        
         // left swipe
-        UISwipeGestureRecognizer *swipeGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        swipeGesture.direction = UISwipeGestureRecognizerDirectionLeft;
-        [self addGestureRecognizer:swipeGesture];
-        [swipeGesture release];
+        _swipeLeftRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+        _swipeLeftRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
+        [self addGestureRecognizer:_swipeLeftRecognizer];
         
         // up swipe
-        UISwipeGestureRecognizer *swipeGesture2 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        swipeGesture2.direction = UISwipeGestureRecognizerDirectionUp;
-        [self addGestureRecognizer:swipeGesture2];
-        [swipeGesture2 release];
+        _swipeUpRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+        _swipeUpRecognizer.direction = UISwipeGestureRecognizerDirectionUp;
+        [self addGestureRecognizer:_swipeUpRecognizer];
         
         // down swipe
-        UISwipeGestureRecognizer *swipeGesture3 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        swipeGesture3.direction = UISwipeGestureRecognizerDirectionDown;
-        [self addGestureRecognizer:swipeGesture3];
-        [swipeGesture3 release];
+        _swipeDownRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+        _swipeDownRecognizer.direction = UISwipeGestureRecognizerDirectionDown;
+        [self addGestureRecognizer:_swipeDownRecognizer];
     }
     if((evt & Gesture::GESTURE_PINCH) == Gesture::GESTURE_PINCH && _pinchRecognizer == NULL)
     {
@@ -698,15 +701,33 @@ int getUnicode(int key);
         _tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
         [self addGestureRecognizer:_tapRecognizer];
     }
+    if((evt & Gesture::GESTURE_DOUBLETAP) == Gesture::GESTURE_DOUBLETAP && _doubleTapRecognizer == NULL)
+    {
+        _doubleTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+        _doubleTapRecognizer.numberOfTapsRequired = 2;
+        [self addGestureRecognizer:_doubleTapRecognizer];
+    }
 }
 
 - (void)unregisterGesture: (Gesture::GestureEvent) evt
 {
-    if((evt & Gesture::GESTURE_SWIPE) == Gesture::GESTURE_SWIPE && _swipeRecognizer != NULL)
+    if((evt & Gesture::GESTURE_SWIPE) == Gesture::GESTURE_SWIPE && _swipeRightRecognizer != NULL&& _swipeDownRecognizer != NULL && _swipeLeftRecognizer != NULL && _swipeUpRecognizer != NULL)
     {
-        [self removeGestureRecognizer:_swipeRecognizer];
-        [_swipeRecognizer release];
-        _swipeRecognizer = NULL;
+        [self removeGestureRecognizer:_swipeRightRecognizer];
+        [_swipeRightRecognizer release];
+        _swipeRightRecognizer = NULL;
+        
+        [self removeGestureRecognizer:_swipeLeftRecognizer];
+        [_swipeLeftRecognizer release];
+        _swipeLeftRecognizer = NULL;
+        
+        [self removeGestureRecognizer:_swipeUpRecognizer];
+        [_swipeUpRecognizer release];
+        _swipeUpRecognizer = NULL;
+        
+        [self removeGestureRecognizer:_swipeDownRecognizer];
+        [_swipeDownRecognizer release];
+        _swipeDownRecognizer = NULL;
     }
     if((evt & Gesture::GESTURE_PINCH) == Gesture::GESTURE_PINCH && _pinchRecognizer != NULL)
     {
@@ -725,7 +746,10 @@ int getUnicode(int key);
 - (void)handleTapGesture:(UITapGestureRecognizer*)sender
 {
     CGPoint location = [sender locationInView:self];
-    gameplay::Platform::gestureTapEventInternal(location.x, location.y);
+    if (sender.state == UIGestureRecognizerStateRecognized) {
+        gameplay::Platform::gestureDoubleTapEventInternal(location.x,location.y);
+    }
+    //gameplay::Platform::gestureTapEventInternal(location.x, location.y);
 }
 
 - (void)handlePinchGesture:(UIPinchGestureRecognizer*)sender
@@ -754,7 +778,10 @@ int getUnicode(int key);
             gameplayDirection = Gesture::SWIPE_DIRECTION_DOWN;
             break;
     }
-    gameplay::Platform::gestureSwipeEventInternal(location.x, location.y, gameplayDirection);
+    if([self isGestureRegistered:Gesture::GESTURE_SWIPE])
+    {
+        gameplay::Platform::gestureSwipeEventInternal(location.x, location.y, gameplayDirection);
+    }
 }
 
 @end
@@ -835,6 +862,28 @@ int getUnicode(int key);
     [(View*)self.view stopUpdating];
 }
 
+-(BOOL)canBecomeFirstResponder {
+    return YES;
+}
+
+-(void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self becomeFirstResponder];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [self resignFirstResponder];
+    [super viewWillDisappear:animated];
+}
+
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event
+{
+    if (motion == UIEventSubtypeMotionShake)
+    {
+        gameplay::Game::getInstance()->deviceShakenEvent();
+    }
+}
+
 @end
 
 
@@ -857,7 +906,11 @@ int getUnicode(int key);
     __appDelegate = self;
     [UIApplication sharedApplication].statusBarHidden = YES;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-
+    application.applicationSupportsShakeToEdit = YES;
+    
+    [window addSubview:viewController.view];
+    [window makeKeyAndVisible];
+    
     motionManager = [[CMMotionManager alloc] init];
     if([motionManager isAccelerometerAvailable] == YES) 
     {

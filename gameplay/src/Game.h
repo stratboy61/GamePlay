@@ -434,6 +434,7 @@ public:
      */
     virtual void gesturePinchEvent(int x, int y, float scale);
 
+    virtual void deviceShakenEvent();
     /**
      * Gesture callback on Gesture::TAP events.
      *
@@ -442,6 +443,7 @@ public:
      */
     virtual void gestureTapEvent(int x, int y);
 
+    virtual void gestureDoubleTapEvent(int x,int y);
     /**
      * Gamepad callback on gamepad events.  Override to receive Gamepad::CONNECTED_EVENT 
      * and Gamepad::DISCONNECTED_EVENT, and store the Gamepad* in order to poll it from update().
