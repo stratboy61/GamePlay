@@ -1230,6 +1230,54 @@ PhysicsCollisionObject* Node::setCollisionObject(Properties* properties, int gro
     return _collisionObject;
 }
 
+PhysicsCollisionObject* Node::setCollisionObject(const char* url, int group, int mask, PhysicsCollisionShape::Definition &shape)
+{
+	// Load the collision object properties from file.
+	Properties* properties = Properties::create(url);
+	if (properties == NULL)
+	{
+		GP_ERROR("Failed to load collision object file: %s", url);
+		return NULL;
+	}
+
+	PhysicsCollisionObject* collisionObject = setCollisionObject((strlen(properties->getNamespace()) > 0) ? properties : properties->getNextNamespace(), group, mask, shape);
+	SAFE_DELETE(properties);
+
+	return collisionObject;
+}
+
+PhysicsCollisionObject* Node::setCollisionObject(Properties* properties, int group, int mask, PhysicsCollisionShape::Definition &shape)
+{
+	SAFE_DELETE(_collisionObject);
+
+	// Check if the properties is valid.
+	if (!properties || !(strcmp(properties->getNamespace(), "collisionObject") == 0))
+	{
+		GP_ERROR("Failed to load collision object from properties object: must be non-null object and have namespace equal to 'collisionObject'.");
+		return NULL;
+	}
+
+	if (const char* type = properties->getString("type"))
+	{
+		if (strcmp(type, "GHOST_OBJECT") == 0)
+		{
+			_collisionObject = PhysicsGhostObject::create(this, properties, group, mask, shape);
+		}
+		else
+		{
+			GP_ERROR("Unsupported collision object type '%s'.", type);
+			return NULL;
+		}
+	}
+	else
+	{
+		GP_ERROR("Failed to load collision object from properties object; required attribute 'type' is missing.");
+		return NULL;
+	}
+
+	return _collisionObject;
+}
+
 unsigned int Node::getNumAdvertisedDescendants() const
 {
     return (unsigned int)_advertisedDescendants.size();
