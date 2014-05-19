@@ -570,6 +570,18 @@ public:
     PhysicsCollisionObject* setCollisionObject(const char* url, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
 
     /**
+     * Sets the physics collision object for this node using the data from the Properties object defined at the specified URL, 
+     * where the URL is of the format "<file-path>.<extension>#<namespace-id>/<namespace-id>/.../<namespace-id>"
+     * (and "#<namespace-id>/<namespace-id>/.../<namespace-id>" is optional). 
+     * 
+     * @param url The URL pointing to the Properties object defining the physics collision object.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
+	 * @param shape returns bounding's definition.
+     */
+    PhysicsCollisionObject* setCollisionObject(const char* url, int group /*= PHYSICS_COLLISION_GROUP_DEFAULT*/, int mask /*= PHYSICS_COLLISION_MASK_DEFAULT*/, PhysicsCollisionShape::Definition &shape);
+
+    /**
      * Sets the physics collision object for this node from the given properties object.
      * 
      * @param properties The properties object defining the collision object.
@@ -577,6 +589,16 @@ public:
      * @param mask Bitmask field for filtering collisions with this object.
      */
     PhysicsCollisionObject* setCollisionObject(Properties* properties, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
+
+    /**
+     * Sets the physics collision object for this node from the given properties object and stores bounding's definition back.
+     * 
+     * @param properties The properties object defining the collision object.
+	 * @param group Group identifier
+     * @param mask Bitmask field for filtering collisions with this object.
+	 * @param shape returns bounding's definition.
+     */
+    PhysicsCollisionObject* setCollisionObject(Properties* properties, int group /*= PHYSICS_COLLISION_GROUP_DEFAULT*/, int mask /*= PHYSICS_COLLISION_MASK_DEFAULT*/, PhysicsCollisionShape::Definition &shape);
 
     /**
      * Returns the number of advertised descendants held in this node.

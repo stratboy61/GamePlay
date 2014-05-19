@@ -63,6 +63,7 @@ protected:
      * @param mask Bitmask field for filtering collisions with this object.
      */
     static PhysicsGhostObject* create(Node* node, Properties* properties, int group = PHYSICS_COLLISION_GROUP_DEFAULT, int mask = PHYSICS_COLLISION_MASK_DEFAULT);
+	static PhysicsGhostObject* create(Node* node, Properties* properties, int group, int mask, PhysicsCollisionShape::Definition &shape);
 
     /**
      * Pointer to the Bullet ghost collision object.

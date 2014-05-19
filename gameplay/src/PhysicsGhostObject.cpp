@@ -80,6 +80,43 @@ PhysicsGhostObject* PhysicsGhostObject::create(Node* node, Properties* propertie
     return ghost;
 }
 
+PhysicsGhostObject* PhysicsGhostObject::create(Node* node, Properties* properties, int group, int mask, PhysicsCollisionShape::Definition &shape)
+{
+	// Check if the properties is valid and has a valid namespace.
+	if (!properties || !(strcmp(properties->getNamespace(), "collisionObject") == 0))
+	{
+		GP_ERROR("Failed to load ghost object from properties object: must be non-null object and have namespace equal to 'collisionObject'.");
+		return NULL;
+	}
+
+	// Check that the type is specified and correct.
+	const char* type = properties->getString("type");
+	if (!type)
+	{
+		GP_ERROR("Failed to load ghost object from properties object; required attribute 'type' is missing.");
+		return NULL;
+	}
+	if (strcmp(type, "GHOST_OBJECT") != 0)
+	{
+		GP_ERROR("Failed to load ghost object from properties object; attribute 'type' must be equal to 'GHOST_OBJECT'.");
+		return NULL;
+	}
+
+	// Load the physics collision shape definition.
+	// MALEK PhysicsCollisionShape::Definition 
+	shape = PhysicsCollisionShape::Definition::create(node, properties);
+	if (shape.isEmpty())
+	{
+		GP_ERROR("Failed to create collision shape during ghost object creation.");
+		return NULL;
+	}
+
+	// Create the ghost object.
+	PhysicsGhostObject* ghost = new PhysicsGhostObject(node, shape, group, mask);
+
+	return ghost;
+}
+
 PhysicsCollisionObject::Type PhysicsGhostObject::getType() const
 {
     return GHOST_OBJECT;
