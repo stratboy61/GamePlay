@@ -20,6 +20,73 @@ ScriptTarget::~ScriptTarget()
     }
 }
 
+template<> void ScriptTarget::fireScriptEvent<void>(const std::string& eventName, ...)
+{
+    va_list list;
+    va_start(list, eventName);
+
+    std::map<std::string, std::vector<Callback>* >::iterator iter = _callbacks.find(eventName);
+    if (iter != _callbacks.end() && iter->second != NULL)
+    {
+        ScriptController* sc = Game::getInstance()->getScriptController();
+
+        if (_events[eventName].size() > 0)
+        {
+            for (unsigned int i = 0; i < iter->second->size(); i++)
+            {
+                sc->executeFunction<void>((*iter->second)[i].function.c_str(), _events[eventName].c_str(), &list);
+            }
+        }
+        else
+        {
+            for (unsigned int i = 0; i < iter->second->size(); i++)
+            {
+                sc->executeFunction<void>((*iter->second)[i].function.c_str(), _events[eventName].c_str());
+            }
+        }
+    }
+
+    va_end(list);
+}
+
+template<> bool ScriptTarget::fireScriptEvent<bool>(const std::string& eventName, ...)
+{
+    va_list list;
+    va_start(list, eventName);
+
+    std::map<std::string, std::vector<Callback>* >::iterator iter = _callbacks.find(eventName);
+    if (iter != _callbacks.end() && iter->second)
+    {
+        ScriptController* sc = Game::getInstance()->getScriptController();
+
+        if (_events[eventName].size() > 0)
+        {
+            for (unsigned int i = 0; i < iter->second->size(); i++)
+            {
+                if (sc->executeFunction<bool>((*iter->second)[i].function.c_str(), _events[eventName].c_str(), &list))
+                {
+                    va_end(list);
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            for (unsigned int i = 0; i < iter->second->size(); i++)
+            {
+                if (sc->executeFunction<bool>((*iter->second)[i].function.c_str(), _events[eventName].c_str()))
+                {
+                    va_end(list);
+                    return true;
+                }
+            }
+        }
+    }
+
+    va_end(list);
+    return false;
+}
+
 template<> void ScriptTarget::fireScriptEvent<void>(const char* eventName, ...)
 {
     va_list list;
