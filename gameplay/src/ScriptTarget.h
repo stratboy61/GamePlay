@@ -59,6 +59,8 @@ protected:
      */
     template<typename T> T fireScriptEvent(const char* eventName, ...);
 
+	template<typename T> T fireScriptEvent(const std::string& eventName, ...);
+
     /** Used to store a script callbacks for given event. */
     struct Callback
     {
@@ -84,6 +86,17 @@ template<typename T> T ScriptTarget::fireScriptEvent(const char* eventName, ...)
 template<> void ScriptTarget::fireScriptEvent<void>(const char* eventName, ...);
 /** Template specialization. */
 template<> bool ScriptTarget::fireScriptEvent<bool>(const char* eventName, ...);
+
+template<typename T> T ScriptTarget::fireScriptEvent(const std::string& eventName, ...)
+{
+    GP_ERROR("Unsupported return type!");
+}
+
+/** Template specialization. */
+template<> void ScriptTarget::fireScriptEvent<void>(const std::string& eventName, ...);
+/** Template specialization. */
+template<> bool ScriptTarget::fireScriptEvent<bool>(const std::string& eventName, ...);
+
 
 }
 

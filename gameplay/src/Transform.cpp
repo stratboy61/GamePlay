@@ -991,7 +991,8 @@ void Transform::transformChanged()
             l.listener->transformChanged(this, l.cookie);
         }
     }
-    fireScriptEvent<void>("transformChanged", this);
+	static const std::string transformEvent("transformChanged");
+    fireScriptEvent<void>(transformEvent, this);
 }
 
 void Transform::cloneInto(Transform* transform, NodeCloneContext &context) const
