@@ -283,6 +283,8 @@ private:
      */
     static bool launchURL(const char* url);
 
+    static const char *getAppDocumentDirectory(const char *filename2Append);
+
     /**
      * Constructor.
      */

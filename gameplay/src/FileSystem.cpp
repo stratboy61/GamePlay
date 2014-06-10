@@ -651,6 +651,9 @@ FileStream* FileStream::create(const char* filePath, const char* mode)
         }
 
         return stream;
+    } else {
+        const int errsv = errno;
+        GP_WARN("Error opening file: %s\n", strerror(errsv));
     }
     return NULL;
 }
