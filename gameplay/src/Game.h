@@ -584,6 +584,8 @@ public:
      */
     bool launchURL(const char *url) const;
 
+    const char *getAppDocumentDirectory(const char *filename2Append) const;
+
 protected:
 
     /**

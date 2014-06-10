@@ -156,4 +156,9 @@ inline bool Game::launchURL(const char* url) const
     return Platform::launchURL(url);
 }
 
+inline const char *Game::getAppDocumentDirectory(const char *filename2Append) const
+{
+    return Platform::getAppDocumentDirectory(filename2Append);
+}
+
 }

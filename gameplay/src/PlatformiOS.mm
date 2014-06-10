@@ -1623,7 +1623,24 @@ bool Platform::launchURL(const char *url)
 
     return [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[NSString stringWithUTF8String: url]]];
 }
-    
+
+const char *Platform::getAppDocumentDirectory(const char *filename2Append)
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    /*NSString *appBundleID = [[NSBundle mainBundle] bundleIdentifier];
+    NSString *bundleIdPath = [[paths objectAtIndex:0] stringByAppendingPathComponent: appBundleID];
+
+    NSLog(@"Listing of %@", documentPath);
+    int fileCount;
+    NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:NULL];
+    for (fileCount = 0; fileCount < (int)[directoryContent count]; fileCount++) {
+        NSLog(@"File %d: %@", (fileCount + 1), [directoryContent objectAtIndex:fileCount]);
+    }*/
+
+    NSString *documentPath = [paths objectAtIndex:0];
+	return [[documentPath stringByAppendingPathComponent: [NSString stringWithUTF8String: filename2Append]] UTF8String];
+}
+
 }
 
 #endif
