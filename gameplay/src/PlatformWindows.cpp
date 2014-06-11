@@ -1338,6 +1338,14 @@ bool Platform::launchURL(const char* url)
     return (r > 32);
 }
 
+static char appDocumentDirectory[MAX_PATH];
+
+const char *Platform::getAppDocumentDirectory(const char *filename2Append)
+{
+	strcpy(appDocumentDirectory, FileSystem::getResourcePath());
+	return strcat(appDocumentDirectory, filename2Append); // TODO:
+}
+
 }
 
 #endif
