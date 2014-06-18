@@ -11,6 +11,8 @@ GLenum __gl_error_code = GL_NO_ERROR;
 /** @script{ignore} */
 ALenum __al_error_code = AL_NO_ERROR;
 
+unsigned int sl6_gameplayRevision = 1;
+
 namespace gameplay
 {
 
@@ -294,6 +296,8 @@ void Game::frame()
     // Fire time events to scheduled TimeListeners
     fireTimeEvents(frameTime);
 
+#define USE_ACCUMULATOR 1
+
     if (_state == Game::RUNNING)
     {
         GP_ASSERT(_animationController);
@@ -305,44 +309,109 @@ void Game::frame()
         float elapsedTime = (frameTime - lastFrameTime);
         lastFrameTime = frameTime;
 
-        // Update the scheduled and running animations.
-        _animationController->update(elapsedTime);
+		// MALEK: Limit frame time explosion.
+		if (elapsedTime>250.0)
+			elapsedTime = 250.0;
 
-        // Update the physics.
-        _physicsController->update(elapsedTime);
+#if USE_ACCUMULATOR
+		// MALEK : Fixed Time Update
+		static const double FRAME_RATE = 60.0;
+		static const double UPDATE_RATE = 30.0;
+		static const double MS_PER_FRAME = 1000.0/FRAME_RATE;
+		static const double MS_PER_UPDATE = 1000.0/UPDATE_RATE;
+		static const int MAX_LOOP = 3;
+		// catchup accumulators
+		static double accumulatedFrame = 0.0;
+		static double accumulatedUpdate = 0.0;
 
-        // Update AI.
-        _aiController->update(elapsedTime);
+		// MALEK: --->
+		float elapsedRealTime = elapsedTime;
+		accumulatedFrame += elapsedTime;
+		accumulatedUpdate += elapsedTime;
+		int loop = 0;
+		
+		// animation & physics should be updated at 60 fps
+		if (accumulatedFrame >= MS_PER_FRAME*0.5)
+		{
+			while (accumulatedFrame >= MS_PER_FRAME && loop < MAX_LOOP)
+			{
+				elapsedTime = (float)MS_PER_FRAME;				
 
-        // Update gamepads.
-        Gamepad::updateInternal(elapsedTime);
+				// Update the scheduled and running animations.
+				_animationController->update(elapsedTime);
 
-        // Application Update.
-        update(elapsedTime);
+				// Update the physics.
+				_physicsController->update(elapsedTime);
 
-        // Update forms.
-        Form::updateInternal(elapsedTime);
+				++loop;
+				accumulatedFrame -= MS_PER_FRAME;
+			}
+		}
 
-        // Run script update.
-        _scriptController->update(elapsedTime);
+		loop = 0;
 
-        // Audio Rendering.
-        _audioController->update(elapsedTime);
+		if (accumulatedUpdate >= MS_PER_UPDATE)
+		{
+			elapsedTime = (float)MS_PER_UPDATE;
 
-        // Graphics Rendering.
-        render(elapsedTime);
+			while (accumulatedUpdate >= MS_PER_UPDATE && loop < MAX_LOOP)
+			{
 
-        // Run script render.
-        _scriptController->render(elapsedTime);
+		// MALEK <---
+#else		
+			// Update the scheduled and running animations.
+			_animationController->update(elapsedTime);
 
-        // Update FPS.
-        ++_frameCount;
-        if ((Game::getGameTime() - _frameLastFPS) >= 1000)
-        {
-            _frameRate = _frameCount;
-            _frameCount = 0;
-            _frameLastFPS = getGameTime();
-        }
+			// Update the physics.
+			_physicsController->update(elapsedTime);
+#endif
+			// Update AI.
+			_aiController->update(elapsedTime);
+
+			// Update gamepads.
+			Gamepad::updateInternal(elapsedTime);
+
+			// Application Update.
+			update(elapsedTime);
+
+			// Update forms.
+			Form::updateInternal(elapsedTime);
+
+			// Run script update.
+			_scriptController->update(elapsedTime);
+
+			// Audio Rendering.
+			_audioController->update(elapsedTime);
+
+#if USE_ACCUMULATOR
+			++loop;
+			accumulatedUpdate -= MS_PER_UPDATE;
+
+			}
+		}
+//#if FORCE_FIXED_RENDERING
+		//else {
+		//	return false;
+		//}
+//#endif
+#endif
+
+		// MALEK use elapsedRealTime if required
+
+		// Graphics Rendering.
+		render(elapsedTime);
+
+		// Run script render.
+		_scriptController->render(elapsedTime);
+		
+		// Update FPS.
+		++_frameCount;
+		if ((Game::getGameTime() - _frameLastFPS) >= 1000)
+		{
+			_frameRate = _frameCount;
+			_frameCount = 0;
+			_frameLastFPS = getGameTime();
+		}
     }
 	else if (_state == Game::PAUSED)
     {
