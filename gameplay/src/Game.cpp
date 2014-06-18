@@ -11,8 +11,6 @@ GLenum __gl_error_code = GL_NO_ERROR;
 /** @script{ignore} */
 ALenum __al_error_code = AL_NO_ERROR;
 
-unsigned int sl6_gameplayRevision = 1;
-
 namespace gameplay
 {
 
@@ -337,9 +335,6 @@ void Game::frame()
 			{
 				elapsedTime = (float)MS_PER_FRAME;				
 
-				// Update the scheduled and running animations.
-				_animationController->update(elapsedTime);
-
 				// Update the physics.
 				_physicsController->update(elapsedTime);
 
@@ -358,6 +353,9 @@ void Game::frame()
 			{
 
 		// MALEK <---
+			
+			// Update the scheduled and running animations.
+			_animationController->update(elapsedTime);
 #else		
 			// Update the scheduled and running animations.
 			_animationController->update(elapsedTime);

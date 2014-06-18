@@ -15,6 +15,8 @@
 #include "Vector4.h"
 #include "TimeListener.h"
 
+#define SL6_GAMEPLAY_REVISION 1
+
 namespace gameplay
 {
 
