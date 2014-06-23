@@ -15,7 +15,7 @@
 #include "Vector4.h"
 #include "TimeListener.h"
 
-#define SL6_GAMEPLAY_REVISION 1
+#define SL6_GAMEPLAY_REVISION 2
 
 namespace gameplay
 {
@@ -624,6 +624,17 @@ protected:
      * @param elapsedTime The elapsed game time.
      */
     virtual void render(float elapsedTime) = 0;
+
+    /**
+     * Post Frame callback for handling update routines after rendering.
+     *
+     * Called after render, once per frame when game is running.
+     * Ideal for non-render code and game logic such as scene maintenance.
+     *
+     * @param elapsedTime The elapsed game time.
+     */
+    virtual void postFrameUpdate(float elapsedTime) = 0;
+
 
     /**
      * Renders a single frame once and then swaps it to the display.

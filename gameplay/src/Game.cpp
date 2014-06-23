@@ -323,39 +323,43 @@ void Game::frame()
 		static double accumulatedUpdate = 0.0;
 
 		// MALEK: --->
-		float elapsedRealTime = elapsedTime;
+		float realElapsedTime = elapsedTime;
 		accumulatedFrame += elapsedTime;
 		accumulatedUpdate += elapsedTime;
-		int loop = 0;
-		
+		int frameloop = 0;
+		int updateloop = 0;
+
+		// Update gamepads.
+		Gamepad::updateInternal(elapsedTime);
+
+		// Update forms.
+		Form::updateInternal(realElapsedTime);
+
 		// animation & physics should be updated at 60 fps
-		if (accumulatedFrame >= MS_PER_FRAME*0.5)
+		//if (accumulatedFrame >= MS_PER_FRAME*0.5)
 		{
-			while (accumulatedFrame >= MS_PER_FRAME && loop < MAX_LOOP)
+			//while (accumulatedFrame >= MS_PER_FRAME && frameloop < MAX_LOOP)
 			{
-				elapsedTime = (float)MS_PER_FRAME;				
+				// Update the scheduled and running animations.
+				//_animationController->update(MS_PER_FRAME);
 
 				// Update the physics.
-				_physicsController->update(elapsedTime);
+				//_physicsController->update(MS_PER_FRAME);
 
-				++loop;
+
+				++frameloop;
 				accumulatedFrame -= MS_PER_FRAME;
-			}
-		}
 
-		loop = 0;
 
-		if (accumulatedUpdate >= MS_PER_UPDATE)
-		{
+
+		updateloop = 0;
+
 			elapsedTime = (float)MS_PER_UPDATE;
 
-			while (accumulatedUpdate >= MS_PER_UPDATE && loop < MAX_LOOP)
+			while (accumulatedUpdate >= MS_PER_UPDATE && updateloop < MAX_LOOP)
 			{
 
 		// MALEK <---
-			
-			// Update the scheduled and running animations.
-			_animationController->update(elapsedTime);
 #else		
 			// Update the scheduled and running animations.
 			_animationController->update(elapsedTime);
@@ -363,17 +367,23 @@ void Game::frame()
 			// Update the physics.
 			_physicsController->update(elapsedTime);
 #endif
+			// Update the scheduled and running animations.
+			_animationController->update(elapsedTime);
+
+			// Update the physics.
+			_physicsController->update(elapsedTime);
+
 			// Update AI.
 			_aiController->update(elapsedTime);
 
 			// Update gamepads.
-			Gamepad::updateInternal(elapsedTime);
+			//Gamepad::updateInternal(elapsedTime);
 
 			// Application Update.
 			update(elapsedTime);
 
 			// Update forms.
-			Form::updateInternal(elapsedTime);
+			//Form::updateInternal(elapsedTime);
 
 			// Run script update.
 			_scriptController->update(elapsedTime);
@@ -382,8 +392,11 @@ void Game::frame()
 			_audioController->update(elapsedTime);
 
 #if USE_ACCUMULATOR
-			++loop;
+			++updateloop;
 			accumulatedUpdate -= MS_PER_UPDATE;
+
+			}
+
 
 			}
 		}
@@ -392,9 +405,9 @@ void Game::frame()
 		//	return false;
 		//}
 //#endif
+		elapsedTime = realElapsedTime;
 #endif
 
-		// MALEK use elapsedRealTime if required
 
 		// Graphics Rendering.
 		render(elapsedTime);
@@ -402,6 +415,9 @@ void Game::frame()
 		// Run script render.
 		_scriptController->render(elapsedTime);
 		
+		// Post Render Update
+		postFrameUpdate(elapsedTime);
+
 		// Update FPS.
 		++_frameCount;
 		if ((Game::getGameTime() - _frameLastFPS) >= 1000)
@@ -430,6 +446,9 @@ void Game::frame()
 
         // Script render.
         _scriptController->render(0);
+
+		// Post Render Update
+		postFrameUpdate(0);
     }
 }
 
