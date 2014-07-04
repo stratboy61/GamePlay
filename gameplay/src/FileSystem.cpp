@@ -22,8 +22,9 @@
 #endif
 
 #ifdef __ANDROID__
-#include <android/asset_manager.h>
-extern AAssetManager* __assetManager;
+	#include <errno.h>
+	#include <android/asset_manager.h>
+	extern AAssetManager* __assetManager;
 #endif
 
 namespace gameplay
