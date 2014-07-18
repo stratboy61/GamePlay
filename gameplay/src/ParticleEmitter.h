@@ -617,6 +617,7 @@ public:
      * Draws the particles currently being emitted.
      */
     void draw();
+	void draw(const Vector3 &up, const Vector3 &right);
 
     /**
      * Gets a TextureBlending enum from a corresponding string.
