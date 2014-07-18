@@ -1469,6 +1469,42 @@ bool Platform::launchURL(const char *url)
     return result;
 }
 
+static char appDocumentDirectory[PATH_MAX];
+
+const char *Platform::getAppDocumentDirectory(const char *filename2Append)
+{
+	 // Get the android application's activity.
+    ANativeActivity* activity = __state->activity;
+    JavaVM* jvm = __state->activity->vm;
+    JNIEnv* env = NULL;
+    jvm->GetEnv((void **)&env, JNI_VERSION_1_6);
+    jint res = jvm->AttachCurrentThread(&env, NULL);
+    if (res == JNI_ERR)
+    {
+        GP_ERROR("Failed to retrieve JVM environment when entering message pump.");
+        return NULL; 
+    }
+    GP_ASSERT(env);
+	jclass clsContext = env->FindClass("android/content/Context");
+    GP_ASSERT(clsContext != NULL);
+
+    jmethodID getFilesDir = env->GetMethodID(clsContext, "getFilesDir", "()Ljava/io/File;");
+
+	jobject appDocumentDirectory_obj = env->CallObjectMethod(activity->clazz, getFilesDir);
+	jclass cls_File = env->FindClass("java/io/File");
+	jmethodID mid_getPath = env->GetMethodID(cls_File, "getPath","()Ljava/lang/String;");
+	jstring obj_Path = (jstring) env->CallObjectMethod(appDocumentDirectory_obj, mid_getPath);
+	const char* path = env->GetStringUTFChars(obj_Path, NULL);
+
+
+	strcpy(appDocumentDirectory, path);
+
+	env->ReleaseStringUTFChars(obj_Path, path);
+
+	return strcat(appDocumentDirectory, filename2Append); // TODO:
+}
+
+
 }
 
 #endif
