@@ -915,6 +915,18 @@ void ParticleEmitter::update(float elapsedTime)
 
 void ParticleEmitter::draw()
 {
+    GP_ASSERT(_node && _node->getScene() && _node->getScene()->getActiveCamera() && _node->getScene()->getActiveCamera()->getNode());
+	const Matrix& cameraWorldMatrix = _node->getScene()->getActiveCamera()->getNode()->getWorldMatrix();
+
+	Vector3 right;
+	cameraWorldMatrix.getRightVector(&right);
+	Vector3 up;
+	cameraWorldMatrix.getUpVector(&up);
+	draw(up, right);
+}
+
+void ParticleEmitter::draw(const Vector3 &up, const Vector3 &right)
+{
     if (!isActive())
     {
         return;
@@ -940,12 +952,6 @@ void ParticleEmitter::draw()
 
         // 3D Rotation so that particles always face the camera.
         GP_ASSERT(_node && _node->getScene() && _node->getScene()->getActiveCamera() && _node->getScene()->getActiveCamera()->getNode());
-        const Matrix& cameraWorldMatrix = _node->getScene()->getActiveCamera()->getNode()->getWorldMatrix();
-
-        Vector3 right;
-        cameraWorldMatrix.getRightVector(&right);
-        Vector3 up;
-        cameraWorldMatrix.getUpVector(&up);
 
         for (unsigned int i = 0; i < _particleCount; i++)
         {
