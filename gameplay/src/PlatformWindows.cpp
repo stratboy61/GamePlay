@@ -1345,6 +1345,44 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
 	strcpy(appDocumentDirectory, FileSystem::getResourcePath());
 	return strcat(appDocumentDirectory, filename2Append); // TODO:
 }
+    
+    
+    
+    
+    /**FACEBOOK FUNCTIONS**/
+    
+static FacebookListener*            Platform::m_fbListener = NULL;
+static std::vector<FbFriendInfo>    Platform::m_friendsInfo;
+static std::vector<FbBundle>        Platform::m_notifications;
+static std::vector<std::string>     Platform::m_permissions;
+    
+
+static void Platform::setFacebookListener(FacebookListener* fbl) { m_fbListener = fbl; }
+    
+static void Platform::performFbLoginButtonClick() { GP_WARN("Facebook not supported."); }
+    
+static bool Platform::isUserLogged() { return false; }
+    
+
+static void Platform::sendRequestDialog(const FbBundle& params,
+                                  const std::string& title,
+                                  const std::string& message,
+                                            const std::string& callbackId) {}
+    
+
+static void Platform::sendRequest(const std::string&  graphPath,
+                            const FbBundle&     params,
+                            HTTP_METHOD         method,
+                                      const std::string&  callbackId) {}
+    
+
+static void Platform::updateFriendsAsync(const std::string& callbackId) {}
+    
+static void Platform::requestNewPermissionAsync(const std::string& permission,
+                                                    const std::string& callbackId) {}
+    
+static std::string Platform::getUserId() { return ""; }
+static std::string Platform::getAppId() { return ""; }
 
 }
 

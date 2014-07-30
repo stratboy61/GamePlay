@@ -16,6 +16,8 @@
 #import <OpenGLES/ES2/glext.h>
 #import <mach/mach_time.h>
 
+#import <FacebookSDK/FacebookSDK.h>
+
 #define UIInterfaceOrientationEnum(x) ([x isEqualToString:@"UIInterfaceOrientationPortrait"]?UIInterfaceOrientationPortrait:                        \
                                       ([x isEqualToString:@"UIInterfaceOrientationPortraitUpsideDown"]?UIInterfaceOrientationPortraitUpsideDown:    \
                                       ([x isEqualToString:@"UIInterfaceOrientationLandscapeLeft"]?UIInterfaceOrientationLandscapeLeft:              \
@@ -69,10 +71,34 @@ static float __pitch;
 static float __roll;
 
 
+std::vector<FbFriendInfo>   Platform::m_friendsInfo;
+std::vector<FbBundle>       Platform::m_notifications;
+std::vector<std::string>    Platform::m_permissions;
+FacebookListener*           Platform::m_fbListener = NULL;
+
 double getMachTimeInMilliseconds();
 
 int getKey(unichar keyCode);
 int getUnicode(int key);
+
+@class ViewController;
+
+@interface AppDelegate : UIApplication <UIApplicationDelegate>
+{
+    UIWindow* window;
+    ViewController* viewController;
+    CMMotionManager *motionManager;
+}
+// FBSample logic
+// In this sample the app delegate maintains a property for the current
+// active session, and the view controllers reference the session via
+// this property, as well as play a role in keeping the session object
+// up to date; a more complicated application may choose to introduce
+// a simple singleton that owns the active FBSession object as well
+// as access to the object by the rest of the application
+@property (strong, nonatomic) FBSession *session;
+@property (nonatomic, retain) ViewController *viewController;
+@end
 
 @interface View : UIView <UIKeyInput>
 {
@@ -787,17 +813,228 @@ int getUnicode(int key);
 @end
 
 
+static void safeSendMessage(const std::string& event, const std::string& message="")
+{
+    if(Platform::getFbListener())
+    {
+        Platform::getFbListener()->onFacebookEvent(event, message);
+    }
+}
+
+
 @interface ViewController : UIViewController
+
+@property (strong, nonatomic) NSString* mUserName;
+@property (strong, nonatomic) NSString* mUserID;
+
 - (void)startUpdating;
 - (void)stopUpdating;
-@end
+- (void)FetchUserDetails;
+- (void)perfomFbLoginButtonClick;
+- (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error;@end
 
 
-@implementation ViewController 
+@implementation ViewController
 
-- (id)init 
+/**
+ * A function for parsing URL parameters.
+ */
+- (NSDictionary*)parseURLParams:(NSString *)query {
+    NSArray *pairs = [query componentsSeparatedByString:@"&"];
+    NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
+    for (NSString *pair in pairs) {
+        NSArray *kv = [pair componentsSeparatedByString:@"="];
+        NSString *val =
+        [kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        params[kv[0]] = val;
+    }
+    return params;
+}
+
+
+- (void) openSession {
+    
+    AppDelegate *appDelegate = __appDelegate;
+    
+    [FBSession setActiveSession:appDelegate.session];
+    
+    // if the session isn't open, let's open it now and present the login UX to the user
+    [appDelegate.session openWithCompletionHandler:^(FBSession *session,
+                                                     FBSessionState state,
+                                                     NSError *error) {
+        // and here we make sure to update our UX according to the new session state
+        [self sessionStateChanged:session state:state error:error];
+
+    }];
+}
+
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+    
+ 
+    AppDelegate *appDelegate = __appDelegate;
+    if (!appDelegate.session.isOpen) {
+        // create a fresh session object
+        appDelegate.session = [[FBSession alloc] init];
+        
+        // if we don't have a cached token, a call to open here would cause UX for login to
+        // occur; we don't want that to happen unless the user clicks the login button, and so
+        // we check here to make sure we have a token before calling open
+        if (appDelegate.session.state == FBSessionStateCreatedTokenLoaded) {
+            
+            [self openSession];
+        }
+    }
+ 
+}
+
+
+
+
+- (void)userLoggedIn{
+    [self FetchUserDetails];
+    
+}
+
+// This method will handle ALL the session state changes in the app
+- (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error
 {
-    if((self = [super init])) 
+
+  
+    // If the session was opened successfully
+    if (!error && state == FBSessionStateOpen){
+
+        // Show the user the logged-in UI
+        [self userLoggedIn];
+        safeSendMessage(SESSION_STATE_CHANGED, "Session opened");
+        return;
+    }
+    if (state == FBSessionStateClosed || state == FBSessionStateClosedLoginFailed){
+        // If the session is closed
+
+        safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
+
+    }
+    
+    // Handle errors
+    if (error){
+        std::string message;
+        NSString *alertText;
+        NSString *alertTitle;
+        // If the error requires people using an app to make an action outside of the app in order to recover
+        if ([FBErrorUtility shouldNotifyUserForError:error] == YES){
+            message = "Something went wrong. ";
+            message += [[FBErrorUtility userMessageForError:error] UTF8String];
+        } else {
+            
+            // If the user cancelled login, do nothing
+            if ([FBErrorUtility errorCategoryForError:error] == FBErrorCategoryUserCancelled) {
+                message = "User cancelled login";
+                
+                // Handle session closures that happen outside of the app
+            } else if ([FBErrorUtility errorCategoryForError:error] == FBErrorCategoryAuthenticationReopenSession){
+                message = "Session Error. ";
+                message += "Your current session is no longer valid. Please log in again.";
+                
+                // Here we will handle all other errors with a generic error message.
+                // We recommend you check our Handling Errors guide for more information
+                // https://developers.facebook.com/docs/ios/errors/
+            } else {
+                //Get more error information from the error
+                NSDictionary *errorInformation = [[[error.userInfo objectForKey:@"com.facebook.sdk:ParsedJSONResponseKey"] objectForKey:@"body"] objectForKey:@"error"];
+                
+                // Show the user an error message
+                  message = "Something went wrong. ";
+                message += [[NSString stringWithFormat:@"Please retry. \n\n If the problem persists contact us and mention this error code: %@", [errorInformation objectForKey:@"message"]] UTF8String];
+            }
+        }
+        // Clear this token
+        [FBSession.activeSession closeAndClearTokenInformation];
+        
+        safeSendMessage(FACEBOOK_ERROR, message);
+        safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
+    }
+    
+}
+
+- (void)FetchUserPermissions
+{
+    Platform::getPermissions().clear();
+    for(NSString* permission in FBSession.activeSession.permissions)
+    {
+        Platform::getPermissions().push_back(std::string([permission UTF8String]));
+    }
+}
+
+
+- (void)FetchUserDetails
+{
+    // Start the facebook request
+    [[FBRequest requestForMe]
+     startWithCompletionHandler:
+     ^(FBRequestConnection *connection, NSDictionary<FBGraphUser> *result, NSError *error)
+     {
+         // Did everything come back okay with no errors?
+         if (!error && result) {
+             // If so we can extract out the player's Facebook ID and first name
+             self.mUserName = [[NSString alloc] initWithString:result.first_name];
+             self.mUserID = [[NSString alloc] initWithString:result.objectID];
+   
+         }
+         else
+         {
+             NSLog(@"%@",[error localizedDescription]);
+         }
+         
+     }];
+    
+    [self FetchUserPermissions];
+    
+    
+}
+
+- (void)perfomFbLoginButtonClick {
+    // get the app delegate so that we can access the session property
+    AppDelegate *appDelegate = __appDelegate;
+    
+    // this button's job is to flip-flop the session from open to closed
+    if (appDelegate.session.isOpen) {
+        // if a user logs out explicitly, we delete any cached token information, and next
+        // time they run the applicaiton they will be presented with log in UX again; most
+        // users will simply close the app or switch away, without logging out; this will
+        // cause the implicit cached-token login to occur on next launch of the application
+        [appDelegate.session closeAndClearTokenInformation];
+        
+    } else {
+        if (appDelegate.session.state != FBSessionStateCreated) {
+            // Create a new, logged out session.
+            appDelegate.session = [[FBSession alloc] init];
+            
+        }
+        
+        [self openSession];
+        
+
+        
+    }
+}
+
+- (NSString*)getFbAppId {
+    return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"FacebookAppID"] copy];
+}
+
+
+
+
+
+
+
+
+- (id)init
+{
+    if((self = [super init]))
     {
     }
     return self;
@@ -887,19 +1124,112 @@ int getUnicode(int key);
 @end
 
 
-@interface AppDelegate : UIApplication <UIApplicationDelegate>
-{
-    UIWindow* window;
-    ViewController* viewController;
-    CMMotionManager *motionManager;
-}
-@property (nonatomic, retain) ViewController *viewController;
-@end
+
 
 
 @implementation AppDelegate
 
 @synthesize viewController;
+
+/**
+* A function for parsing URL parameters.
+*/
+- (NSDictionary*)parseURLParams:(NSString *)query {
+    NSArray *pairs = [query componentsSeparatedByString:@"&"];
+    NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
+    for (NSString *pair in pairs) {
+        NSArray *kv = [pair componentsSeparatedByString:@"="];
+        NSString *val =
+        [kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        params[kv[0]] = val;
+    }
+    return params;
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
+{
+    return [FBSession.activeSession handleOpenURL:url];
+}
+
+- (void) notificationGet:(NSString *)requestid {
+    [FBRequestConnection startWithGraphPath:requestid
+                          completionHandler:^(FBRequestConnection *connection,
+                                              id result,
+                                              NSError *error) {
+                              if (!error) {
+                                  
+                                      FbBundle bundle;
+                                      bundle.addPair(std::string([result[@"from"][@"name"] UTF8String]), "from_name");
+                                      bundle.addPair(std::string([result[@"from"][@"id"] UTF8String]), "from_id");
+                                      bundle.addPair(std::string([result[@"id"] UTF8String]), "request_id");
+                                      bundle.addPair(std::string([result[@"message"] UTF8String]), "message");
+                                      
+                                      if(result[@"data"])
+                                      {
+                                         bundle.addPair(std::string([result[@"data"] UTF8String]), "data");
+                                      }
+                                    
+                                      Platform::getNotifications().push_back(bundle);
+                                  if(Platform::getFbListener())
+                                  {
+                                      Platform::getFbListener()->onFacebookEvent(INCOMING_NOTIFICATION);
+                                  }
+                                  
+
+                              }
+                          }];
+}
+
+- (void) handleAppLinkData:(FBAppLinkData *)appLinkData {
+    NSString *targetURLString = appLinkData.originalQueryParameters[@"target_url"];
+    if (targetURLString) {
+        NSURL *targetURL = [NSURL URLWithString:targetURLString];
+        NSDictionary *targetParams = [self parseURLParams:[targetURL query]];
+        NSString *ref = [targetParams valueForKey:@"ref"];
+        // Check for the ref parameter to check if this is one of
+        // our incoming news feed link, otherwise it can be an
+        // an attribution link
+        if ([ref isEqualToString:@"notif"]) {
+            // Get the request id
+            NSString *requestIDParam = targetParams[@"request_ids"];
+            NSArray *requestIDs = [requestIDParam
+                                   componentsSeparatedByString:@","];
+            
+            for(id element in requestIDs)
+            {
+                [self notificationGet:element];
+            }
+            
+            
+        }
+    }
+}
+
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication
+         annotation:(id)annotation {
+    // attempt to extract a token from the url
+    return [FBAppCall handleOpenURL:url
+                  sourceApplication:sourceApplication
+                    fallbackHandler:^(FBAppCall *call) {
+                        // If there is an active session
+                        if (FBSession.activeSession.isOpen) {
+                            // Check the incoming link
+                            [self handleAppLinkData:call.appLinkData];
+                        } else if (call.accessTokenData) {
+                            // If token data is passed in and there's
+                            // no active session.
+                          /*  if ([self handleAppLinkToken:call.accessTokenData]) {
+                                // Attempt to open the session using the
+                                // cached token and if successful then
+                                // check the incoming link
+                                [self handleAppLinkData:call.appLinkData];
+                            }*/
+                        }
+                    }];
+}
+
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -1011,13 +1341,35 @@ int getUnicode(int key);
 }
 
 - (void)applicationDidBecomeActive:(UIApplication*)application 
-{    
+{
+    [FBAppEvents activateApp];
+    
+    /*
+     Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+     */
     [viewController startUpdating];
+    
+    
+    // FBSample logic
+    // We need to properly handle activation of the application with regards to SSO
+    //  (e.g., returning from iOS 6.0 authorization dialog or from fast app switching).
+    [FBAppCall handleDidBecomeActiveWithSession:self.session];
+    
+    
+  
+
 }
 
 - (void)applicationWillTerminate:(UIApplication*)application 
 {    
     [viewController stopUpdating];
+    
+    // FBSample logic
+    // if the app is going away, we close the session if it is open
+    // this is a good idea because things may be hanging off the session, that need
+    // releasing (completion block, etc.) and other components in the app may be awaiting
+    // close notification in order to do cleanup
+    [self.session close];
 }
 
 - (void)dealloc 
@@ -1640,6 +1992,206 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
     NSString *documentPath = [paths objectAtIndex:0];
 	return [[documentPath stringByAppendingPathComponent: [NSString stringWithUTF8String: filename2Append]] UTF8String];
 }
+    
+void Platform::performFbLoginButtonClick()
+{
+    [__appDelegate.viewController perfomFbLoginButtonClick];
+}
+    
+bool Platform::isUserLogged()
+{
+    return __appDelegate.session.isOpen;
+}
+    
+    
+static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
+{
+    NSMutableArray *objects = [NSMutableArray array];
+    NSMutableArray *keys = [NSMutableArray array];
+    
+    const std::vector<std::string>& bundle = fbBundle.getData();
+    
+    if(!bundle.size()) return nil;
+    
+    for(int i=0; i<bundle.size(); i+=2)
+    {
+        NSString* object = [NSString stringWithCString:bundle[i].c_str() encoding:[NSString defaultCStringEncoding]];
+        NSString* key = [NSString stringWithCString:bundle[i+1].c_str() encoding:[NSString defaultCStringEncoding]];
+        
+        [objects addObject:object];
+        [keys addObject:key];
+    }
+    
+    return [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
+}
+    
+void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method,
+                           const std::string& callbackId)
+{
+    NSMutableDictionary* params = convertToDictionary(bundle);
+    NSString* path = [NSString stringWithUTF8String: graphPath.c_str()];
+    
+    NSString* httpMethod;
+    
+    switch(method){
+        case HTTP_GET:
+            httpMethod = @"GET";
+            break;
+        case HTTP_POST:
+            httpMethod = @"POST";
+            break;
+        case HTTP_DELETE:
+            httpMethod = @"DELETE";
+            break;
+    }
+    
+    static std::string staticMessage;
+    
+    staticMessage = callbackId;
+    
+    [FBRequestConnection startWithGraphPath:path
+                                 parameters:params
+                                 HTTPMethod:httpMethod
+                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+        
+        if (error) {
+            safeSendMessage(FACEBOOK_ERROR);
+        }
+        else {
+            safeSendMessage(staticMessage);
+        }
+            
+    }];
+}
+    
+void Platform::sendRequestDialog(const FbBundle&        bundle,
+                                 const std::string&     title,
+                                 const std::string&     message,
+                                 const std::string&     callbackId)
+{
+    NSMutableDictionary* params = convertToDictionary(bundle);
+    NSString* m =[NSString stringWithCString:message.c_str() encoding:[NSString defaultCStringEncoding]];
+    NSString* t =[NSString stringWithCString:title.c_str() encoding:[NSString defaultCStringEncoding]];
+    
+    static std::string staticEvent = callbackId;
+
+        [FBWebDialogs
+         presentRequestsDialogModallyWithSession:nil
+         message:m
+         title:t
+         parameters:params
+         handler:^(FBWebDialogResult result, NSURL *resultURL, NSError *error) {
+             if (error) {
+                 // Error launching the dialog or sending the request.
+                 safeSendMessage(FACEBOOK_ERROR, "Error sending request.");
+             } else {
+                 if (result == FBWebDialogResultDialogNotCompleted) {
+                     // User clicked the "x" icon
+                     NSLog(@"User canceled request.");
+                 } else {
+                     // Handle the send request callback
+                     NSDictionary *urlParams = [__appDelegate.viewController parseURLParams:[resultURL query]];
+                     if (![urlParams valueForKey:@"request"]) {
+                         // User clicked the Cancel button
+                         NSLog(@"User canceled request.");
+                     } else {
+                         // User clicked the Send button
+                         safeSendMessage(staticEvent);
+                     }
+                 }
+             }
+         }];
+    
+}
+    
+void Platform::updateFriendsAsync(const std::string& callbackId)
+{
+    m_friendsInfo.clear();
+    
+    static std::string staticString;
+    staticString = callbackId;
+    
+    NSString* scores = @"/scores";
+    
+    NSString* graphPath = [NSString stringWithFormat:@"%@%@", [__appDelegate.viewController getFbAppId] , scores ];
+    
+    [FBRequestConnection startWithGraphPath:graphPath parameters:nil HTTPMethod:@"GET" completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+        
+        if(error)
+        {
+            safeSendMessage(FACEBOOK_ERROR, "error fetching friends data");
+        }
+        
+        if (result && !error) {
+            
+            NSArray *array = [result objectForKey:@"data"];
+            
+            for(id element in array)
+            {
+                NSString *name      = [[element objectForKey:@"user"] objectForKey:@"name"];
+                NSString *userId    = [[element objectForKey:@"user"] objectForKey:@"id"];
+                int      score      = [[element objectForKey:@"score"] intValue];
+                
+                FbFriendInfo fbfriend = { std::string([name UTF8String]), std::string([userId UTF8String]), score };
+                m_friendsInfo.push_back(fbfriend);
+            }
+            
+            safeSendMessage(staticString);
+            
+        }
+        
+    }];
+    
+}
+    
+std::string Platform::getUserId()
+{
+    return std::string([__appDelegate.viewController.mUserID UTF8String]);
+}
+    
+    
+std::string Platform::getAppId()
+{
+    return std::string([[__appDelegate.viewController getFbAppId] UTF8String]);
+}
+    
+    
+void Platform::requestNewPermissionAsync(const std::string& permission,
+                                         const std::string& callbackId)
+{
+    
+   NSString* perm = [NSString stringWithCString:permission.c_str() encoding:[NSString defaultCStringEncoding]];
+    
+    [FBSession.activeSession requestNewPublishPermissions:[NSArray arrayWithObject:perm]
+                                          defaultAudience:FBSessionDefaultAudienceFriends
+                                        completionHandler:^(FBSession *session, NSError *error) {
+                                            __block NSString *alertText;
+                                            __block NSString *alertTitle;
+                                            if (!error) {
+                                                if ([FBSession.activeSession.permissions
+                                                     indexOfObject:perm] == NSNotFound){
+                                                    // Permission not granted, tell the user we will not publish
+                                                    alertTitle = @"Permission not granted";
+                                                    alertText = @"Your action will not be published to Facebook.";
+                                                    [[[UIAlertView alloc] initWithTitle:alertTitle
+                                                                                message:alertText
+                                                                               delegate:__appDelegate
+                                                                      cancelButtonTitle:@"OK!"
+                                                                      otherButtonTitles:nil] show];
+                                                } else {
+                                       
+                                                    [__appDelegate.viewController FetchUserPermissions];
+                                                    safeSendMessage(callbackId);
+                                                
+                                                }
+                                                
+                                            } else {
+                                                safeSendMessage(FACEBOOK_ERROR,"error requesting additional permission");
+                                            }
+                                        }];
+        
+}
+    
 
 }
 

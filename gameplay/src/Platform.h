@@ -7,11 +7,16 @@
 #include "Touch.h"
 #include "Gesture.h"
 #include "Gamepad.h"
+#include "FbUtils.h"
+
+
+
 
 namespace gameplay
 {
 
 class Game;
+
 
 /**
  * Defines a platform abstraction.
@@ -297,8 +302,73 @@ private:
     
     static void deviceShaken();
 
+    
+/********************* FACEBOOK STUFF *********************/
+    
 public:
+    
+    /**
+     * The FacebookListener will be notified of facebook events
+     */
+    static void setFacebookListener(FacebookListener* fbl) { m_fbListener = fbl; }
+    
+    /**
+     * Will log in or log out the user. 
+     * This will open the facebook app or facebook webpage to let the user enter his credentials out of our app
+     */
+    static void performFbLoginButtonClick();
+    
+    static bool isUserLogged();
+    
+    /**
+     * For request from one user to his friends, see facebook doc for understanding how to fill the bundle.
+     */
+    static void sendRequestDialog(const FbBundle& params,
+                                  const std::string& title,
+                                  const std::string& message,
+                                  const std::string& callbackId);
+    
+    typedef enum {
+        HTTP_GET,
+        HTTP_POST,
+        HTTP_DELETE
+    } HTTP_METHOD;
+    
+    /**
+     * Basic open graph request
+     */
+    static void sendRequest(const std::string&  graphPath,
+                            const FbBundle&     params,
+                            HTTP_METHOD         method,
+                            const std::string&  callbackId);
+    
+    /**
+     * Send a fb request to get friends data
+     */
+    static void updateFriendsAsync(const std::string& callbackId);
+    
+    static void requestNewPermissionAsync(const std::string& permission,
+                                          const std::string& callbackId);
+    
+    static std::string getUserId();
+    static std::string getAppId();
+    
+    static const std::vector<FbFriendInfo>& getFriends()        { return m_friendsInfo;     }
+    static std::vector<FbBundle>&           getNotifications()  { return m_notifications;   }
+    static std::vector<std::string>&        getPermissions()    { return m_permissions;     }
+    static FacebookListener*                getFbListener()     { return m_fbListener;      }
 
+private:
+    
+    static FacebookListener* m_fbListener;
+    
+    static std::vector<FbFriendInfo>    m_friendsInfo;
+    static std::vector<FbBundle>        m_notifications;
+    static std::vector<std::string>     m_permissions;
+
+
+/********************* END FACEBOOK STUFF *********************/
+public:
     /**
      * Internal method used only from static code in various platform implementation.
      *
