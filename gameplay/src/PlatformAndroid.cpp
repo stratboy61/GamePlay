@@ -1505,6 +1505,47 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
 }
 
 
+void Platform::performFbLoginButtonClick()
+{
+	ANativeActivity* activity = __state->activity;
+    JavaVM* jvm = __state->activity->vm;
+    JNIEnv* env = NULL;
+    jvm->GetEnv((void **)&env, JNI_VERSION_1_6);
+    jint res = jvm->AttachCurrentThread(&env, NULL);
+    if (res == JNI_ERR)
+    {
+        GP_ERROR("Failed to retrieve JVM environment when entering message pump.");
+        return; 
+    }
+    GP_ASSERT(env);
+
+	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
+    GP_ASSERT(nativeActivityClass != NULL);
+
+    jmethodID methodid = env->GetMethodID(nativeActivityClass, "calledFromCpp", "()V");
+	env->CallVoidMethod(activity->clazz, methodid);
+
+	//jobject arg;
+
+	//jobject result = env->CallObjectMethod(activity->clazz, methodid, arg);
+
+	GP_WARN("testField =");
+
+
+	jclass cls= env->GetObjectClass(activity->clazz);
+
+	jfieldID fid = env->GetFieldID(cls,"testField","I");
+
+	int i = env->GetIntField(activity->clazz, fid);
+
+	std::stringstream ss; ss << i;
+
+	GP_WARN(ss.str().c_str());
+
+
+}
+
+
 }
 
 #endif
