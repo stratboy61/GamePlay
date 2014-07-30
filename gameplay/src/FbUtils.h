@@ -10,7 +10,7 @@ namespace gameplay
     
     class FacebookListener
     {
-    public:
+    public: 
         virtual void onFacebookEvent(const std::string& eventName, const std::string& message="") = 0;
     };
     
