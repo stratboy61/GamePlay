@@ -7,8 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3C7920201988FA1B0010FF26 /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */; };
-		3C7920211988FA1B0010FF26 /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */; };
+		0F022E911998F9BA0046495B /* InAppPurchase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E8F1998F9BA0046495B /* InAppPurchase.cpp */; };
+		0F022E921998F9BA0046495B /* InAppPurchase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E8F1998F9BA0046495B /* InAppPurchase.cpp */; };
+		0F022E931998F9BA0046495B /* InAppPurchase.h in Headers */ = {isa = PBXBuildFile; fileRef = 0F022E901998F9BA0046495B /* InAppPurchase.h */; };
+		0F022E941998F9BA0046495B /* InAppPurchase.h in Headers */ = {isa = PBXBuildFile; fileRef = 0F022E901998F9BA0046495B /* InAppPurchase.h */; };
+		0F022E961998F9C30046495B /* InAppPurchaseiOS.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E951998F9C30046495B /* InAppPurchaseiOS.mm */; };
+		0F022E981998F9CB0046495B /* InAppPurchaseMacOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */; };
+		0F022E9A1998FCA30046495B /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F022E991998FCA30046495B /* StoreKit.framework */; };
+		0F022E9F1998FE320046495B /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */; };
+		0F022EA01998FE660046495B /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */; };
+		0F022EA21998FE6E0046495B /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F022EA11998FE6E0046495B /* StoreKit.framework */; };
 		3C81A95F1987DFCA001CC8BD /* FbUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */; };
 		3C81A9601987DFCA001CC8BD /* FbUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */; };
 		3C81A9611987DFCA001CC8BD /* FbUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 3C81A95E1987DFCA001CC8BD /* FbUtils.h */; };
@@ -1174,6 +1182,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0F022E8F1998F9BA0046495B /* InAppPurchase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = InAppPurchase.cpp; path = src/InAppPurchase.cpp; sourceTree = SOURCE_ROOT; };
+		0F022E901998F9BA0046495B /* InAppPurchase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = InAppPurchase.h; path = src/InAppPurchase.h; sourceTree = SOURCE_ROOT; };
+		0F022E951998F9C30046495B /* InAppPurchaseiOS.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = InAppPurchaseiOS.mm; path = src/InAppPurchaseiOS.mm; sourceTree = SOURCE_ROOT; };
+		0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = InAppPurchaseMacOSX.mm; path = src/InAppPurchaseMacOSX.mm; sourceTree = SOURCE_ROOT; };
+		0F022E991998FCA30046495B /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		0F022EA11998FE6E0046495B /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.0.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
 		3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FacebookSDK.framework; path = "../external-deps/facebook-ios-sdk-sdk-version-3.15.0/build/FacebookSDK.framework"; sourceTree = "<group>"; };
 		3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FbUtils.cpp; path = src/FbUtils.cpp; sourceTree = SOURCE_ROOT; };
 		3C81A95E1987DFCA001CC8BD /* FbUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FbUtils.h; path = src/FbUtils.h; sourceTree = SOURCE_ROOT; };
@@ -1789,13 +1803,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0F022E9F1998FE320046495B /* FacebookSDK.framework in Frameworks */,
+				0F022E9A1998FCA30046495B /* StoreKit.framework in Frameworks */,
 				5B21E99616153890006EBEAC /* IOKit.framework in Frameworks */,
 				5B2BC7641512516B00D176CD /* libz.dylib in Frameworks */,
 				5B2BC7621512514D00D176CD /* QuartzCore.framework in Frameworks */,
 				5B2BC75F1512514500D176CD /* OpenAL.framework in Frameworks */,
 				5B2BC7601512514500D176CD /* OpenGL.framework in Frameworks */,
 				4234D99E14686C52003031B3 /* Cocoa.framework in Frameworks */,
-				3C7920201988FA1B0010FF26 /* FacebookSDK.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1803,13 +1818,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0F022EA21998FE6E0046495B /* StoreKit.framework in Frameworks */,
+				0F022EA01998FE660046495B /* FacebookSDK.framework in Frameworks */,
 				BD2636E516CF5B7400CFE15F /* CoreMotion.framework in Frameworks */,
 				BD2636E616CF5B7400CFE15F /* Foundation.framework in Frameworks */,
 				BD2636E716CF5B7400CFE15F /* OpenAL.framework in Frameworks */,
 				BD2636E816CF5B7400CFE15F /* OpenGLES.framework in Frameworks */,
 				BD2636E916CF5B7400CFE15F /* QuartzCore.framework in Frameworks */,
 				BD2636EA16CF5B7400CFE15F /* UIKit.framework in Frameworks */,
-				3C7920211988FA1B0010FF26 /* FacebookSDK.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1839,9 +1855,6 @@
 		4234D9A314686C52003031B3 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */,
-				3C81A95E1987DFCA001CC8BD /* FbUtils.h */,
-				42BCD31E15EFD0F300C0E076 /* lua */,
 				5BD52634150F822A004C9099 /* AbsoluteLayout.cpp */,
 				5BD52635150F822A004C9099 /* AbsoluteLayout.h */,
 				42789FC215B0E83700866F5B /* AIAgent.cpp */,
@@ -1899,6 +1912,8 @@
 				42CD0DD1147D8FF50000361E /* DepthStencilTarget.h */,
 				42CD0DD2147D8FF50000361E /* Effect.cpp */,
 				42CD0DD3147D8FF50000361E /* Effect.h */,
+				3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */,
+				3C81A95E1987DFCA001CC8BD /* FbUtils.h */,
 				42CD0DD4147D8FF50000361E /* FileSystem.cpp */,
 				42CD0DD5147D8FF50000361E /* FileSystem.h */,
 				426878AA153F4BB300844500 /* FlowLayout.cpp */,
@@ -1916,6 +1931,7 @@
 				42C932AF14919FD10098216A /* Game.inl */,
 				42F4B7D515994CED00B5A78D /* Gamepad.cpp */,
 				42F4B7D615994CED00B5A78D /* Gamepad.h */,
+				F18024A41627000D001BFF87 /* gameplay-main-macosx.mm */,
 				5BD5266A150F8257004C9099 /* gameplay.dox */,
 				42CD0DE1147D8FF50000361E /* gameplay.h */,
 				42BCD31D15EFD0F300C0E076 /* Gesture.h */,
@@ -1926,6 +1942,10 @@
 				4208DEE814A4079F00D3C511 /* Image.inl */,
 				42A5030F16E8F06500F0246C /* ImageControl.cpp */,
 				42A5031016E8F06500F0246C /* ImageControl.h */,
+				0F022E8F1998F9BA0046495B /* InAppPurchase.cpp */,
+				0F022E901998F9BA0046495B /* InAppPurchase.h */,
+				0F022E951998F9C30046495B /* InAppPurchaseiOS.mm */,
+				0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */,
 				42CD0DE4147D8FF50000361E /* Joint.cpp */,
 				42CD0DE5147D8FF50000361E /* Joint.h */,
 				4239DDE9157545A1005EA3F6 /* Joystick.cpp */,
@@ -1940,7 +1960,7 @@
 				42CD0DE7147D8FF50000361E /* Light.h */,
 				B67EC8F4161DFCA8000B4D12 /* Logger.cpp */,
 				B67EC8F5161DFCA8000B4D12 /* Logger.h */,
-				F18024A41627000D001BFF87 /* gameplay-main-macosx.mm */,
+				42BCD31E15EFD0F300C0E076 /* lua */,
 				42CD0DE8147D8FF50000361E /* Material.cpp */,
 				42CD0DE9147D8FF50000361E /* Material.h */,
 				42CD0DEA147D8FF50000361E /* MaterialParameter.cpp */,
@@ -1970,9 +1990,6 @@
 				42CD0DFC147D8FF50000361E /* ParticleEmitter.h */,
 				42CD0DFD147D8FF50000361E /* Pass.cpp */,
 				42CD0DFE147D8FF50000361E /* Pass.h */,
-				42CD0E16147D8FF50000361E /* Plane.cpp */,
-				42CD0E17147D8FF50000361E /* Plane.h */,
-				42CD0E18147D8FF50000361E /* Plane.inl */,
 				5BD5266B150F8257004C9099 /* PhysicsCharacter.cpp */,
 				5BD5266C150F8257004C9099 /* PhysicsCharacter.h */,
 				5BD5266D150F8257004C9099 /* PhysicsCollisionObject.cpp */,
@@ -1990,10 +2007,10 @@
 				42CD0E07147D8FF50000361E /* PhysicsGenericConstraint.cpp */,
 				42CD0E08147D8FF50000361E /* PhysicsGenericConstraint.h */,
 				42CD0E09147D8FF50000361E /* PhysicsGenericConstraint.inl */,
-				42CD0E0A147D8FF50000361E /* PhysicsHingeConstraint.cpp */,
-				42CD0E0B147D8FF50000361E /* PhysicsHingeConstraint.h */,
 				5BBE143C1513E400003FB362 /* PhysicsGhostObject.cpp */,
 				5BBE143D1513E400003FB362 /* PhysicsGhostObject.h */,
+				42CD0E0A147D8FF50000361E /* PhysicsHingeConstraint.cpp */,
+				42CD0E0B147D8FF50000361E /* PhysicsHingeConstraint.h */,
 				42CD0E0E147D8FF50000361E /* PhysicsRigidBody.cpp */,
 				42CD0E0F147D8FF50000361E /* PhysicsRigidBody.h */,
 				42CD0E10147D8FF50000361E /* PhysicsRigidBody.inl */,
@@ -2006,10 +2023,13 @@
 				421FBD4C1602818800A61BC0 /* PhysicsVehicle.h */,
 				421FBD4D1602818800A61BC0 /* PhysicsVehicleWheel.cpp */,
 				421FBD4E1602818800A61BC0 /* PhysicsVehicleWheel.h */,
+				42CD0E16147D8FF50000361E /* Plane.cpp */,
+				42CD0E17147D8FF50000361E /* Plane.h */,
+				42CD0E18147D8FF50000361E /* Plane.inl */,
 				DD1FF47116DBD8F9000B42EF /* Platform.cpp */,
 				42CD0E19147D8FF50000361E /* Platform.h */,
-				42CD0E1A147D8FF50000361E /* PlatformMacOSX.mm */,
 				5B04C5CC14BFD48500EB0071 /* PlatformiOS.mm */,
+				42CD0E1A147D8FF50000361E /* PlatformMacOSX.mm */,
 				42CD0E1D147D8FF50000361E /* Properties.cpp */,
 				42CD0E1E147D8FF50000361E /* Properties.h */,
 				42CD0E1F147D8FF50000361E /* Quaternion.cpp */,
@@ -2050,15 +2070,15 @@
 				B661731C16A619FB0083A307 /* Terrain.h */,
 				B661731D16A619FB0083A307 /* TerrainPatch.cpp */,
 				B661731E16A619FB0083A307 /* TerrainPatch.h */,
-				42CD0E33147D8FF50000361E /* Texture.cpp */,
-				42CD0E34147D8FF50000361E /* Texture.h */,
 				5BD52648150F822A004C9099 /* TextBox.cpp */,
 				5BD52649150F822A004C9099 /* TextBox.h */,
-				5BD5264C150F822A004C9099 /* TimeListener.h */,
+				42CD0E33147D8FF50000361E /* Texture.cpp */,
+				42CD0E34147D8FF50000361E /* Texture.h */,
 				5BD5264A150F822A004C9099 /* Theme.cpp */,
 				5BD5264B150F822A004C9099 /* Theme.h */,
 				4251B12F152D049B002F6199 /* ThemeStyle.cpp */,
 				4251B130152D049B002F6199 /* ThemeStyle.h */,
+				5BD5264C150F822A004C9099 /* TimeListener.h */,
 				4208DEED14A407D500D3C511 /* Touch.h */,
 				42CD0E35147D8FF50000361E /* Transform.cpp */,
 				42CD0E36147D8FF50000361E /* Transform.h */,
@@ -2442,6 +2462,8 @@
 		42CCD4AF146D811D00353661 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0F022EA11998FE6E0046495B /* StoreKit.framework */,
+				0F022E991998FCA30046495B /* StoreKit.framework */,
 				3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */,
 				5B04C5FE14BFE52F00EB0071 /* MacOSX */,
 				5B04C5FD14BFE52300EB0071 /* iOS */,
@@ -2657,6 +2679,7 @@
 				42BCD50615EFD0F300C0E076 /* lua_FlowLayout.h in Headers */,
 				42BCD50A15EFD0F300C0E076 /* lua_Font.h in Headers */,
 				42BCD50E15EFD0F300C0E076 /* lua_FontJustify.h in Headers */,
+				0F022E931998F9BA0046495B /* InAppPurchase.h in Headers */,
 				42BCD51215EFD0F300C0E076 /* lua_FontStyle.h in Headers */,
 				42BCD51615EFD0F300C0E076 /* lua_FontText.h in Headers */,
 				42BCD51A15EFD0F300C0E076 /* lua_Form.h in Headers */,
@@ -2965,6 +2988,7 @@
 				42BCD50B15EFD0F300C0E076 /* lua_Font.h in Headers */,
 				42BCD50F15EFD0F300C0E076 /* lua_FontJustify.h in Headers */,
 				42BCD51315EFD0F300C0E076 /* lua_FontStyle.h in Headers */,
+				0F022E941998F9BA0046495B /* InAppPurchase.h in Headers */,
 				42BCD51715EFD0F300C0E076 /* lua_FontText.h in Headers */,
 				42BCD51B15EFD0F300C0E076 /* lua_Form.h in Headers */,
 				42BCD51F15EFD0F300C0E076 /* lua_FrameBuffer.h in Headers */,
@@ -3302,6 +3326,7 @@
 				5BBE143E1513E400003FB362 /* PhysicsGhostObject.cpp in Sources */,
 				42554EA1152BC35C000ED910 /* PhysicsCollisionShape.cpp in Sources */,
 				4251B133152D049B002F6199 /* ThemeStyle.cpp in Sources */,
+				0F022E981998F9CB0046495B /* InAppPurchaseMacOSX.mm in Sources */,
 				4271C08E15337C8200B89DA7 /* Layout.cpp in Sources */,
 				422260D61537790F0011E3AB /* Bundle.cpp in Sources */,
 				426878AC153F4BB300844500 /* FlowLayout.cpp in Sources */,
@@ -3424,6 +3449,7 @@
 				42BCD60415EFD0F300C0E076 /* lua_PhysicsHingeConstraint.cpp in Sources */,
 				42BCD60815EFD0F300C0E076 /* lua_PhysicsRigidBody.cpp in Sources */,
 				42BCD60C15EFD0F300C0E076 /* lua_PhysicsRigidBodyParameters.cpp in Sources */,
+				0F022E911998F9BA0046495B /* InAppPurchase.cpp in Sources */,
 				42BCD61015EFD0F300C0E076 /* lua_PhysicsSocketConstraint.cpp in Sources */,
 				42BCD61415EFD0F300C0E076 /* lua_PhysicsSpringConstraint.cpp in Sources */,
 				42BCD61815EFD0F300C0E076 /* lua_Plane.cpp in Sources */,
@@ -3656,6 +3682,7 @@
 				42BCD54115EFD0F300C0E076 /* lua_Image.cpp in Sources */,
 				42BCD54515EFD0F300C0E076 /* lua_ImageFormat.cpp in Sources */,
 				42BCD54915EFD0F300C0E076 /* lua_Joint.cpp in Sources */,
+				0F022E961998F9C30046495B /* InAppPurchaseiOS.mm in Sources */,
 				42BCD54D15EFD0F300C0E076 /* lua_Joystick.cpp in Sources */,
 				42BCD55115EFD0F300C0E076 /* lua_Keyboard.cpp in Sources */,
 				42BCD55515EFD0F300C0E076 /* lua_KeyboardKey.cpp in Sources */,
@@ -3705,6 +3732,7 @@
 				42BCD60515EFD0F300C0E076 /* lua_PhysicsHingeConstraint.cpp in Sources */,
 				42BCD60915EFD0F300C0E076 /* lua_PhysicsRigidBody.cpp in Sources */,
 				42BCD60D15EFD0F300C0E076 /* lua_PhysicsRigidBodyParameters.cpp in Sources */,
+				0F022E921998F9BA0046495B /* InAppPurchase.cpp in Sources */,
 				42BCD61115EFD0F300C0E076 /* lua_PhysicsSocketConstraint.cpp in Sources */,
 				42BCD61515EFD0F300C0E076 /* lua_PhysicsSpringConstraint.cpp in Sources */,
 				42BCD61915EFD0F300C0E076 /* lua_Plane.cpp in Sources */,
@@ -3814,6 +3842,7 @@
 					"$(inherited)",
 					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
 					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3826,7 +3855,7 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -3865,12 +3894,13 @@
 					"$(inherited)",
 					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
 					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -3909,6 +3939,7 @@
 					"$(inherited)",
 					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
 					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3964,6 +3995,7 @@
 					"$(inherited)",
 					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
 					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;

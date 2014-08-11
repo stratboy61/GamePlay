@@ -5,6 +5,7 @@
 #include "FileSystem.h"
 #include "FrameBuffer.h"
 #include "SceneLoader.h"
+#include "InAppPurchase.h"
 
 /** @script{ignore} */
 GLenum __gl_error_code = GL_NO_ERROR;
@@ -29,6 +30,7 @@ Game::Game()
     GP_ASSERT(__gameInstance == NULL);
     __gameInstance = this;
     _timeEvents = new std::priority_queue<TimeEvent, std::vector<TimeEvent>, std::less<TimeEvent> >();
+    InAppPurchaseWrapper::GetUniqueInstance();
 }
 
 Game::~Game()
