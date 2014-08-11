@@ -238,6 +238,20 @@ void AudioSource::setVelocity(float x, float y, float z)
     setVelocity(Vector3(x, y, z));
 }
 
+int AudioSource::getPositionInSample() const
+{
+	ALint pos;
+    AL_CHECK( alGetSourcei(_alSource, AL_SAMPLE_OFFSET, &pos) );
+	return pos;
+}
+
+float AudioSource::getPositionInSec() const
+{
+	ALfloat pos;
+    AL_CHECK( alGetSourcef(_alSource, AL_SEC_OFFSET, &pos) );
+	return pos;
+}
+
 Node* AudioSource::getNode() const
 {
     return _node;

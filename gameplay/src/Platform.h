@@ -459,6 +459,8 @@ public:
      */
     static void shutdownInternal();
 
+	static bool getAndroidExpansionFileStream(const char *filename, std::string &str);
+
 private:
 
     Game* _game;                // The game this platform is interfacing with.

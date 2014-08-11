@@ -1473,7 +1473,7 @@ static char appDocumentDirectory[PATH_MAX];
 
 const char *Platform::getAppDocumentDirectory(const char *filename2Append)
 {
-	 // Get the android application's activity.
+	/* Get the android application's activity.
     ANativeActivity* activity = __state->activity;
     JavaVM* jvm = __state->activity->vm;
     JNIEnv* env = NULL;
@@ -1502,8 +1502,86 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
 	env->ReleaseStringUTFChars(obj_Path, path);
 
 	return strcat(appDocumentDirectory, filename2Append); // TODO:
+	
+    std::string fullPath(FileSystem::getResourcePath());
+	GP_WARN("getAppDocumentDirectory - FileSystem::getResourcePath()=%s", fullPath.c_str());
+    fullPath += FileSystem::resolvePath(filename2Append);
+    return fullPath.c_str();*/
+
+	GP_WARN("getAppDocumentDirectory - filename2Append=%s", filename2Append);
+	return filename2Append;
 }
 
+bool Platform::getAndroidExpansionFileStream(const char *filename, std::string &str)
+{
+	 // Get the android application's activity.
+    ANativeActivity* activity = __state->activity;
+    JavaVM* jvm = __state->activity->vm;
+    JNIEnv* java_env = NULL;
+    jvm->GetEnv((void **)&java_env, JNI_VERSION_1_6);
+    jint res = jvm->AttachCurrentThread(&java_env, NULL);
+    if (res == JNI_ERR)
+    {
+        GP_ERROR("Failed to retrieve JVM environment when entering message pump.");
+        return false; 
+    }
+    GP_ASSERT(java_env);
+
+    jobject lNativeActivity = activity->clazz;
+    jclass ClassNativeActivity = java_env->GetObjectClass(lNativeActivity);
+    GP_ASSERT(ClassNativeActivity != NULL);
+
+	GP_WARN("-> GetMethodID()");
+	jmethodID readFileFromResources_id = java_env->GetMethodID(ClassNativeActivity, "readFileFromResources", "(Ljava/lang/String;)[B");
+	if (readFileFromResources_id == NULL) {
+		GP_ERROR("readFileFromResources_id==NULL");
+		return false;
+	}
+
+	jstring jsFilename = java_env->NewStringUTF(filename);
+	GP_WARN("looking for %s...", filename);
+	jbyteArray array = (jbyteArray)java_env->CallObjectMethod(activity->clazz, readFileFromResources_id, jsFilename);
+
+	jboolean isCopy;
+	jbyte* buffer = java_env->GetByteArrayElements(array, &isCopy);
+	jsize length = java_env->GetArrayLength(array);
+	GP_WARN("GetArrayLength()=%d", length);
+
+	str = std::string((const char *)buffer, length);
+	java_env->ReleaseByteArrayElements(array, buffer, JNI_ABORT);
+	return true;
+}
+
+
+FacebookListener*            Platform::m_fbListener = NULL;
+std::vector<FbFriendInfo>    Platform::m_friendsInfo;
+std::vector<FbBundle>        Platform::m_notifications;
+std::vector<std::string>     Platform::m_permissions;
+    
+
+
+    
+bool Platform::isUserLogged() { GP_WARN("please implement :)"); return false; }
+    
+
+void Platform::sendRequestDialog(const FbBundle& params,
+                                  const std::string& title,
+                                  const std::string& message,
+                                            const std::string& callbackId) { GP_WARN("please implement :)");}
+    
+void Platform::sendRequest(const std::string&  graphPath,
+                            const FbBundle&     params,
+                            HTTP_METHOD         method,
+                                      const std::string&  callbackId) { GP_WARN("please implement :)");}
+    
+
+void Platform::updateFriendsAsync(const std::string& callbackId) { GP_WARN("please implement :)");}
+    
+void Platform::requestNewPermissionAsync(const std::string& permission,
+                                                    const std::string& callbackId) { GP_WARN("please implement :)");}
+    
+std::string Platform::getUserId() { GP_WARN("please implement :)"); return ""; }
+std::string Platform::getAppId() { GP_WARN("please implement :)"); return ""; }
 
 void Platform::performFbLoginButtonClick()
 {
@@ -1544,7 +1622,6 @@ void Platform::performFbLoginButtonClick()
 
 
 }
-
 
 }
 

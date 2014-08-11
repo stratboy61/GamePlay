@@ -378,7 +378,7 @@ Stream* FileSystem::open(const char* path, size_t mode)
     char modeStr[] = "rb";
     if ((mode & WRITE) != 0)
         modeStr[0] = 'w';
-#ifdef __ANDROID__
+/*#ifdef __ANDROID__
     if ((mode & WRITE) != 0)
     {
         // Open a file on the SD card
@@ -392,7 +392,9 @@ Stream* FileSystem::open(const char* path, size_t mode)
             struct stat s;
             if (stat(directoryPath.c_str(), &s) != 0)
                 makepath(directoryPath, 0777);
+			GP_WARN("FileSystem - Writing %s to %s", path, directoryPath.c_str());
         }
+        GP_WARN("FileSystem - fullPath=%s\n", fullPath.c_str());
         return FileStream::create(fullPath.c_str(), modeStr);
     }
     else
@@ -400,10 +402,12 @@ Stream* FileSystem::open(const char* path, size_t mode)
         // Open a file in the read-only asset directory
         return FileStreamAndroid::create(resolvePath(path), modeStr);
     }
-#else
+#else*/
     std::string fullPath;
     getFullPath(path, fullPath);
-    
+
+    createFileFromAsset(path);
+
 #ifdef WIN32
     gp_stat_struct s;
     if (!isAbsolutePath(path) && stat(fullPath.c_str(), &s) != 0 && (mode & WRITE) == 0)
@@ -427,7 +431,7 @@ Stream* FileSystem::open(const char* path, size_t mode)
 #endif
     FileStream* stream = FileStream::create(fullPath.c_str(), modeStr);
     return stream;
-#endif
+//#endif
 }
 
 FILE* FileSystem::openFile(const char* filePath, const char* mode)

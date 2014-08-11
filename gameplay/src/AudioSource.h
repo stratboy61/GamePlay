@@ -150,6 +150,9 @@ public:
      */
     void setVelocity(float x, float y, float z);
 
+    int getPositionInSample() const;
+    float getPositionInSec() const;
+
     /**
      * Gets the node that this source is attached to.
      * 

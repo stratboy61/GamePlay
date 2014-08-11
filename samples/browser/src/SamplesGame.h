@@ -41,6 +41,8 @@ public:
 
     bool mouseEvent(Mouse::MouseEvent evt, int x, int y, int wheelDelta);
 
+	void postFrameUpdate(float elapsedTime) {}
+
     void menuEvent();
 
     void gestureSwipeEvent(int x, int y, int direction);
