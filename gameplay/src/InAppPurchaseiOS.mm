@@ -79,11 +79,6 @@
     for (NSString *productIdentifier in m_productIdentifiers)
     {
         productsIdentifiers.push_back([productIdentifier UTF8String]);
-        BOOL productPurchased = [[NSUserDefaults standardUserDefaults] boolForKey : productIdentifier];
-        if (productPurchased)
-        {
-            [purchasedProducts addObject : productIdentifier];
-        }
     }
     self.purchasedProducts = purchasedProducts;
     gameplay::InAppPurchaseWrapper &the_inAppPurchaseWrapper = gameplay::InAppPurchaseWrapper::GetUniqueInstance();
@@ -259,6 +254,10 @@
         item.productIdentifier = [product.productIdentifier UTF8String];
         products[item.productIdentifier] = item;
         [self downloadImageForProduct : product.productIdentifier];
+        if ([[NSUserDefaults standardUserDefaults] boolForKey : product.productIdentifier] && product.downloadable)
+        {
+            [m_purchasedProducts addObject : product.productIdentifier];
+        }
     }
     const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = gameplay::InAppPurchaseWrapper::GetUniqueInstance().getCallbacks();
     for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
