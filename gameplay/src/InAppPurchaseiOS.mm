@@ -245,6 +245,7 @@
     self.request = nil;
     [[NSNotificationCenter defaultCenter] postNotificationName : ProductsLoadedNotification object : m_products];
     std::map<std::string, gameplay::InAppPurchaseItem> &products = gameplay::InAppPurchaseWrapper::GetUniqueInstance().getProducts();
+    products.clear();
     for (SKProduct *product in m_products)
     {
         gameplay::InAppPurchaseItem item;
@@ -298,28 +299,38 @@
 - (void) completeTransaction : (SKPaymentTransaction *) transaction
 {
     [self recordTransaction : transaction];
-    [self provideContent : transaction.payment.productIdentifier];
     if (transaction.downloads)
     {
+        [self provideContent : transaction.payment.productIdentifier];
         [[SKPaymentQueue defaultQueue] startDownloads : transaction.downloads];
     }
     else
     {
         [[SKPaymentQueue defaultQueue] finishTransaction : transaction];
+        const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = gameplay::InAppPurchaseWrapper::GetUniqueInstance().getCallbacks();
+        for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
+        {
+            (*it)->productBought(gameplay::InAppPurchaseWrapper::GetUniqueInstance().getProducts()[[transaction.payment.productIdentifier UTF8String]]);
+        }
     }
 }
 
 - (void) restoreTransaction : (SKPaymentTransaction *) transaction
 {
     [self recordTransaction : transaction];
-    [self provideContent : transaction.originalTransaction.payment.productIdentifier];
     if (transaction.downloads)
     {
+        [self provideContent : transaction.originalTransaction.payment.productIdentifier];
         [[SKPaymentQueue defaultQueue] startDownloads : transaction.downloads];
     }
     else
     {
         [[SKPaymentQueue defaultQueue] finishTransaction : transaction];
+        const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = gameplay::InAppPurchaseWrapper::GetUniqueInstance().getCallbacks();
+        for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
+        {
+            (*it)->productBought(gameplay::InAppPurchaseWrapper::GetUniqueInstance().getProducts()[[transaction.originalTransaction.payment.productIdentifier UTF8String]]);
+        }
     }
 }
 
@@ -558,7 +569,6 @@
                   {
                       instance = [[self alloc] init];
                       [[SKPaymentQueue defaultQueue] addTransactionObserver : instance];
-                      [instance downloadImageForProduct : @"com.6l6interactive.Tree-Of-Dreams"];
                   });
     return instance;
 }

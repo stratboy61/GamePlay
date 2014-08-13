@@ -39,6 +39,7 @@ namespace gameplay
         
         virtual void productsIdentifiersRetrieved(const std::vector<std::string> &productsIdentifiers) = 0;
         virtual void productsRetrieved(const std::map<std::string, InAppPurchaseItem> &products) = 0;
+        virtual void productBought(const InAppPurchaseItem &product) = 0;
         virtual void productDownloading(const InAppPurchaseContent &product) = 0;
         virtual void productDownloaded(const InAppPurchaseContent &product) = 0;
         virtual void imagePreviewLoaded(const InAppPurchaseItem &item) = 0;
