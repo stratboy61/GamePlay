@@ -1326,18 +1326,21 @@ static void safeSendMessage(const std::string& event, const std::string& message
 }
 
 - (void)applicationWillResignActive:(UIApplication*)application
-{    
+{
+    Game::getInstance()->applicationWillResignActive();
     [viewController stopUpdating];
 }
 
 - (void)applicationDidEnterBackground:(UIApplication*)application 
 {
+    Game::getInstance()->applicationDidEnterBackground();
     [viewController stopUpdating];
 }
 
 - (void)applicationWillEnterForeground:(UIApplication*)application 
-{    
+{
     [viewController startUpdating];
+    Game::getInstance()->applicationWillEnterForeground();
 }
 
 - (void)applicationDidBecomeActive:(UIApplication*)application 
@@ -1348,6 +1351,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
      Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
      */
     [viewController startUpdating];
+    Game::getInstance()->applicationDidBecomeActive();
     
     
     // FBSample logic
@@ -1361,7 +1365,8 @@ static void safeSendMessage(const std::string& event, const std::string& message
 }
 
 - (void)applicationWillTerminate:(UIApplication*)application 
-{    
+{
+    Game::getInstance()->applicationWillTerminate();
     [viewController stopUpdating];
     
     // FBSample logic
