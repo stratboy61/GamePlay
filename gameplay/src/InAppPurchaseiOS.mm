@@ -17,14 +17,12 @@
 {
     NSSet *m_productIdentifiers;
     NSArray *m_products;
-    NSMutableSet *m_purchasedProducts;
     SKProductsRequest *m_request;
     NSNumberFormatter *m_priceFormatter;
 }
 
 @property (nonatomic, retain) NSSet *productIdentifiers;
 @property (retain) NSArray *products;
-@property (retain) NSMutableSet *purchasedProducts;
 @property (retain) SKProductsRequest *request;
 
 - (id) init;
@@ -49,13 +47,13 @@
 
 @synthesize productIdentifiers = m_productIdentifiers;
 @synthesize products = m_products;
-@synthesize purchasedProducts = m_purchasedProducts;
 @synthesize request = m_request;
 
 - (id) init
 {
     if ((self = [super init]))
     {
+        m_products = [[NSArray alloc] init];
         m_priceFormatter = [[NSNumberFormatter alloc] init];
         [m_priceFormatter setFormatterBehavior : NSNumberFormatterBehavior10_4];
         [m_priceFormatter setNumberStyle : NSNumberFormatterCurrencyStyle];
@@ -67,19 +65,15 @@
 {
     if (m_productIdentifiers)
     {
-        m_products = nil;
         m_request = nil;
         m_productIdentifiers = nil;
-        m_purchasedProducts = nil;
     }
     m_productIdentifiers = [productIdentifiers copy];
     std::vector<std::string> productsIdentifiers;
-    NSMutableSet *purchasedProducts = [NSMutableSet set];
     for (NSString *productIdentifier in m_productIdentifiers)
     {
         productsIdentifiers.push_back([productIdentifier UTF8String]);
     }
-    self.purchasedProducts = purchasedProducts;
     gameplay::InAppPurchaseWrapper &the_inAppPurchaseWrapper = gameplay::InAppPurchaseWrapper::GetUniqueInstance();
     the_inAppPurchaseWrapper.getProducts().clear();
     const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = the_inAppPurchaseWrapper.getCallbacks();
@@ -240,10 +234,6 @@
         item.productIdentifier = [product.productIdentifier UTF8String];
         products[item.productIdentifier] = item;
         [self downloadImageForProduct : product.productIdentifier];
-        if ([[NSUserDefaults standardUserDefaults] boolForKey : product.productIdentifier] && product.downloadable)
-        {
-            [m_purchasedProducts addObject : product.productIdentifier];
-        }
     }
     const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = gameplay::InAppPurchaseWrapper::GetUniqueInstance().getCallbacks();
     for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
@@ -277,7 +267,6 @@
 {
     [[NSUserDefaults standardUserDefaults] setBool : TRUE forKey : productIdentifier];
     [[NSUserDefaults standardUserDefaults] synchronize];
-    [m_purchasedProducts addObject : productIdentifier];
     [[NSNotificationCenter defaultCenter] postNotificationName : ProductPurchasedNotification object : productIdentifier];
 }
 
@@ -543,7 +532,7 @@
 
 - (bool) isProductPurchased : (SKProduct *) product
 {
-    return [m_purchasedProducts containsObject : product.productIdentifier];
+    return [[NSUserDefaults standardUserDefaults] boolForKey : product.productIdentifier];
 }
 
 + (InAppPurchaseiOS *) GetInstance
