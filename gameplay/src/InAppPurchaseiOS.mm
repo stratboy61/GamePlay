@@ -3,7 +3,6 @@
 # if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
 
 #import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
 
 #include <gameplay.h>
@@ -155,81 +154,68 @@
                        NSString *imageName = @"__bundle_image.png";
                        NSString *directory = [self downloadContentPathForProductID : productIdentifier];
                        NSString *fullPath = [directory stringByAppendingPathComponent : imageName];
-                       // Remove the "true" if you want to cache the image. The problem is that if the bundle is updated and its image is changed, we would still have the previous image. We have to introduce a notion of versioning in the image name to do efficiently.
-                       if (true || [[NSFileManager defaultManager] fileExistsAtPath : fullPath] == NO)
+                       NSString *itunesAPIUrl = @"http://itunes.apple.com/lookup?bundleId=";
+                       NSString *requestURL = [itunesAPIUrl stringByAppendingString : productIdentifier];
+                       NSURL *url = [NSURL URLWithString : [requestURL stringByAddingPercentEscapesUsingEncoding : NSUTF8StringEncoding]];
+                       NSError *error;
+                       NSData *data = [NSData dataWithContentsOfURL : url options : kNilOptions error : &error];
+                       if (data)
                        {
-                           NSString *itunesAPIUrl = @"http://itunes.apple.com/lookup?bundleId=";
-                           NSString *requestURL = [itunesAPIUrl stringByAppendingString : productIdentifier];
-                           NSURL *url = [NSURL URLWithString : [requestURL stringByAddingPercentEscapesUsingEncoding : NSUTF8StringEncoding]];
-                           NSError *error;
-                           NSData *data = [NSData dataWithContentsOfURL : url options : kNilOptions error : &error];
-                           if (data)
+                           NSDictionary *json = [NSJSONSerialization JSONObjectWithData : data options : kNilOptions error : &error];
+                           if (json)
                            {
-                               NSDictionary *json = [NSJSONSerialization JSONObjectWithData : data options : kNilOptions error : &error];
-                               if (json)
+                               NSString *numberOfResults;
+                               if ((numberOfResults = [json objectForKey : @"resultCount"]) && [numberOfResults integerValue] >= 1)
                                {
-                                   NSString *numberOfResults;
-                                   if ((numberOfResults = [json objectForKey : @"resultCount"]) && [numberOfResults integerValue] >= 1)
+                                   NSDictionary *firstResult =[[json objectForKey : @"results"] objectAtIndex : 0];
+                                   if ((requestURL = [firstResult objectForKey : @"artworkUrl60"]))
                                    {
-                                       NSDictionary *firstResult =[[json objectForKey : @"results"] objectAtIndex : 0];
-                                       if ((requestURL = [firstResult objectForKey : @"artworkUrl60"]))
+                                       url = [NSURL URLWithString : [requestURL stringByAddingPercentEscapesUsingEncoding : NSUTF8StringEncoding]];
+                                       data = [NSData dataWithContentsOfURL : url options : kNilOptions error : &error];
+                                       if (data)
                                        {
-                                           url = [NSURL URLWithString : [requestURL stringByAddingPercentEscapesUsingEncoding : NSUTF8StringEncoding]];
-                                           data = [NSData dataWithContentsOfURL : url options : kNilOptions error : &error];
-                                           if (data)
+                                           if ([data writeToFile : fullPath options : kNilOptions error : &error])
                                            {
-                                               data = [NSData dataWithData : UIImagePNGRepresentation([UIImage imageWithData : data])];
-                                           }
-                                           if (data)
-                                           {
-                                               if ([data writeToFile : fullPath options : kNilOptions error : &error] == NO)
-                                               {
-                                                   NSLog(@"Impossible to create %@ file: %@", fullPath, error);
-                                               }
+                                               dispatch_async(main_queue, ^
+                                                              {
+                                                                  gameplay::InAppPurchaseWrapper &the_inAppPurchaseWrapper = gameplay::InAppPurchaseWrapper::GetUniqueInstance();
+                                                                  gameplay::InAppPurchaseItem &item = the_inAppPurchaseWrapper.getProducts()[[productIdentifier UTF8String]];
+                                                                  item.imagePreviewPath = [fullPath UTF8String];
+                                                                  const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = the_inAppPurchaseWrapper.getCallbacks();
+                                                                  for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
+                                                                  {
+                                                                      (*it)->imagePreviewLoaded(item);
+                                                                  }
+                                                              });
                                            }
                                            else
                                            {
-                                               NSLog(@"Error while retrieving image from url %@ for bundle %@", [url lastPathComponent], productIdentifier);
+                                               NSLog(@"Impossible to create %@ file: %@", fullPath, error);
                                            }
                                        }
                                        else
                                        {
-                                           NSLog(@"Error while retrieving image URL for bundle %@", productIdentifier);
+                                           NSLog(@"Error while retrieving image from url %@ for bundle %@", [url lastPathComponent], productIdentifier);
                                        }
                                    }
                                    else
                                    {
-                                       NSLog(@"Error while retrieving image for bundle %@: No image found", productIdentifier);
+                                       NSLog(@"Error while retrieving image URL for bundle %@", productIdentifier);
                                    }
                                }
                                else
                                {
-                                   NSLog(@"Error while retrieving JSON data from url %@: %@", [url lastPathComponent], error);
+                                   NSLog(@"Error while retrieving image for bundle %@: No image found", productIdentifier);
                                }
                            }
                            else
                            {
-                               NSLog(@"Error while retrieving image for bundle %@: %@", productIdentifier, error);
+                               NSLog(@"Error while retrieving JSON data from url %@: %@", [url lastPathComponent], error);
                            }
                        }
-                       if ([[NSFileManager defaultManager] fileExistsAtPath : fullPath])
+                       else
                        {
-                           
-                           gameplay::Image *image = gameplay::Image::create([fullPath UTF8String]);
-                           if (image)
-                           {
-                               dispatch_async(main_queue, ^
-                                              {
-                                                  gameplay::InAppPurchaseWrapper &the_inAppPurchaseWrapper = gameplay::InAppPurchaseWrapper::GetUniqueInstance();
-                                                  gameplay::InAppPurchaseItem &item = the_inAppPurchaseWrapper.getProducts()[[productIdentifier UTF8String]];
-                                                  item.imagePreviewPath = [fullPath UTF8String];
-                                                  const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = the_inAppPurchaseWrapper.getCallbacks();
-                                                  for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
-                                                  {
-                                                      (*it)->imagePreviewLoaded(item);
-                                                  }
-                                              });
-                           }
+                           NSLog(@"Error while retrieving image for bundle %@: %@", productIdentifier, error);
                        }
                    });
 }
