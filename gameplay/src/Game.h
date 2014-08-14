@@ -587,6 +587,16 @@ public:
     bool launchURL(const char *url) const;
 
     const char *getAppDocumentDirectory(const char *filename2Append) const;
+    
+    virtual inline void applicationWillResignActive(void) {};
+    
+    virtual inline void applicationDidEnterBackground(void) {};
+    
+    virtual inline void applicationWillEnterForeground(void) {};
+    
+    virtual inline void applicationDidBecomeActive(void) {};
+    
+    virtual inline void applicationWillTerminate(void) {};
 
 protected:
 
