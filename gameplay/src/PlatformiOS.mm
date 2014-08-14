@@ -16,7 +16,10 @@
 #import <OpenGLES/ES2/glext.h>
 #import <mach/mach_time.h>
 
+#define FACEBOOK_SDK
+#ifdef FACEBOOK_SDK
 #import <FacebookSDK/FacebookSDK.h>
+#endif
 
 #define UIInterfaceOrientationEnum(x) ([x isEqualToString:@"UIInterfaceOrientationPortrait"]?UIInterfaceOrientationPortrait:                        \
                                       ([x isEqualToString:@"UIInterfaceOrientationPortraitUpsideDown"]?UIInterfaceOrientationPortraitUpsideDown:    \
@@ -96,7 +99,9 @@ int getUnicode(int key);
 // up to date; a more complicated application may choose to introduce
 // a simple singleton that owns the active FBSession object as well
 // as access to the object by the rest of the application
+#ifdef FACEBOOK_SDK
 @property (strong, nonatomic) FBSession *session;
+#endif
 @property (nonatomic, retain) ViewController *viewController;
 @end
 
@@ -829,10 +834,12 @@ static void safeSendMessage(const std::string& event, const std::string& message
 
 - (void)startUpdating;
 - (void)stopUpdating;
-- (void)FetchUserDetails;
 - (void)perfomFbLoginButtonClick;
-- (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error;@end
-
+#ifdef FACEBOOK_SDK
+- (void)FetchUserDetails;
+- (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error;
+#endif
+@end
 
 @implementation ViewController
 
@@ -851,7 +858,31 @@ static void safeSendMessage(const std::string& event, const std::string& message
     return params;
 }
 
+- (void)perfomFbLoginButtonClick {
+    // get the app delegate so that we can access the session property
+    AppDelegate *appDelegate = __appDelegate;
+    
+#ifdef FACEBOOK_SDK
+    // this button's job is to flip-flop the session from open to closed
+    if (appDelegate.session.isOpen) {
+        // if a user logs out explicitly, we delete any cached token information, and next
+        // time they run the applicaiton they will be presented with log in UX again; most
+        // users will simply close the app or switch away, without logging out; this will
+        // cause the implicit cached-token login to occur on next launch of the application
+        [appDelegate.session closeAndClearTokenInformation];
+        
+    } else {
+        if (appDelegate.session.state != FBSessionStateCreated) {
+            // Create a new, logged out session.
+            appDelegate.session = [[FBSession alloc] init];
+        }
+        
+        [self openSession];
+    }
+#endif
+}
 
+#ifdef FACEBOOK_SDK
 - (void) openSession {
     
     AppDelegate *appDelegate = __appDelegate;
@@ -867,7 +898,6 @@ static void safeSendMessage(const std::string& event, const std::string& message
 
     }];
 }
-
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -890,19 +920,13 @@ static void safeSendMessage(const std::string& event, const std::string& message
  
 }
 
-
-
-
 - (void)userLoggedIn{
     [self FetchUserDetails];
-    
 }
 
 // This method will handle ALL the session state changes in the app
 - (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error
 {
-
-  
     // If the session was opened successfully
     if (!error && state == FBSessionStateOpen){
 
@@ -956,7 +980,6 @@ static void safeSendMessage(const std::string& event, const std::string& message
         safeSendMessage(FACEBOOK_ERROR, message);
         safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
     }
-    
 }
 
 - (void)FetchUserPermissions
@@ -967,7 +990,6 @@ static void safeSendMessage(const std::string& event, const std::string& message
         Platform::getPermissions().push_back(std::string([permission UTF8String]));
     }
 }
-
 
 - (void)FetchUserDetails
 {
@@ -991,46 +1013,12 @@ static void safeSendMessage(const std::string& event, const std::string& message
      }];
     
     [self FetchUserPermissions];
-    
-    
-}
-
-- (void)perfomFbLoginButtonClick {
-    // get the app delegate so that we can access the session property
-    AppDelegate *appDelegate = __appDelegate;
-    
-    // this button's job is to flip-flop the session from open to closed
-    if (appDelegate.session.isOpen) {
-        // if a user logs out explicitly, we delete any cached token information, and next
-        // time they run the applicaiton they will be presented with log in UX again; most
-        // users will simply close the app or switch away, without logging out; this will
-        // cause the implicit cached-token login to occur on next launch of the application
-        [appDelegate.session closeAndClearTokenInformation];
-        
-    } else {
-        if (appDelegate.session.state != FBSessionStateCreated) {
-            // Create a new, logged out session.
-            appDelegate.session = [[FBSession alloc] init];
-            
-        }
-        
-        [self openSession];
-        
-
-        
-    }
 }
 
 - (NSString*)getFbAppId {
     return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"FacebookAppID"] copy];
 }
-
-
-
-
-
-
-
+#endif
 
 - (id)init
 {
@@ -1146,6 +1134,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
     return params;
 }
 
+#ifdef FACEBOOK_SDK
 - (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
 {
     return [FBSession.activeSession handleOpenURL:url];
@@ -1229,7 +1218,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
                         }
                     }];
 }
-
+#endif
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -1342,34 +1331,33 @@ static void safeSendMessage(const std::string& event, const std::string& message
 
 - (void)applicationDidBecomeActive:(UIApplication*)application 
 {
+#ifdef FACEBOOK_SDK
     [FBAppEvents activateApp];
-    
+#endif
     /*
      Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
      */
     [viewController startUpdating];
     
     
-    // FBSample logic
+#ifdef FACEBOOK_SDK
     // We need to properly handle activation of the application with regards to SSO
     //  (e.g., returning from iOS 6.0 authorization dialog or from fast app switching).
     [FBAppCall handleDidBecomeActiveWithSession:self.session];
-    
-    
-  
-
+#endif
 }
 
 - (void)applicationWillTerminate:(UIApplication*)application 
 {    
     [viewController stopUpdating];
     
-    // FBSample logic
     // if the app is going away, we close the session if it is open
     // this is a good idea because things may be hanging off the session, that need
     // releasing (completion block, etc.) and other components in the app may be awaiting
     // close notification in order to do cleanup
+#ifdef FACEBOOK_SDK
     [self.session close];
+#endif
 }
 
 - (void)dealloc 
@@ -2000,7 +1988,11 @@ void Platform::performFbLoginButtonClick()
     
 bool Platform::isUserLogged()
 {
+#ifdef FACEBOOK_SDK
     return __appDelegate.session.isOpen;
+#else
+    return false;
+#endif
 }
     
     
@@ -2028,6 +2020,7 @@ static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
 void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method,
                            const std::string& callbackId)
 {
+#ifdef FACEBOOK_SDK
     NSMutableDictionary* params = convertToDictionary(bundle);
     NSString* path = [NSString stringWithUTF8String: graphPath.c_str()];
     
@@ -2062,6 +2055,7 @@ void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle,
         }
             
     }];
+#endif
 }
     
 void Platform::sendRequestDialog(const FbBundle&        bundle,
@@ -2075,6 +2069,7 @@ void Platform::sendRequestDialog(const FbBundle&        bundle,
     
     static std::string staticEvent = callbackId;
 
+#ifdef FACEBOOK_SDK
         [FBWebDialogs
          presentRequestsDialogModallyWithSession:nil
          message:m
@@ -2101,13 +2096,13 @@ void Platform::sendRequestDialog(const FbBundle&        bundle,
                  }
              }
          }];
-    
+#endif
 }
     
 void Platform::updateFriendsAsync(const std::string& callbackId)
 {
     m_friendsInfo.clear();
-    
+#ifdef FACEBOOK_SDK
     static std::string staticString;
     staticString = callbackId;
     
@@ -2141,7 +2136,7 @@ void Platform::updateFriendsAsync(const std::string& callbackId)
         }
         
     }];
-    
+#endif
 }
     
 std::string Platform::getUserId()
@@ -2152,7 +2147,11 @@ std::string Platform::getUserId()
     
 std::string Platform::getAppId()
 {
+#ifdef FACEBOOK_SDK
     return std::string([[__appDelegate.viewController getFbAppId] UTF8String]);
+#else
+    return "";
+#endif
 }
     
     
@@ -2162,6 +2161,7 @@ void Platform::requestNewPermissionAsync(const std::string& permission,
     
    NSString* perm = [NSString stringWithCString:permission.c_str() encoding:[NSString defaultCStringEncoding]];
     
+#ifdef FACEBOOK_SDK
     [FBSession.activeSession requestNewPublishPermissions:[NSArray arrayWithObject:perm]
                                           defaultAudience:FBSessionDefaultAudienceFriends
                                         completionHandler:^(FBSession *session, NSError *error) {
@@ -2189,7 +2189,7 @@ void Platform::requestNewPermissionAsync(const std::string& permission,
                                                 safeSendMessage(FACEBOOK_ERROR,"error requesting additional permission");
                                             }
                                         }];
-        
+#endif
 }
     
 
