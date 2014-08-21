@@ -144,7 +144,7 @@ void SpriteBatch::start()
     _batch->start();
 }
 
-void SpriteBatch::draw(const Rectangle& dst, const Rectangle& src, const Vector4& color)
+void SpriteBatch::draw(const Rectangle& dst, const Rectangle& src, const Vector4& color, const Vector2 &rotationPoint, const float rotationAngle, bool positionIsCenter)
 {
     // Calculate uvs.
     float u1 = _textureWidthRatio * src.x;
@@ -152,7 +152,8 @@ void SpriteBatch::draw(const Rectangle& dst, const Rectangle& src, const Vector4
     float u2 = u1 + _textureWidthRatio * src.width;
     float v2 = v1 - _textureHeightRatio * src.height;
 
-    draw(dst.x, dst.y, dst.width, dst.height, u1, v1, u2, v2, color);
+	const Vector3 d(dst.x, dst.y, 0.0f);
+	draw(d, dst.width, dst.height, u1, v1, u2, v2, color, rotationPoint, rotationAngle, positionIsCenter);
 }
 
 void SpriteBatch::draw(const Vector3& dst, const Rectangle& src, const Vector2& scale, const Vector4& color)
@@ -216,10 +217,10 @@ void SpriteBatch::draw(float x, float y, float z, float width, float height, flo
 
     // Write sprite vertex data.
     static SpriteVertex v[4];
-    SPRITE_ADD_VERTEX(v[0], downLeft.x, downLeft.y, z, u1, v1, color.x, color.y, color.z, color.w);
-    SPRITE_ADD_VERTEX(v[1], upLeft.x, upLeft.y, z, u1, v2, color.x, color.y, color.z, color.w);
-    SPRITE_ADD_VERTEX(v[2], downRight.x, downRight.y, z, u2, v1, color.x, color.y, color.z, color.w);
-    SPRITE_ADD_VERTEX(v[3], upRight.x, upRight.y, z, u2, v2, color.x, color.y, color.z, color.w);
+    SPRITE_ADD_VERTEX(v[0], upLeft.x, upLeft.y, z, u1, v1, color.x, color.y, color.z, color.w);
+    SPRITE_ADD_VERTEX(v[1], downLeft.x, downLeft.y, z, u1, v2, color.x, color.y, color.z, color.w);
+    SPRITE_ADD_VERTEX(v[2], upRight.x, upRight.y, z, u2, v1, color.x, color.y, color.z, color.w);
+    SPRITE_ADD_VERTEX(v[3], downRight.x, downRight.y, z, u2, v2, color.x, color.y, color.z, color.w);
     
     static unsigned short indices[4] = { 0, 1, 2, 3 };
 

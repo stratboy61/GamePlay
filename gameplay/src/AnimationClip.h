@@ -432,10 +432,10 @@ private:
 	bool _synchronized;
 	bool _restart;
 	bool _locomotionClip;
-    
-    // Optimisation with cached value for determine min/max of current clip + index
-	int m_lastmin;
-	int m_lastmax;
+
+	// Optimization with cached value for determine min/max of current clip + index
+	int m_lastMin;
+	int m_lastMax;
 	int m_lastIndex;
 };
 

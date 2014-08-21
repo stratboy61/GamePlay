@@ -103,7 +103,7 @@ public:
      * @param src The source rectangle.
      * @param color The color to tint the sprite. Use white for no tint.
      */
-    void draw(const Rectangle& dst, const Rectangle& src, const Vector4& color = Vector4::one());
+    void draw(const Rectangle& dst, const Rectangle& src, const Vector4& color = Vector4::one(), const Vector2 &rotationPoint = Vector2(0.0f, 0.0f), float rotationAngle = 0.0f, bool positionIsCenter = false);
 
     /**
      * Draws a single sprite.

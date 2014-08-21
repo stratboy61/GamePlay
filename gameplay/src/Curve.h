@@ -1,6 +1,8 @@
 #ifndef CURVE_H_
 #define CURVE_H_
 
+#include <cstdlib>
+
 #include "Ref.h"
 
 namespace gameplay
@@ -382,7 +384,7 @@ public:
      *      disables curve looping.
      * @param dst The evaluated value of the curve at the given time.
      */
-    void evaluate(float time, float startTime, float endTime, float loopBlendTime, float* dst, int* lastmin = 0, int* lastmax = 0, int* lastIndex = 0) const;
+    void evaluate(float time, float startTime, float endTime, float loopBlendTime, float* dst, int *lastMin = NULL, int *lastMax = NULL, int *lastIndex = NULL) const;
 
     /**
      * Linear interpolation function.
@@ -491,7 +493,7 @@ private:
     /**
      * Determines the current keyframe to interpolate from based on the specified time.
      */ 
-    int determineIndex(float time, unsigned int min, unsigned int max, int* lastIndex) const;
+    int determineIndex(float time, unsigned int min, unsigned int max, int *lastIndex = NULL) const;
 
     /**
      * Sets the offset for the beginning of a Quaternion piece of data within the curve's value span at the specified

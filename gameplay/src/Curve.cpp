@@ -148,7 +148,7 @@ void Curve::setPoint(unsigned int index, float time, float* value, Interpolation
 
 void Curve::setPoint(unsigned int index, float time, float* value, InterpolationType type, float* inValue, float* outValue)
 {
-    assert(index < _pointCount && time >= 0.0f && time <= 1.0f && !(_pointCount > 1 && index == 0 && time != 0.0f) && !(_pointCount != 1 && index == _pointCount - 1 && time != 1.0f));
+    assert(index < _pointCount);
 
     _points[index].time = time;
     _points[index].type = type;
@@ -179,12 +179,12 @@ void Curve::setTangent(unsigned int index, InterpolationType type, float* inValu
 void Curve::evaluate(float time, float* dst) const
 {
     assert(dst);
-    evaluate(time, 0.0f, 1.0f, 0.0f, dst);
+	evaluate(time, getStartTime(), getEndTime(), 0.0f, dst);
 }
 
-void Curve::evaluate(float time, float startTime, float endTime, float loopBlendTime, float* dst,  int* lastmin, int* lastmax, int* lastIndex) const
+void Curve::evaluate(float time, float startTime, float endTime, float loopBlendTime, float* dst, int *lastMin, int *lastMax, int *lastIndex) const
 {
-    assert(dst && startTime >= 0.0f && startTime <= endTime && endTime <= 1.0f && loopBlendTime >= 0.0f);
+    assert(dst && startTime <= endTime && loopBlendTime >= 0.0f);
 	
     // If there's only one point on the curve, return its value.
     if (_pointCount == 1)
@@ -196,27 +196,33 @@ void Curve::evaluate(float time, float startTime, float endTime, float loopBlend
     unsigned int min = 0;
     unsigned int max = _pointCount - 1;
 	
-    float localTime = time;
-    if (startTime > 0.0f || endTime < 1.0f)
-    {
-        // Evaluating a sub section of the curve
-        if (lastmin!= NULL && lastmax!= NULL && *lastmin != -1 && (*lastmax) != -1)
-		{
-			min = *lastmin;
-			max = *lastmax;
-		}
-		else
-		{
-			min = determineIndex(startTime, 0, max, 0);
-			max = determineIndex(endTime, min, max, 0);
-		}
+	float localTime = time;
 
-		*lastmin = min;
-		*lastmax = max;
+	// Evaluating a sub section of the curve
+	if (lastMin && lastMax && *lastMin != -1 && *lastMax != -1)
+	{
+		min = *lastMin;
+		max = *lastMax;
+	}
+	else
+	{
+		min = determineIndex(startTime, 0, max);
+		max = determineIndex(endTime, min, max);
+	}
+	if (lastMin && lastMax)
+	{
+		*lastMin = min;
+		*lastMax = max;
+	}
 
-        // Convert time to fall within the subregion
-        localTime = _points[min].time + (_points[max].time - _points[min].time) * time;
-    }
+	// Convert time to fall within the subregion
+	const float duration = _points[max].time - _points[min].time;
+	if (startTime == getStartTime() && endTime == getEndTime())
+	{
+		time -= _points[min].time;
+		time /= duration;
+	}
+	localTime = _points[min].time + duration * time;
 
     if (loopBlendTime == 0.0f)
     {
@@ -269,7 +275,10 @@ void Curve::evaluate(float time, float startTime, float endTime, float loopBlend
     {
         // Locate the points we are interpolating between using a binary search.
        	index = determineIndex(localTime, min, max, lastIndex);
-		*lastIndex = index;
+		if (lastIndex)
+		{
+			*lastIndex = index;
+		}
 
 		from = &_points[index];
         to = &_points[index == max ? index : index+1];
@@ -1233,16 +1242,18 @@ void Curve::interpolateQuaternion(float s, float* from, float* to, float* dst) c
         Quaternion::slerp(to[0], to[1], to[2], to[3], from[0], from[1], from[2], from[3], s, dst, dst + 1, dst + 2, dst + 3);
 }
 
-int Curve::determineIndex(float time, unsigned int min, unsigned int max, int* lastIndex) const
+int Curve::determineIndex(float time, unsigned int min, unsigned int max, int *lastIndex) const
 {
     unsigned int mid;
 
 	// Do a binary search to determine the index.
     do 
     {
-		// check Cached value
-		if (lastIndex != NULL && (*lastIndex)!= -1 && (time >= _points[*lastIndex].time && time < _points[*lastIndex + 1].time))
-            return (*lastIndex);
+		// check cached value
+		if (lastIndex && *lastIndex != -1 && (time >= _points[*lastIndex].time && time < _points[*lastIndex + 1].time))
+		{
+			return *lastIndex;
+		}
 
         mid = (min + max) >> 1;
 

@@ -14,7 +14,7 @@ AnimationClip::AnimationClip(const char* id, Animation* animation, unsigned long
       _stateBits(0x00), _repeatCount(1.0f), _loopBlendTime(0), _activeDuration(_duration * _repeatCount), _speed(1.0f), _timeStarted(0), 
       _elapsedTime(0), _crossFadeToClip(NULL), _crossFadeOutElapsed(0), _crossFadeOutDuration(0), _blendWeight(1.0f), 
       _beginListeners(NULL), _endListeners(NULL), _listeners(NULL), _listenerItr(NULL), _scriptListeners(NULL), _locomotionClip(false),
-	  _synchronized(false), _restart(false)
+	  _synchronized(false), _restart(false), m_lastMin(-1), m_lastMax(-1), m_lastIndex(-1)
 {
     GP_ASSERT(_animation);
     GP_ASSERT(0 <= startTime && startTime <= _animation->_duration && 0 <= endTime && endTime <= _animation->_duration);
@@ -25,8 +25,6 @@ AnimationClip::AnimationClip(const char* id, Animation* animation, unsigned long
         GP_ASSERT(_animation->_channels[i]->getCurve());
         _values.push_back(new AnimationValue(_animation->_channels[i]->getCurve()->getComponentCount()));
     }
-
-	m_lastmin = m_lastmax = m_lastIndex = -1;
 }
 
 AnimationClip::~AnimationClip()
@@ -550,7 +548,7 @@ bool AnimationClip::update(float elapsedTime)
 
         // Evaluate the point on Curve
         GP_ASSERT(channel->getCurve());
-        channel->getCurve()->evaluate(percentComplete, percentageStart, percentageEnd, percentageBlend, value->_value, &m_lastmin, &m_lastmax, &m_lastIndex);
+        channel->getCurve()->evaluate(percentComplete, percentageStart, percentageEnd, percentageBlend, value->_value, &m_lastMin, &m_lastMax, &m_lastIndex);
 
         // Set the animation value on the target property.
         target->setAnimationPropertyValue(channel->_propertyId, value, _blendWeight);
