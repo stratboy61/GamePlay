@@ -146,7 +146,6 @@ void MeshPart::setIndexData(const void* indexData, unsigned int indexStart, unsi
        // _indexData = new int[indexCount];
        // memcpy(_indexData, indexData, indexCount*sizeof(int));
         
-        int value;
         for (unsigned int i = 0; i < indexCount; i++)
         {
             switch (_indexFormat)

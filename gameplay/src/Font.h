@@ -161,7 +161,8 @@ public:
      * @param clip A region to clip text within after applying justification to the viewport area.
      */
     void drawText(const char* text, const Rectangle& area, const Vector4& color, unsigned int size = 0, 
-                  Justify justify = ALIGN_TOP_LEFT, bool wrap = true, bool rightToLeft = false, const Rectangle* clip = NULL);
+                  Justify justify = ALIGN_TOP_LEFT, bool wrap = true, bool rightToLeft = false, const Rectangle* clip = NULL,
+				  const Vector2 &rotationPoint = Vector2(0.0f, 0.0f), float rotationAngle = 0.0f, bool positionIsCenter = false);
 
     /**
      * Draw a string from a precomputed Text object.

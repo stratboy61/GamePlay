@@ -520,7 +520,8 @@ void Font::drawText(const char* text, int x, int y, float red, float green, floa
     drawText(text, x, y, Vector4(red, green, blue, alpha), size, rightToLeft);
 }
 
-void Font::drawText(const char* text, const Rectangle& area, const Vector4& color, unsigned int size, Justify justify, bool wrap, bool rightToLeft, const Rectangle* clip)
+void Font::drawText(const char* text, const Rectangle& area, const Vector4& color, unsigned int size, Justify justify,
+	bool wrap, bool rightToLeft, const Rectangle* clip, const Vector2 &rotationPoint, float rotationAngle, bool positionIsCenter)
 {
     GP_ASSERT(text);
 
@@ -643,7 +644,13 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
                         }
                         else
                         {
-                            _batch->draw(xPos, yPos, g.width * scale, size, g.uvs[0], g.uvs[1], g.uvs[2], g.uvs[3], color);
+							const Vector2 letterBegin(xPos, yPos);
+							const Vector2 letterEnd(letterBegin.x + g.width * scale, letterBegin.y + size);
+							const Vector2 letterSize(letterEnd.x - letterBegin.x, letterEnd.y - letterBegin.y);
+							Vector2 realRotationPoint = gameplay::Vector2(area.x + rotationPoint.x * area.width, area.y + rotationPoint.y * area.height);
+							realRotationPoint -= letterBegin;
+							realRotationPoint = gameplay::Vector2(realRotationPoint.x / letterSize.x, realRotationPoint.y / letterSize.y);
+							_batch->draw(xPos, yPos, 0.0f, g.width * scale, size, g.uvs[0], g.uvs[1], g.uvs[2], g.uvs[3], color, realRotationPoint, rotationAngle, positionIsCenter);
                         }
                     }
                 }
