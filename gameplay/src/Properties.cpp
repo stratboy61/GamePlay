@@ -973,6 +973,45 @@ bool Properties::getPath(const char* name, std::string* path) const
     const char* valueString = getString(name);
     if (valueString)
     {
+        // Malek --- begin
+        bool found = false;
+        size_t len = strlen(valueString);
+        char* ext = (char *)&valueString[len-4];
+        if (valueString[0] != '@' && *ext != '.')
+        {
+            char newPath[512];
+            strncpy(newPath, valueString, len);
+            ext = &newPath[len];
+            *ext = 0;
+            strncat(newPath, ".pvr", 5);
+            if (FileSystem::fileExists(newPath))
+            {
+                found = true;
+            }
+            else {
+                *ext = 0;
+                strncat(newPath, ".png", 5);
+                if (FileSystem::fileExists(newPath))
+                {
+                    found = true;
+                }
+                else {
+                    *ext = 0;
+                    strncat(newPath, ".dds", 5);
+                    if (FileSystem::fileExists(newPath))
+                    {
+                        found = true;
+                    }
+                }
+            }
+            
+            if (found) {
+                path->assign(valueString);
+                return true;
+            }
+        }
+        // Malek --- end
+
         if (FileSystem::fileExists(valueString))
         {
             path->assign(valueString);

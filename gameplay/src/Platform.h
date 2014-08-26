@@ -313,6 +313,16 @@ public:
     static void setFacebookListener(FacebookListener* fbl) { m_fbListener = fbl; }
     
     /**
+     * MemoryWarningListener (iOS only)
+     */
+    typedef void(*MemoryWarningFunc)();
+    static void setMemoryWarningListener(MemoryWarningFunc func) { m_memoryWarningFunc = func; }
+    static void memoryWarningCallback() {
+        if (m_memoryWarningFunc)
+            m_memoryWarningFunc();
+    }
+    
+    /**
      * Will log in or log out the user. 
      * This will open the facebook app or facebook webpage to let the user enter his credentials out of our app
      */
@@ -361,6 +371,7 @@ public:
 private:
     
     static FacebookListener* m_fbListener;
+    static MemoryWarningFunc m_memoryWarningFunc;
     
     static std::vector<FbFriendInfo>    m_friendsInfo;
     static std::vector<FbBundle>        m_notifications;

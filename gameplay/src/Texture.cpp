@@ -123,6 +123,27 @@ Texture* Texture::create(const char* path, bool generateMipmaps)
             break;
         }
     }
+    // Malek -- begin
+    else
+    {
+        // PowerVR Compressed Texture RGBA.
+        texture = createCompressedPVRTC(path);
+        if (!texture)
+        {
+            // DDS file format (DXT/S3TC) compressed textures
+            texture = createCompressedDDS(path);
+            if (!texture)
+            {
+                Image* image = Image::create(path);
+                if (image)
+                    texture = create(image, generateMipmaps);
+                else
+                    GP_ERROR("Failed to open image file '%s'.", path);
+                SAFE_RELEASE(image);
+            }
+        }
+    }
+    // Malek -- end
 
     if (texture)
     {
@@ -223,10 +244,22 @@ static unsigned int computePVRTCDataSize(int width, int height, int bpp)
 
 Texture* Texture::createCompressedPVRTC(const char* path)
 {
-    std::auto_ptr<Stream> stream(FileSystem::open(path));
+    // Malek -- begin
+    char newPath[512];
+    strncpy(newPath, FileSystem::resolvePath(path), 512);
+    char* ext = strrchr(newPath, '.');
+    if (ext == NULL)
+    {
+        strncat(newPath, ".pvr", 5);
+        if (!FileSystem::fileExists(newPath))
+            return NULL;
+    }
+    // Malek -- end
+    
+    std::auto_ptr<Stream> stream(FileSystem::open(newPath));
     if (stream.get() == NULL || !stream->canRead())
     {
-        GP_ERROR("Failed to load file '%s'.", path);
+        GP_ERROR("Failed to load file '%s'.", newPath);
         return NULL;
     }
 
@@ -265,7 +298,7 @@ Texture* Texture::createCompressedPVRTC(const char* path)
     }
     if (data == NULL)
     {
-        GP_ERROR("Failed to read texture data from PVR file '%s'.", path);
+        GP_ERROR("Failed to read texture data from PVR file '%s'.", newPath);
         return NULL;
     }
     stream->close();
@@ -546,10 +579,22 @@ Texture* Texture::createCompressedDDS(const char* path)
     Texture* texture = NULL;
 
     // Read DDS file.
-    std::auto_ptr<Stream> stream(FileSystem::open(path));
+    // Malek -- begin
+    char newPath[512];
+    strncpy(newPath, FileSystem::resolvePath(path), 512);
+    char* ext = strrchr(newPath, '.');
+    if (ext == NULL)
+    {
+        strncat(newPath, ".dds", 5);
+        if (!FileSystem::fileExists(newPath))
+            return NULL;
+    }
+    // Malek -- end
+    
+    std::auto_ptr<Stream> stream(FileSystem::open(newPath));
     if (stream.get() == NULL || !stream->canRead())
     {
-        GP_ERROR("Failed to open file '%s'.", path);
+        GP_ERROR("Failed to open file '%s'.", newPath);
         return NULL;
     }
 
@@ -557,7 +602,7 @@ Texture* Texture::createCompressedDDS(const char* path)
     char code[4];
     if (stream->read(code, 1, 4) != 4 || strncmp(code, "DDS ", 4) != 0)
     {
-        GP_ERROR("Failed to read DDS file '%s': invalid DDS magic number.", path);
+        GP_ERROR("Failed to read DDS file '%s': invalid DDS magic number.", newPath);
         return NULL;
     }
 
@@ -565,7 +610,7 @@ Texture* Texture::createCompressedDDS(const char* path)
     dds_header header;
     if (stream->read(&header, sizeof(dds_header), 1) != 1)
     {
-        GP_ERROR("Failed to read header for DDS file '%s'.", path);
+        GP_ERROR("Failed to read header for DDS file '%s'.", newPath);
         return NULL;
     }
 
@@ -619,7 +664,7 @@ Texture* Texture::createCompressedDDS(const char* path)
             bytesPerBlock = 16;
             break;
         default:
-            GP_ERROR("Unsupported compressed texture format (%d) for DDS file '%s'.", header.ddspf.dwFourCC, path);
+            GP_ERROR("Unsupported compressed texture format (%d) for DDS file '%s'.", header.ddspf.dwFourCC, newPath);
             SAFE_DELETE_ARRAY(mipLevels);
             return NULL;
         }
@@ -635,7 +680,7 @@ Texture* Texture::createCompressedDDS(const char* path)
 
             if (stream->read(level.data, 1, level.size) != (unsigned int)level.size)
             {
-                GP_ERROR("Failed to load dds compressed texture bytes for texture: %s", path);
+                GP_ERROR("Failed to load dds compressed texture bytes for texture: %s", newPath);
                 
                 // Cleanup mip data.
                 for (unsigned int i = 0; i < header.dwMipMapCount; ++i)
@@ -689,7 +734,7 @@ Texture* Texture::createCompressedDDS(const char* path)
 
         if (format == 0)
         {
-            GP_ERROR("Failed to create texture from uncompressed DDS file '%s': Unsupported color format (must be one of R8G8B8, A8R8G8B8, A8B8G8R8, X8R8G8B8, X8B8G8R8.", path);
+            GP_ERROR("Failed to create texture from uncompressed DDS file '%s': Unsupported color format (must be one of R8G8B8, A8R8G8B8, A8B8G8R8, X8R8G8B8, X8B8G8R8.", newPath);
             SAFE_DELETE_ARRAY(mipLevels);
             return NULL;
         }
@@ -706,7 +751,7 @@ Texture* Texture::createCompressedDDS(const char* path)
 
             if (stream->read(level.data, 1, level.size) != (unsigned int)level.size)
             {
-                GP_ERROR("Failed to load bytes for RGB dds texture: %s", path);
+                GP_ERROR("Failed to load bytes for RGB dds texture: %s", newPath);
 
                 // Cleanup mip data.
                 for (unsigned int i = 0; i < header.dwMipMapCount; ++i)
@@ -760,7 +805,7 @@ Texture* Texture::createCompressedDDS(const char* path)
     else
     {
         // Unsupported.
-        GP_ERROR("Failed to create texture from DDS file '%s': unsupported flags (%d).", path, header.ddspf.dwFlags);
+        GP_ERROR("Failed to create texture from DDS file '%s': unsupported flags (%d).", newPath, header.ddspf.dwFlags);
         SAFE_DELETE_ARRAY(mipLevels);
         return NULL;
     }

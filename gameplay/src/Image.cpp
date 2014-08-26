@@ -17,12 +17,23 @@ static void readStream(png_structp png, png_bytep data, png_size_t length)
 Image* Image::create(const char* path)
 {
     GP_ASSERT(path);
-
+    // Malek -- begin
+    char newPath[512];
+    strncpy(newPath, FileSystem::resolvePath(path), 512);
+    char* ext = strrchr(newPath, '.');
+    if (ext == NULL)
+    {
+        strncat(newPath, ".png", 5);
+        if (!FileSystem::fileExists(newPath))
+            return NULL;
+    }
+    // Malek -- end
+    
     // Open the file.
-    std::auto_ptr<Stream> stream(FileSystem::open(path));
+    std::auto_ptr<Stream> stream(FileSystem::open(newPath));
     if (stream.get() == NULL || !stream->canRead())
     {
-        GP_ERROR("Failed to open image file '%s'.", path);
+        GP_ERROR("Failed to open image file '%s'.", newPath);
         return NULL;
     }
 
@@ -30,7 +41,7 @@ Image* Image::create(const char* path)
     unsigned char sig[8];
     if (stream->read(sig, 1, 8) != 8 || png_sig_cmp(sig, 0, 8) != 0)
     {
-        GP_ERROR("Failed to load file '%s'; not a valid PNG.", path);
+        GP_ERROR("Failed to load file '%s'; not a valid PNG.", newPath);
         return NULL;
     }
 
@@ -38,7 +49,7 @@ Image* Image::create(const char* path)
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (png == NULL)
     {
-        GP_ERROR("Failed to create PNG structure for reading PNG file '%s'.", path);
+        GP_ERROR("Failed to create PNG structure for reading PNG file '%s'.", newPath);
         return NULL;
     }
 
@@ -46,7 +57,7 @@ Image* Image::create(const char* path)
     png_infop info = png_create_info_struct(png);
     if (info == NULL)
     {
-        GP_ERROR("Failed to create PNG info structure for PNG file '%s'.", path);
+        GP_ERROR("Failed to create PNG info structure for PNG file '%s'.", newPath);
         png_destroy_read_struct(&png, NULL, NULL);
         return NULL;
     }
@@ -54,7 +65,7 @@ Image* Image::create(const char* path)
     // Set up error handling (required without using custom error handlers above).
     if (setjmp(png_jmpbuf(png)))
     {
-        GP_ERROR("Failed to set up error handling for reading PNG file '%s'.", path);
+        GP_ERROR("Failed to set up error handling for reading PNG file '%s'.", newPath);
         png_destroy_read_struct(&png, &info, NULL);
         return NULL;
     }
@@ -84,7 +95,7 @@ Image* Image::create(const char* path)
         break;
 
     default:
-        GP_ERROR("Unsupported PNG color type (%d) for image file '%s'.", (int)colorType, path);
+        GP_ERROR("Unsupported PNG color type (%d) for image file '%s'.", (int)colorType, newPath);
         png_destroy_read_struct(&png, &info, NULL);
         return NULL;
     }

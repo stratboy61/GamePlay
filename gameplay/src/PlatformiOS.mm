@@ -16,7 +16,7 @@
 #import <OpenGLES/ES2/glext.h>
 #import <mach/mach_time.h>
 
-#define FACEBOOK_SDK
+//#define FACEBOOK_SDK
 #ifdef FACEBOOK_SDK
 #import <FacebookSDK/FacebookSDK.h>
 #endif
@@ -78,6 +78,7 @@ std::vector<FbFriendInfo>   Platform::m_friendsInfo;
 std::vector<FbBundle>       Platform::m_notifications;
 std::vector<std::string>    Platform::m_permissions;
 FacebookListener*           Platform::m_fbListener = NULL;
+Platform::MemoryWarningFunc Platform::m_memoryWarningFunc = NULL;
 
 double getMachTimeInMilliseconds();
 
@@ -1037,6 +1038,8 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
+    
+    Platform::memoryWarningCallback();
 }
 
 #pragma mark - View lifecycle
