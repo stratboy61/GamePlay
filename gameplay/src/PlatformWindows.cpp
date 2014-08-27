@@ -16,6 +16,8 @@
 
 using gameplay::print;
 
+gameplay::Platform::MemoryWarningFunc gameplay::Platform::m_memoryWarningFunc = NULL;
+
 // Window defaults
 #define DEFAULT_RESOLUTION_X 1024
 #define DEFAULT_RESOLUTION_Y 768
