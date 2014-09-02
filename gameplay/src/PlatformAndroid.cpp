@@ -1553,6 +1553,7 @@ bool Platform::getAndroidExpansionFileStream(const char *filename, std::string &
 }
 
 
+Platform::MemoryWarningFunc	 Platform::m_memoryWarningFunc = NULL;
 FacebookListener*            Platform::m_fbListener = NULL;
 std::vector<FbFriendInfo>    Platform::m_friendsInfo;
 std::vector<FbBundle>        Platform::m_notifications;

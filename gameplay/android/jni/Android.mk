@@ -43,6 +43,8 @@ LOCAL_SRC_FILES := \
     HeightField.cpp \
     Image.cpp \
 	ImageControl.cpp \
+	InAppPurchase.cpp \
+	InAppPurchaseAndroid.cpp \
     Joint.cpp \
     Joystick.cpp \
     Label.cpp \

@@ -110,8 +110,6 @@ public:
      */
     bool targets(AnimationTarget* target) const;
 
-private:
-
     /**
      * Defines a channel which holds the target, target property, curve values, and duration.
      *
@@ -123,6 +121,8 @@ private:
         friend class AnimationClip;
         friend class Animation;
         friend class AnimationTarget;
+	public:
+        Curve* getCurve() const;
 
     private:
 
@@ -131,7 +131,6 @@ private:
         Channel(const Channel&); // Hidden copy constructor.
         ~Channel();
         Channel& operator=(const Channel&); // Hidden copy assignment operator.
-        Curve* getCurve() const;
 
         Animation* _animation;                // Reference to the animation this channel belongs to.
         AnimationTarget* _target;             // The target of this channel.
@@ -140,7 +139,11 @@ private:
         unsigned long _duration;              // The length of the animation (in milliseconds).
     };
 
-    /**
+	const std::vector<Channel*> &getChannels() const {return _channels;} // The channels within this Animation.
+
+private:
+
+	/**
      * Hidden copy constructor.
      */
     Animation(const Animation& copy);

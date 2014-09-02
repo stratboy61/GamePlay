@@ -391,8 +391,6 @@ public:
      */
     static float lerp(float t, float from, float to);
 
-private:
-
     /**
      * Defines a single point within a curve.
      */
@@ -427,7 +425,11 @@ private:
         Point& operator=(const Point&);
     };
 
-    /**
+	const Point* getPoints() const {return _points;} // The points on the curve.
+
+private:
+
+	/**
      * Constructor.
      */
     Curve();
