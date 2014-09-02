@@ -391,6 +391,9 @@ public:
      * @script{ignore}
      */
     bool getPath(const char* name, std::string* path) const;
+    
+    // Called by resolveInheritance().
+    void mergeWith(Properties* overrides);
 
 private:
     
@@ -420,9 +423,6 @@ private:
 
     // Called after create(); copies info from parents into derived namespaces.
     void resolveInheritance(const char* id = NULL);
-
-    // Called by resolveInheritance().
-    void mergeWith(Properties* overrides);
 
     // Clones the Properties object.
     Properties* clone();
