@@ -87,7 +87,8 @@ static bool androidFileExists(const char* filePath)
 #endif
 
 /** @script{ignore} */
-static std::string __resourcePath("./");
+static std::vector<std::string> m_resourcePathList;
+//static std::string __resourcePath("./");
 static std::map<std::string, std::string> __aliases;
 
 /**
@@ -98,7 +99,7 @@ static std::map<std::string, std::string> __aliases;
  * @param path The path to resolve.
  * @param fullPath The full resolved path. (out param)
  */
-static void getFullPath(const char* path, std::string& fullPath)
+static void getFullPath(const char* path, const std::string &resourceLocation, std::string& fullPath)
 {
     if (FileSystem::isAbsolutePath(path))
     {
@@ -106,7 +107,8 @@ static void getFullPath(const char* path, std::string& fullPath)
     }
     else
     {
-        fullPath.assign(__resourcePath);
+        //fullPath.assign(__resourcePath);
+		fullPath.assign(resourceLocation);
         fullPath += FileSystem::resolvePath(path);
     }
 }
@@ -191,14 +193,31 @@ FileSystem::~FileSystem()
 {
 }
 
+class ResourcePathPredicate
+{
+ public:
+	ResourcePathPredicate(const char *path) : m_path(path) {}
+	bool operator()(const std::string &path) const {
+		return (m_path == path);
+	}
+protected:
+	const std::string m_path;
+};
+
 void FileSystem::setResourcePath(const char* path)
 {
-    __resourcePath = path == NULL ? "" : path;
+	std::vector<std::string>::const_iterator cit = std::find_if(m_resourcePathList.begin(), m_resourcePathList.end(), ResourcePathPredicate(path));
+	if (cit == m_resourcePathList.end()) {
+		GP_WARN("adding %s to resources path.", path);
+		m_resourcePathList.push_back(path == NULL ? "" : path);
+	}
+    //__resourcePath = path == NULL ? "" : path;
 }
 
 const char* FileSystem::getResourcePath()
 {
-    return __resourcePath.c_str();
+	return m_resourcePathList.front().c_str();
+    //return __resourcePath.c_str();
 }
 
 void FileSystem::loadResourceAliases(const char* aliasFilePath)
@@ -345,39 +364,41 @@ bool FileSystem::fileExists(const char* filePath)
         return true;
     }
 #endif
+	bool bFound = false;
+	for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
 
-    std::string fullPath;
-    getFullPath(filePath, fullPath);
-
-    gp_stat_struct s;
-
+		std::string fullPath;
+		getFullPath(filePath, *cit, fullPath);
+		gp_stat_struct s;
 #ifdef WIN32
-    if (!isAbsolutePath(filePath) && stat(fullPath.c_str(), &s) != 0)
-    {
-        fullPath = __resourcePath;
-        fullPath += "../../gameplay/";
-        fullPath += filePath;
-        
-        int result = stat(fullPath.c_str(), &s);
-        if (result != 0)
-        {
-            fullPath = __resourcePath;
-            fullPath += "../gameplay/";
-            fullPath += filePath;
-            return stat(fullPath.c_str(), &s) == 0;
-        }
-    }
-    return true;
-#else
-    return stat(fullPath.c_str(), &s) == 0;
+		if (!isAbsolutePath(filePath) && stat(fullPath.c_str(), &s) != 0)
+		{
+			fullPath = m_resourcePathList.front();
+			fullPath += "../../gameplay/";
+			fullPath += filePath;
+       
+			bFound |= (stat(fullPath.c_str(), &s) == 0);
+			if (!bFound) {
+				fullPath = m_resourcePathList.front();
+				fullPath += "../gameplay/";
+				fullPath += filePath;
+			}
+		}
 #endif
+		bFound |= (stat(fullPath.c_str(), &s) == 0);
+		if (bFound) {
+			break;
+		}
+	}
+    return bFound;
 }
 
 Stream* FileSystem::open(const char* path, size_t mode)
 {
     char modeStr[] = "rb";
-    if ((mode & WRITE) != 0)
+    if ((mode & WRITE) != 0) {
         modeStr[0] = 'w';
+	}
 /*#ifdef __ANDROID__
     if ((mode & WRITE) != 0)
     {
@@ -403,23 +424,36 @@ Stream* FileSystem::open(const char* path, size_t mode)
         return FileStreamAndroid::create(resolvePath(path), modeStr);
     }
 #else*/
-    std::string fullPath;
-    getFullPath(path, fullPath);
+	std::string fullPath = FileSystem::resolvePath(path);
+	if (mode & READ) {
+		bool bFound = false;
+		for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
+			getFullPath(path, *cit, fullPath);
 
-    createFileFromAsset(path);
-
+			gp_stat_struct s;
+			bFound |= (stat(fullPath.c_str(), &s) == 0);
+			if (bFound) {
+				break;
+			}
+		}
+		if (!bFound) {
+			return NULL;
+		}
+	}
 #ifdef WIN32
     gp_stat_struct s;
     if (!isAbsolutePath(path) && stat(fullPath.c_str(), &s) != 0 && (mode & WRITE) == 0)
     {
-        fullPath = __resourcePath;
+        //fullPath = __resourcePath;
+		fullPath = m_resourcePathList.front();
         fullPath += "../../gameplay/";
         fullPath += path;
         
         int result = stat(fullPath.c_str(), &s);
         if (result != 0)
         {
-            fullPath = __resourcePath;
+			//fullPath = __resourcePath;
+			fullPath = m_resourcePathList.front();
             fullPath += "../gameplay/";
             fullPath += path;
             if (stat(fullPath.c_str(), &s) != 0)
@@ -440,23 +474,37 @@ FILE* FileSystem::openFile(const char* filePath, const char* mode)
     GP_ASSERT(mode);
 
     std::string fullPath;
-    getFullPath(filePath, fullPath);
+	bool bFound = false;
+	for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
+		getFullPath(filePath, *cit, fullPath);
 
-    createFileFromAsset(filePath);
+		gp_stat_struct s;
+		bFound |= (stat(fullPath.c_str(), &s) == 0);
+		if (bFound) {
+			break;
+		}
+	}
+	if (!bFound) {
+		return NULL;
+	}
+
+	createFileFromAsset(filePath);
     
     FILE* fp = fopen(fullPath.c_str(), mode);
     
 #ifdef WIN32
     if (fp == NULL && !isAbsolutePath(filePath))
     {
-        fullPath = __resourcePath;
+        //fullPath = __resourcePath;
+		fullPath = m_resourcePathList.front();
         fullPath += "../../gameplay/";
         fullPath += filePath;
         
         fp = fopen(fullPath.c_str(), mode);
         if (!fp)
         {
-            fullPath = __resourcePath;
+		    //fullPath = __resourcePath;
+			fullPath = m_resourcePathList.front();
             fullPath += "../gameplay/";
             fullPath += filePath;
             fp = fopen(fullPath.c_str(), mode);
@@ -522,7 +570,8 @@ void FileSystem::createFileFromAsset(const char* path)
     static std::set<std::string> upToDateAssets;
 
     GP_ASSERT(path);
-    std::string fullPath(__resourcePath);
+    //std::string fullPath(__resourcePath);
+    std::string fullPath(m_resourcePathList.front());
     std::string resolvedPath = FileSystem::resolvePath(path);
     fullPath += resolvedPath;
 
