@@ -21,13 +21,19 @@
 #import <FacebookSDK/FacebookSDK.h>
 #endif
 
-#define UIInterfaceOrientationEnum(x) ([x isEqualToString:@"UIInterfaceOrientationPortrait"]?UIInterfaceOrientationPortrait:                        \
-                                      ([x isEqualToString:@"UIInterfaceOrientationPortraitUpsideDown"]?UIInterfaceOrientationPortraitUpsideDown:    \
-                                      ([x isEqualToString:@"UIInterfaceOrientationLandscapeLeft"]?UIInterfaceOrientationLandscapeLeft:              \
-                                        UIInterfaceOrientationLandscapeRight)))
-#define DeviceOrientedSize(o)         ((o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?                      \
-                                            CGSizeMake([[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale]):  \
-                                            CGSizeMake([[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale]))
+#define UIInterfaceOrientationEnum(x) ([x isEqualToString:@"UIInterfaceOrientationPortrait"]?UIInterfaceOrientationPortrait:			    \
+				      ([x isEqualToString:@"UIInterfaceOrientationPortraitUpsideDown"]?UIInterfaceOrientationPortraitUpsideDown:    \
+				      ([x isEqualToString:@"UIInterfaceOrientationLandscapeLeft"]?UIInterfaceOrientationLandscapeLeft:		    \
+					UIInterfaceOrientationLandscapeRight)))
+#define DeviceOrientedSize(o)	      ( ( ( [[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending ) ? \
+					    ( (o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?			   \
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale]):	\
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale]) )  \
+					: \
+					    ( (o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?			   \
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale]):	\
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale]) )  \
+					) )
 
 using namespace std;
 using namespace gameplay;
@@ -53,13 +59,13 @@ public:
     int x;
     int y;
     bool down;
-    
+
     TouchPoint()
     {
-        hashId = 0;
-        x = 0;
-        y = 0;
-        down = false;
+	hashId = 0;
+	x = 0;
+	y = 0;
+	down = false;
     }
 };
 
@@ -75,9 +81,9 @@ static float __roll;
 
 
 std::vector<FbFriendInfo>   Platform::m_friendsInfo;
-std::vector<FbBundle>       Platform::m_notifications;
+std::vector<FbBundle>	    Platform::m_notifications;
 std::vector<std::string>    Platform::m_permissions;
-FacebookListener*           Platform::m_fbListener = NULL;
+FacebookListener*	    Platform::m_fbListener = NULL;
 Platform::MemoryWarningFunc Platform::m_memoryWarningFunc = NULL;
 
 double getMachTimeInMilliseconds();
@@ -124,7 +130,7 @@ int getUnicode(int key);
     BOOL updating;
     Game* game;
     BOOL oglDiscardSupported;
-    
+
     UITapGestureRecognizer *_tapRecognizer;
     UITapGestureRecognizer *_doubleTapRecognizer;
     UIPinchGestureRecognizer *_pinchRecognizer;
@@ -167,68 +173,68 @@ int getUnicode(int key);
 {
     if ((self = [super initWithFrame:frame]))
     {
-        // A system version of 3.1 or greater is required to use CADisplayLink. 
-        NSString *reqSysVer = @"3.1";
-        NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
-        if ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending)
-        {
-            // Log the system version
-            NSLog(@"System Version: %@", currSysVer);
-        }
-        else
-        {
-            GP_ERROR("Invalid OS Version: %s\n", (currSysVer == NULL?"NULL":[currSysVer cStringUsingEncoding:NSASCIIStringEncoding]));
-            [self release];
-            return nil;
-        }
-        
-        // Check for OS 4.0+ features
-        if ([currSysVer compare:@"4.0" options:NSNumericSearch] != NSOrderedAscending)
-        {
-            oglDiscardSupported = YES;
-        }
-        else
-        {
-            oglDiscardSupported = NO;
-        }
-        
-        // Configure the CAEAGLLayer and setup out the rendering context
-        CGFloat scale = [[UIScreen mainScreen] scale];
-        CAEAGLLayer* layer = (CAEAGLLayer *)self.layer;
-        layer.opaque = TRUE;
-        layer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
-                                   [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking, 
-                                    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
-        self.contentScaleFactor = scale;
-        layer.contentsScale = scale;
-        
-        context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-        if (!context || ![EAGLContext setCurrentContext:context])
-        {
-            GP_ERROR("Failed to make context current.");
-            [self release];
-            return nil;
-        }
+	// A system version of 3.1 or greater is required to use CADisplayLink.
+	NSString *reqSysVer = @"3.1";
+	NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
+	if ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending)
+	{
+	    // Log the system version
+	    NSLog(@"System Version: %@", currSysVer);
+	}
+	else
+	{
+	    GP_ERROR("Invalid OS Version: %s\n", (currSysVer == NULL?"NULL":[currSysVer cStringUsingEncoding:NSASCIIStringEncoding]));
+	    [self release];
+	    return nil;
+	}
 
-        // Initialize Internal Defaults
-        displayLink = nil;
-        updateFramebuffer = YES;
-        defaultFramebuffer = 0;
-        colorRenderbuffer = 0;
-        depthRenderbuffer = 0;
-        stencilRenderbuffer = 0;
-        framebufferWidth = 0;
-        framebufferHeight = 0;
-        multisampleFramebuffer = 0;
-        multisampleRenderbuffer = 0;
-        multisampleDepthbuffer = 0;
-        swapInterval = 1;        
-        updating = FALSE;
-        game = nil;
-        
-        // Set the resource path and initalize the game
-        NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingString:@"/"];
-        FileSystem::setResourcePath([bundlePath fileSystemRepresentation]); 
+	// Check for OS 4.0+ features
+	if ([currSysVer compare:@"4.0" options:NSNumericSearch] != NSOrderedAscending)
+	{
+	    oglDiscardSupported = YES;
+	}
+	else
+	{
+	    oglDiscardSupported = NO;
+	}
+
+	// Configure the CAEAGLLayer and setup out the rendering context
+	CGFloat scale = [[UIScreen mainScreen] scale];
+	CAEAGLLayer* layer = (CAEAGLLayer *)self.layer;
+	layer.opaque = TRUE;
+	layer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+				   [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking,
+				    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
+	self.contentScaleFactor = scale;
+	layer.contentsScale = scale;
+
+	context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+	if (!context || ![EAGLContext setCurrentContext:context])
+	{
+	    GP_ERROR("Failed to make context current.");
+	    [self release];
+	    return nil;
+	}
+
+	// Initialize Internal Defaults
+	displayLink = nil;
+	updateFramebuffer = YES;
+	defaultFramebuffer = 0;
+	colorRenderbuffer = 0;
+	depthRenderbuffer = 0;
+	stencilRenderbuffer = 0;
+	framebufferWidth = 0;
+	framebufferHeight = 0;
+	multisampleFramebuffer = 0;
+	multisampleRenderbuffer = 0;
+	multisampleDepthbuffer = 0;
+	swapInterval = 1;
+	updating = FALSE;
+	game = nil;
+
+	// Set the resource path and initalize the game
+	NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingString:@"/"];
+	FileSystem::setResourcePath([bundlePath fileSystemRepresentation]);
     }
     return self;
 }
@@ -236,18 +242,18 @@ int getUnicode(int key);
 - (void) dealloc
 {
     if (game)
-        game->exit();
+	game->exit();
     [self deleteFramebuffer];
-    
+
     if ([EAGLContext currentContext] == context)
     {
-        [EAGLContext setCurrentContext:nil];
+	[EAGLContext setCurrentContext:nil];
     }
     [context release];
     [super dealloc];
 }
 
-- (BOOL)canBecomeFirstResponder 
+- (BOOL)canBecomeFirstResponder
 {
     // Override so we can control the keyboard
     return YES;
@@ -267,150 +273,150 @@ int getUnicode(int key);
 {
     // iOS Requires all content go to a rendering buffer then it is swapped into the windows rendering surface
     assert(defaultFramebuffer == 0);
-    
+
     // Create the default frame buffer
     GL_ASSERT( glGenFramebuffers(1, &defaultFramebuffer) );
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer) );
-    
+
     // Create a color buffer to attach to the frame buffer
     GL_ASSERT( glGenRenderbuffers(1, &colorRenderbuffer) );
     GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, colorRenderbuffer) );
-    
+
     // Associate render buffer storage with CAEAGLLauyer so that the rendered content is display on our UI layer.
     [context renderbufferStorage:GL_RENDERBUFFER fromDrawable:(CAEAGLLayer *)self.layer];
-    
+
     // Attach the color buffer to our frame buffer
     GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorRenderbuffer) );
-    
+
     // Retrieve framebuffer size
     GL_ASSERT( glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &framebufferWidth) );
     GL_ASSERT( glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &framebufferHeight) );
-    
+
     NSLog(@"width: %d, height: %d", framebufferWidth, framebufferHeight);
-    
+
     // If multisampling is enabled in config, create and setup a multisample buffer
     Properties* config = Game::getInstance()->getConfig()->getNamespace("window", true);
     int samples = config ? config->getInt("samples") : 0;
     if (samples < 0)
-        samples = 0;
+	samples = 0;
     if (samples)
     {
-        // Create multisample framebuffer
-        GL_ASSERT( glGenFramebuffers(1, &multisampleFramebuffer) );
-        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, multisampleFramebuffer) );
-        
-        // Create multisample render and depth buffers
-        GL_ASSERT( glGenRenderbuffers(1, &multisampleRenderbuffer) );
-        GL_ASSERT( glGenRenderbuffers(1, &multisampleDepthbuffer) );
+	// Create multisample framebuffer
+	GL_ASSERT( glGenFramebuffers(1, &multisampleFramebuffer) );
+	GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, multisampleFramebuffer) );
 
-        // Try to find a supported multisample configuration starting with the defined sample count
-        while (samples)
-        {
-            GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, multisampleRenderbuffer) );
-            GL_ASSERT( glRenderbufferStorageMultisampleAPPLE(GL_RENDERBUFFER, samples, GL_RGBA8_OES, framebufferWidth, framebufferHeight) );
-            GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffer) );
+	// Create multisample render and depth buffers
+	GL_ASSERT( glGenRenderbuffers(1, &multisampleRenderbuffer) );
+	GL_ASSERT( glGenRenderbuffers(1, &multisampleDepthbuffer) );
 
-            GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, multisampleDepthbuffer) );
-            GL_ASSERT( glRenderbufferStorageMultisampleAPPLE(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24_OES, framebufferWidth, framebufferHeight) );
-            GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampleDepthbuffer) );
-            
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-                break; // success!
-            
-            NSLog(@"Creation of multisample buffer with samples=%d failed. Attempting to use configuration with samples=%d instead: %x", samples, samples / 2, glCheckFramebufferStatus(GL_FRAMEBUFFER));
-            samples /= 2;
-        }
-        
-        //todo: __multiSampling = samples > 0;
+	// Try to find a supported multisample configuration starting with the defined sample count
+	while (samples)
+	{
+	    GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, multisampleRenderbuffer) );
+	    GL_ASSERT( glRenderbufferStorageMultisampleAPPLE(GL_RENDERBUFFER, samples, GL_RGBA8_OES, framebufferWidth, framebufferHeight) );
+	    GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, multisampleRenderbuffer) );
 
-        // Re-bind the default framebuffer
-        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer) );
-        
-        if (samples == 0)
-        {
-            // Unable to find a valid/supported multisample configuratoin - fallback to no multisampling
-            GL_ASSERT( glDeleteRenderbuffers(1, &multisampleRenderbuffer) );
-            GL_ASSERT( glDeleteRenderbuffers(1, &multisampleDepthbuffer) );
-            GL_ASSERT( glDeleteFramebuffers(1, &multisampleFramebuffer) );
-            multisampleFramebuffer = multisampleRenderbuffer = multisampleDepthbuffer = 0;
-        }
+	    GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, multisampleDepthbuffer) );
+	    GL_ASSERT( glRenderbufferStorageMultisampleAPPLE(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24_OES, framebufferWidth, framebufferHeight) );
+	    GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, multisampleDepthbuffer) );
+
+	    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		break; // success!
+
+	    NSLog(@"Creation of multisample buffer with samples=%d failed. Attempting to use configuration with samples=%d instead: %x", samples, samples / 2, glCheckFramebufferStatus(GL_FRAMEBUFFER));
+	    samples /= 2;
+	}
+
+	//todo: __multiSampling = samples > 0;
+
+	// Re-bind the default framebuffer
+	GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer) );
+
+	if (samples == 0)
+	{
+	    // Unable to find a valid/supported multisample configuratoin - fallback to no multisampling
+	    GL_ASSERT( glDeleteRenderbuffers(1, &multisampleRenderbuffer) );
+	    GL_ASSERT( glDeleteRenderbuffers(1, &multisampleDepthbuffer) );
+	    GL_ASSERT( glDeleteFramebuffers(1, &multisampleFramebuffer) );
+	    multisampleFramebuffer = multisampleRenderbuffer = multisampleDepthbuffer = 0;
+	}
     }
-    
+
     // Create default depth buffer and attach to the frame buffer.
     // Note: If we are using multisample buffers, we can skip depth buffer creation here since we only
     // need the color buffer to resolve to.
     if (multisampleFramebuffer == 0)
     {
-        GL_ASSERT( glGenRenderbuffers(1, &depthRenderbuffer) );
-        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer) );
-        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, /*GL_DEPTH_COMPONENT24_OES*/GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight) );
-        GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer) );
-        GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer) );
-                
+	GL_ASSERT( glGenRenderbuffers(1, &depthRenderbuffer) );
+	GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer) );
+	GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, /*GL_DEPTH_COMPONENT24_OES*/GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight) );
+	GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer) );
+	GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer) );
+
      /*   GL_ASSERT( glGenRenderbuffers(1, &stencilRenderbuffer) );
-        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, stencilRenderbuffer) );
-        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight) );
-        GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilRenderbuffer) );
+	GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, stencilRenderbuffer) );
+	GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebufferWidth, framebufferHeight) );
+	GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilRenderbuffer) );
       */
     }
-    
+
     // Sanity check, ensure that the framebuffer is valid
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        NSLog(@"ERROR: Failed to make complete framebuffer object %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
-        [self deleteFramebuffer];
-        return NO;
+	NSLog(@"ERROR: Failed to make complete framebuffer object %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+	[self deleteFramebuffer];
+	return NO;
     }
-    
+
     // If multisampling is enabled, set the currently bound framebuffer to the multisample buffer
     // since that is the buffer code should be drawing into (and FrameBuffr::initialize will detect
     // and set this bound buffer as the default one during initialization.
     if (multisampleFramebuffer)
-        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, multisampleFramebuffer) );
-    
+	GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, multisampleFramebuffer) );
+
     return YES;
 }
 
 - (void)deleteFramebuffer
 {
-    if (context) 
+    if (context)
     {
-        [EAGLContext setCurrentContext:context];        
-        if (defaultFramebuffer) 
-        {
-            GL_ASSERT( glDeleteFramebuffers(1, &defaultFramebuffer) );
-            defaultFramebuffer = 0;
-        }        
-        if (colorRenderbuffer) 
-        {
-            GL_ASSERT( glDeleteRenderbuffers(1, &colorRenderbuffer) );
-            colorRenderbuffer = 0;
-        }
-        if (depthRenderbuffer) 
-        {
-            GL_ASSERT( glDeleteRenderbuffers(1, &depthRenderbuffer) );
-            depthRenderbuffer = 0;
-        }
-        if (stencilRenderbuffer)
-        {
-            GL_ASSERT( glDeleteRenderbuffers(1, &stencilRenderbuffer) );
-            stencilRenderbuffer = 0;
-        }
-        if (multisampleFramebuffer)
-        {
-            GL_ASSERT( glDeleteFramebuffers(1, &multisampleFramebuffer) );
-            multisampleFramebuffer = 0;
-        }
-        if (multisampleRenderbuffer)
-        {
-            GL_ASSERT( glDeleteRenderbuffers(1, &multisampleRenderbuffer) );
-            multisampleRenderbuffer = 0;
-        }
-        if (multisampleDepthbuffer)
-        {
-            GL_ASSERT( glDeleteRenderbuffers(1, &multisampleDepthbuffer) );
-            multisampleDepthbuffer = 0;
-        }
+	[EAGLContext setCurrentContext:context];
+	if (defaultFramebuffer)
+	{
+	    GL_ASSERT( glDeleteFramebuffers(1, &defaultFramebuffer) );
+	    defaultFramebuffer = 0;
+	}
+	if (colorRenderbuffer)
+	{
+	    GL_ASSERT( glDeleteRenderbuffers(1, &colorRenderbuffer) );
+	    colorRenderbuffer = 0;
+	}
+	if (depthRenderbuffer)
+	{
+	    GL_ASSERT( glDeleteRenderbuffers(1, &depthRenderbuffer) );
+	    depthRenderbuffer = 0;
+	}
+	if (stencilRenderbuffer)
+	{
+	    GL_ASSERT( glDeleteRenderbuffers(1, &stencilRenderbuffer) );
+	    stencilRenderbuffer = 0;
+	}
+	if (multisampleFramebuffer)
+	{
+	    GL_ASSERT( glDeleteFramebuffers(1, &multisampleFramebuffer) );
+	    multisampleFramebuffer = 0;
+	}
+	if (multisampleRenderbuffer)
+	{
+	    GL_ASSERT( glDeleteRenderbuffers(1, &multisampleRenderbuffer) );
+	    multisampleRenderbuffer = 0;
+	}
+	if (multisampleDepthbuffer)
+	{
+	    GL_ASSERT( glDeleteRenderbuffers(1, &multisampleDepthbuffer) );
+	    multisampleDepthbuffer = 0;
+	}
     }
 }
 
@@ -418,16 +424,16 @@ int getUnicode(int key);
 {
     if (interval >= 1)
     {
-        swapInterval = interval;        
-        if (updating)
-        {
-            [self stopUpdating];
-            [self startUpdating];
-        }
+	swapInterval = interval;
+	if (updating)
+	{
+	    [self stopUpdating];
+	    [self startUpdating];
+	}
     }
 }
 
-- (int)swapInterval 
+- (int)swapInterval
 {
     return swapInterval;
 }
@@ -436,45 +442,45 @@ int getUnicode(int key);
 {
     if (context)
     {
-        if (multisampleFramebuffer)
-        {
-            // Multisampling is enabled: resolve the multisample buffer into the default framebuffer
-            GL_ASSERT( glBindFramebuffer(GL_DRAW_FRAMEBUFFER_APPLE, defaultFramebuffer) );
-            GL_ASSERT( glBindFramebuffer(GL_READ_FRAMEBUFFER_APPLE, multisampleFramebuffer) );
-            GL_ASSERT( glResolveMultisampleFramebufferAPPLE() );
-            
-            if (oglDiscardSupported)
-            {
-                // Performance hint that the GL driver can discard the contents of the multisample buffers
-                // since they have now been resolved into the default framebuffer
-                const GLenum discards[]  = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
-                GL_ASSERT( glDiscardFramebufferEXT(GL_READ_FRAMEBUFFER_APPLE, 2, discards) );
-            }
-        }
-        else
-        {
-            if (oglDiscardSupported)
-            {
-                // Performance hint to the GL driver that the depth buffer is no longer required.
-                const GLenum discards[]  = { GL_DEPTH_ATTACHMENT };
-                GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer) );
-                GL_ASSERT( glDiscardFramebufferEXT(GL_FRAMEBUFFER, 1, discards) );
-            }
-        }
-        
-        // Present the color buffer
-        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, colorRenderbuffer) );
-        [context presentRenderbuffer:GL_RENDERBUFFER];
+	if (multisampleFramebuffer)
+	{
+	    // Multisampling is enabled: resolve the multisample buffer into the default framebuffer
+	    GL_ASSERT( glBindFramebuffer(GL_DRAW_FRAMEBUFFER_APPLE, defaultFramebuffer) );
+	    GL_ASSERT( glBindFramebuffer(GL_READ_FRAMEBUFFER_APPLE, multisampleFramebuffer) );
+	    GL_ASSERT( glResolveMultisampleFramebufferAPPLE() );
+
+	    if (oglDiscardSupported)
+	    {
+		// Performance hint that the GL driver can discard the contents of the multisample buffers
+		// since they have now been resolved into the default framebuffer
+		const GLenum discards[]  = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
+		GL_ASSERT( glDiscardFramebufferEXT(GL_READ_FRAMEBUFFER_APPLE, 2, discards) );
+	    }
+	}
+	else
+	{
+	    if (oglDiscardSupported)
+	    {
+		// Performance hint to the GL driver that the depth buffer is no longer required.
+		const GLenum discards[]  = { GL_DEPTH_ATTACHMENT };
+		//GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer) );
+		GL_ASSERT( glDiscardFramebufferEXT(GL_FRAMEBUFFER, 1, discards) );
+	    }
+	}
+
+	// Present the color buffer
+	GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, colorRenderbuffer) );
+	[context presentRenderbuffer:GL_RENDERBUFFER];
     }
 }
 
-- (void)startGame 
+- (void)startGame
 {
     if (game == nil)
     {
-        game = Game::getInstance();
-        __timeStart = getMachTimeInMilliseconds();
-        game->run();
+	game = Game::getInstance();
+	__timeStart = getMachTimeInMilliseconds();
+	game->run();
     }
 }
 
@@ -482,12 +488,12 @@ int getUnicode(int key);
 {
     if (!updating)
     {
-        displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(update:)];
-        [displayLink setFrameInterval:swapInterval];
-        [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        if (game)
-            game->resume();
-        updating = TRUE;
+	displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(update:)];
+	[displayLink setFrameInterval:swapInterval];
+	[displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+	if (game)
+	    game->resume();
+	updating = TRUE;
     }
 }
 
@@ -495,65 +501,65 @@ int getUnicode(int key);
 {
     if (updating)
     {
-        if (game)
-            game->pause();
-        [displayLink invalidate];
-        displayLink = nil;
-        updating = FALSE;
+	if (game)
+	    game->pause();
+	[displayLink invalidate];
+	displayLink = nil;
+	updating = FALSE;
     }
 }
 
 - (void)update:(id)sender
-{   
+{
     if (context != nil)
     {
-        // Ensure our context is current
-        [EAGLContext setCurrentContext:context];
-        
-        // If the framebuffer needs (re)creating, do so
-        if (updateFramebuffer)
-        {
-            updateFramebuffer = NO;
-            [self deleteFramebuffer];
-            [self createFramebuffer];
-            
-            // Start the game after our framebuffer is created for the first time.
-            if (game == nil)
-            {
-                [self startGame];
-                
-                // HACK: Skip the first display update after creating buffers and initializing the game.
-                // If we don't do this, the first frame (which includes any drawing during initialization)
-                // does not make it to the display for some reason.
-                return;
-            }
-        }
+	// Ensure our context is current
+	[EAGLContext setCurrentContext:context];
 
-        // Bind our framebuffer for rendering.
-        // If multisampling is enabled, bind the multisample buffer - otherwise bind the default buffer
-        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, multisampleFramebuffer ? multisampleFramebuffer : defaultFramebuffer) );
-        GL_ASSERT( glViewport(0, 0, framebufferWidth, framebufferHeight) );
-        
-        // Execute a single game frame
-        if (game)
-            game->frame();
-        
-        // Present the contents of the color buffer
-        [self swapBuffers];
+	// If the framebuffer needs (re)creating, do so
+	if (updateFramebuffer)
+	{
+	    updateFramebuffer = NO;
+	    [self deleteFramebuffer];
+	    [self createFramebuffer];
+
+	    // Start the game after our framebuffer is created for the first time.
+	    if (game == nil)
+	    {
+		[self startGame];
+
+		// HACK: Skip the first display update after creating buffers and initializing the game.
+		// If we don't do this, the first frame (which includes any drawing during initialization)
+		// does not make it to the display for some reason.
+		return;
+	    }
+	}
+
+	// Bind our framebuffer for rendering.
+	// If multisampling is enabled, bind the multisample buffer - otherwise bind the default buffer
+	GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, multisampleFramebuffer ? multisampleFramebuffer : defaultFramebuffer) );
+	GL_ASSERT( glViewport(0, 0, framebufferWidth, framebufferHeight) );
+
+	// Execute a single game frame
+	if (game)
+	    game->frame();
+
+	// Present the contents of the color buffer
+	[self swapBuffers];
     }
 }
 
-- (BOOL)showKeyboard 
+- (BOOL)showKeyboard
 {
     return [self becomeFirstResponder];
 }
 
-- (BOOL)dismissKeyboard 
+- (BOOL)dismissKeyboard
 {
     return [self resignFirstResponder];
 }
 
-- (void)insertText:(NSString*)text 
+- (void)insertText:(NSString*)text
 {
     if([text length] == 0) return;
     assert([text length] == 1);
@@ -564,121 +570,121 @@ int getUnicode(int key);
     int character = getUnicode(key);
     if (character)
     {
-        Platform::keyEventInternal(Keyboard::KEY_CHAR, /*character*/c);
+	Platform::keyEventInternal(Keyboard::KEY_CHAR, /*character*/c);
     }
-    
+
     Platform::keyEventInternal(Keyboard::KEY_RELEASE, key);
 }
 
-- (void)deleteBackward 
+- (void)deleteBackward
 {
-    Platform::keyEventInternal(Keyboard::KEY_PRESS, Keyboard::KEY_BACKSPACE);    
+    Platform::keyEventInternal(Keyboard::KEY_PRESS, Keyboard::KEY_BACKSPACE);
     Platform::keyEventInternal(Keyboard::KEY_CHAR, getUnicode(Keyboard::KEY_BACKSPACE));
-    Platform::keyEventInternal(Keyboard::KEY_RELEASE, Keyboard::KEY_BACKSPACE);    
+    Platform::keyEventInternal(Keyboard::KEY_RELEASE, Keyboard::KEY_BACKSPACE);
 }
 
-- (BOOL)hasText 
+- (BOOL)hasText
 {
     return YES;
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event 
+- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event
 {
     unsigned int touchID = 0;
-    for(UITouch* touch in touches) 
+    for(UITouch* touch in touches)
     {
-        CGPoint touchPoint = [touch locationInView:self];
-        if(self.multipleTouchEnabled == YES)
-        {
-            touchID = [touch hash];
-        }
+	CGPoint touchPoint = [touch locationInView:self];
+	if(self.multipleTouchEnabled == YES)
+	{
+	    touchID = [touch hash];
+	}
 
-        // Nested loop efficiency shouldn't be a concern since both loop sizes are small (<= 10)
-        int i = 0;
-        while (i < TOUCH_POINTS_MAX && __touchPoints[i].down)
-        {
-            i++;
-        }
+	// Nested loop efficiency shouldn't be a concern since both loop sizes are small (<= 10)
+	int i = 0;
+	while (i < TOUCH_POINTS_MAX && __touchPoints[i].down)
+	{
+	    i++;
+	}
 
-        if (i < TOUCH_POINTS_MAX)
-        {
-            __touchPoints[i].hashId = touchID;
-            __touchPoints[i].x = touchPoint.x * WINDOW_SCALE;
-            __touchPoints[i].y = touchPoint.y * WINDOW_SCALE;
-            __touchPoints[i].down = true;
+	if (i < TOUCH_POINTS_MAX)
+	{
+	    __touchPoints[i].hashId = touchID;
+	    __touchPoints[i].x = touchPoint.x * WINDOW_SCALE;
+	    __touchPoints[i].y = touchPoint.y * WINDOW_SCALE;
+	    __touchPoints[i].down = true;
 
-            Platform::touchEventInternal(Touch::TOUCH_PRESS, __touchPoints[i].x, __touchPoints[i].y, i);
-        }
-        else
-        {
-            print("touchesBegan: unable to find free element in __touchPoints");
-        }
+	    Platform::touchEventInternal(Touch::TOUCH_PRESS, __touchPoints[i].x, __touchPoints[i].y, i);
+	}
+	else
+	{
+	    print("touchesBegan: unable to find free element in __touchPoints");
+	}
     }
 }
 
-- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event 
+- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event
 {
     unsigned int touchID = 0;
-    for(UITouch* touch in touches) 
+    for(UITouch* touch in touches)
     {
-        CGPoint touchPoint = [touch locationInView:self];
-        if(self.multipleTouchEnabled == YES) 
-            touchID = [touch hash];
+	CGPoint touchPoint = [touch locationInView:self];
+	if(self.multipleTouchEnabled == YES)
+	    touchID = [touch hash];
 
-        // Nested loop efficiency shouldn't be a concern since both loop sizes are small (<= 10)
-        bool found = false;
-        for (int i = 0; !found && i < TOUCH_POINTS_MAX; i++)
-        {
-            if (__touchPoints[i].down && __touchPoints[i].hashId == touchID)
-            {
-                __touchPoints[i].down = false;
-                Platform::touchEventInternal(Touch::TOUCH_RELEASE, touchPoint.x * WINDOW_SCALE, touchPoint.y * WINDOW_SCALE, i);
-                found = true;
-            }
-        }
-        
-        if (!found)
-        {
-            // It seems possible to receive an ID not in the array.
-            // The best we can do is clear the whole array.
-            for (int i = 0; i < TOUCH_POINTS_MAX; i++)
-            {
-                if (__touchPoints[i].down)
-                {
-                    __touchPoints[i].down = false;
-                    Platform::touchEventInternal(Touch::TOUCH_RELEASE, __touchPoints[i].x, __touchPoints[i].y, i);
-                }
-            }
-        }
+	// Nested loop efficiency shouldn't be a concern since both loop sizes are small (<= 10)
+	bool found = false;
+	for (int i = 0; !found && i < TOUCH_POINTS_MAX; i++)
+	{
+	    if (__touchPoints[i].down && __touchPoints[i].hashId == touchID)
+	    {
+		__touchPoints[i].down = false;
+		Platform::touchEventInternal(Touch::TOUCH_RELEASE, touchPoint.x * WINDOW_SCALE, touchPoint.y * WINDOW_SCALE, i);
+		found = true;
+	    }
+	}
+
+	if (!found)
+	{
+	    // It seems possible to receive an ID not in the array.
+	    // The best we can do is clear the whole array.
+	    for (int i = 0; i < TOUCH_POINTS_MAX; i++)
+	    {
+		if (__touchPoints[i].down)
+		{
+		    __touchPoints[i].down = false;
+		    Platform::touchEventInternal(Touch::TOUCH_RELEASE, __touchPoints[i].x, __touchPoints[i].y, i);
+		}
+	    }
+	}
     }
 }
 
-- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event 
+- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event
 {
     // No equivalent for this in GamePlay -- treat as touch end
     [self touchesEnded:touches withEvent:event];
 }
 
-- (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event 
+- (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event
 {
     unsigned int touchID = 0;
-    for(UITouch* touch in touches) 
+    for(UITouch* touch in touches)
     {
-        CGPoint touchPoint = [touch locationInView:self];
-        if(self.multipleTouchEnabled == YES) 
-            touchID = [touch hash];
+	CGPoint touchPoint = [touch locationInView:self];
+	if(self.multipleTouchEnabled == YES)
+	    touchID = [touch hash];
 
-        // Nested loop efficiency shouldn't be a concern since both loop sizes are small (<= 10)
-        for (int i = 0; i < TOUCH_POINTS_MAX; i++)
-        {
-            if (__touchPoints[i].down && __touchPoints[i].hashId == touchID)
-            {
-                __touchPoints[i].x = touchPoint.x * WINDOW_SCALE;
-                __touchPoints[i].y = touchPoint.y * WINDOW_SCALE;
-                Platform::touchEventInternal(Touch::TOUCH_MOVE, __touchPoints[i].x, __touchPoints[i].y, i);
-                break;
-            }
-        }
+	// Nested loop efficiency shouldn't be a concern since both loop sizes are small (<= 10)
+	for (int i = 0; i < TOUCH_POINTS_MAX; i++)
+	{
+	    if (__touchPoints[i].down && __touchPoints[i].hashId == touchID)
+	    {
+		__touchPoints[i].x = touchPoint.x * WINDOW_SCALE;
+		__touchPoints[i].y = touchPoint.y * WINDOW_SCALE;
+		Platform::touchEventInternal(Touch::TOUCH_MOVE, __touchPoints[i].x, __touchPoints[i].y, i);
+		break;
+	    }
+	}
     }
 }
 
@@ -686,16 +692,16 @@ int getUnicode(int key);
 - (bool)isGestureRegistered: (Gesture::GestureEvent) evt
 {
     switch(evt) {
-        case Gesture::GESTURE_SWIPE:
-            return (_swipeRightRecognizer != NULL);
-        case Gesture::GESTURE_PINCH:
-            return (_pinchRecognizer != NULL);
-        case Gesture::GESTURE_TAP:
-            return (_tapRecognizer != NULL);
-        case Gesture::GESTURE_DOUBLETAP:
-            return (_doubleTapRecognizer != NULL);
-        default:
-            break;
+	case Gesture::GESTURE_SWIPE:
+	    return (_swipeRightRecognizer != NULL);
+	case Gesture::GESTURE_PINCH:
+	    return (_pinchRecognizer != NULL);
+	case Gesture::GESTURE_TAP:
+	    return (_tapRecognizer != NULL);
+	case Gesture::GESTURE_DOUBLETAP:
+	    return (_doubleTapRecognizer != NULL);
+	default:
+	    break;
     }
     return false;
 }
@@ -704,40 +710,40 @@ int getUnicode(int key);
 {
     if((evt & Gesture::GESTURE_SWIPE) == Gesture::GESTURE_SWIPE  && _swipeDownRecognizer == NULL && _swipeUpRecognizer == NULL && _swipeRightRecognizer == NULL && _swipeLeftRecognizer == NULL)
     {
-        // right swipe (default)
-        _swipeRightRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        [self addGestureRecognizer:_swipeRightRecognizer];
-        
-        // left swipe
-        _swipeLeftRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        _swipeLeftRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
-        [self addGestureRecognizer:_swipeLeftRecognizer];
-        
-        // up swipe
-        _swipeUpRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        _swipeUpRecognizer.direction = UISwipeGestureRecognizerDirectionUp;
-        [self addGestureRecognizer:_swipeUpRecognizer];
-        
-        // down swipe
-        _swipeDownRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
-        _swipeDownRecognizer.direction = UISwipeGestureRecognizerDirectionDown;
-        [self addGestureRecognizer:_swipeDownRecognizer];
+	// right swipe (default)
+	_swipeRightRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+	[self addGestureRecognizer:_swipeRightRecognizer];
+
+	// left swipe
+	_swipeLeftRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+	_swipeLeftRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
+	[self addGestureRecognizer:_swipeLeftRecognizer];
+
+	// up swipe
+	_swipeUpRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+	_swipeUpRecognizer.direction = UISwipeGestureRecognizerDirectionUp;
+	[self addGestureRecognizer:_swipeUpRecognizer];
+
+	// down swipe
+	_swipeDownRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipeGesture:)];
+	_swipeDownRecognizer.direction = UISwipeGestureRecognizerDirectionDown;
+	[self addGestureRecognizer:_swipeDownRecognizer];
     }
     if((evt & Gesture::GESTURE_PINCH) == Gesture::GESTURE_PINCH && _pinchRecognizer == NULL)
     {
-        _pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchGesture:)];
-        [self addGestureRecognizer:_pinchRecognizer];
+	_pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchGesture:)];
+	[self addGestureRecognizer:_pinchRecognizer];
     }
     if((evt & Gesture::GESTURE_TAP) == Gesture::GESTURE_TAP && _tapRecognizer == NULL)
     {
-        _tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
-        [self addGestureRecognizer:_tapRecognizer];
+	_tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+	[self addGestureRecognizer:_tapRecognizer];
     }
     if((evt & Gesture::GESTURE_DOUBLETAP) == Gesture::GESTURE_DOUBLETAP && _doubleTapRecognizer == NULL)
     {
-        _doubleTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
-        _doubleTapRecognizer.numberOfTapsRequired = 2;
-        [self addGestureRecognizer:_doubleTapRecognizer];
+	_doubleTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+	_doubleTapRecognizer.numberOfTapsRequired = 2;
+	[self addGestureRecognizer:_doubleTapRecognizer];
     }
 }
 
@@ -745,33 +751,33 @@ int getUnicode(int key);
 {
     if((evt & Gesture::GESTURE_SWIPE) == Gesture::GESTURE_SWIPE && _swipeRightRecognizer != NULL&& _swipeDownRecognizer != NULL && _swipeLeftRecognizer != NULL && _swipeUpRecognizer != NULL)
     {
-        [self removeGestureRecognizer:_swipeRightRecognizer];
-        [_swipeRightRecognizer release];
-        _swipeRightRecognizer = NULL;
-        
-        [self removeGestureRecognizer:_swipeLeftRecognizer];
-        [_swipeLeftRecognizer release];
-        _swipeLeftRecognizer = NULL;
-        
-        [self removeGestureRecognizer:_swipeUpRecognizer];
-        [_swipeUpRecognizer release];
-        _swipeUpRecognizer = NULL;
-        
-        [self removeGestureRecognizer:_swipeDownRecognizer];
-        [_swipeDownRecognizer release];
-        _swipeDownRecognizer = NULL;
+	[self removeGestureRecognizer:_swipeRightRecognizer];
+	[_swipeRightRecognizer release];
+	_swipeRightRecognizer = NULL;
+
+	[self removeGestureRecognizer:_swipeLeftRecognizer];
+	[_swipeLeftRecognizer release];
+	_swipeLeftRecognizer = NULL;
+
+	[self removeGestureRecognizer:_swipeUpRecognizer];
+	[_swipeUpRecognizer release];
+	_swipeUpRecognizer = NULL;
+
+	[self removeGestureRecognizer:_swipeDownRecognizer];
+	[_swipeDownRecognizer release];
+	_swipeDownRecognizer = NULL;
     }
     if((evt & Gesture::GESTURE_PINCH) == Gesture::GESTURE_PINCH && _pinchRecognizer != NULL)
     {
-        [self removeGestureRecognizer:_pinchRecognizer];
-        [_pinchRecognizer release];
-        _pinchRecognizer = NULL;
+	[self removeGestureRecognizer:_pinchRecognizer];
+	[_pinchRecognizer release];
+	_pinchRecognizer = NULL;
     }
     if((evt & Gesture::GESTURE_TAP) == Gesture::GESTURE_TAP && _tapRecognizer != NULL)
     {
-        [self removeGestureRecognizer:_tapRecognizer];
-        [_tapRecognizer release];
-        _tapRecognizer = NULL;
+	[self removeGestureRecognizer:_tapRecognizer];
+	[_tapRecognizer release];
+	_tapRecognizer = NULL;
     }
 }
 
@@ -779,7 +785,7 @@ int getUnicode(int key);
 {
     CGPoint location = [sender locationInView:self];
     if (sender.state == UIGestureRecognizerStateRecognized) {
-        gameplay::Platform::gestureDoubleTapEventInternal(location.x,location.y);
+	gameplay::Platform::gestureDoubleTapEventInternal(location.x,location.y);
     }
     //gameplay::Platform::gestureTapEventInternal(location.x, location.y);
 }
@@ -797,22 +803,22 @@ int getUnicode(int key);
     CGPoint location = [sender locationInView:self];
     int gameplayDirection = 0;
     switch(direction) {
-        case UISwipeGestureRecognizerDirectionRight:
-            gameplayDirection = Gesture::SWIPE_DIRECTION_RIGHT;
-            break;
-        case UISwipeGestureRecognizerDirectionLeft:
-            gameplayDirection = Gesture::SWIPE_DIRECTION_LEFT;
-            break;
-        case UISwipeGestureRecognizerDirectionUp:
-            gameplayDirection = Gesture::SWIPE_DIRECTION_UP;
-            break;
-        case UISwipeGestureRecognizerDirectionDown:
-            gameplayDirection = Gesture::SWIPE_DIRECTION_DOWN;
-            break;
+	case UISwipeGestureRecognizerDirectionRight:
+	    gameplayDirection = Gesture::SWIPE_DIRECTION_RIGHT;
+	    break;
+	case UISwipeGestureRecognizerDirectionLeft:
+	    gameplayDirection = Gesture::SWIPE_DIRECTION_LEFT;
+	    break;
+	case UISwipeGestureRecognizerDirectionUp:
+	    gameplayDirection = Gesture::SWIPE_DIRECTION_UP;
+	    break;
+	case UISwipeGestureRecognizerDirectionDown:
+	    gameplayDirection = Gesture::SWIPE_DIRECTION_DOWN;
+	    break;
     }
     if([self isGestureRegistered:Gesture::GESTURE_SWIPE])
     {
-        gameplay::Platform::gestureSwipeEventInternal(location.x, location.y, gameplayDirection);
+	gameplay::Platform::gestureSwipeEventInternal(location.x, location.y, gameplayDirection);
     }
 }
 
@@ -823,7 +829,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
 {
     if(Platform::getFbListener())
     {
-        Platform::getFbListener()->onFacebookEvent(event, message);
+	Platform::getFbListener()->onFacebookEvent(event, message);
     }
 }
 
@@ -851,10 +857,10 @@ static void safeSendMessage(const std::string& event, const std::string& message
     NSArray *pairs = [query componentsSeparatedByString:@"&"];
     NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
     for (NSString *pair in pairs) {
-        NSArray *kv = [pair componentsSeparatedByString:@"="];
-        NSString *val =
-        [kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-        params[kv[0]] = val;
+	NSArray *kv = [pair componentsSeparatedByString:@"="];
+	NSString *val =
+	[kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+	params[kv[0]] = val;
     }
     return params;
 }
@@ -862,40 +868,40 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)perfomFbLoginButtonClick {
     // get the app delegate so that we can access the session property
     AppDelegate *appDelegate = __appDelegate;
-    
+
 #ifdef FACEBOOK_SDK
     // this button's job is to flip-flop the session from open to closed
     if (appDelegate.session.isOpen) {
-        // if a user logs out explicitly, we delete any cached token information, and next
-        // time they run the applicaiton they will be presented with log in UX again; most
-        // users will simply close the app or switch away, without logging out; this will
-        // cause the implicit cached-token login to occur on next launch of the application
-        [appDelegate.session closeAndClearTokenInformation];
-        
+	// if a user logs out explicitly, we delete any cached token information, and next
+	// time they run the applicaiton they will be presented with log in UX again; most
+	// users will simply close the app or switch away, without logging out; this will
+	// cause the implicit cached-token login to occur on next launch of the application
+	[appDelegate.session closeAndClearTokenInformation];
+
     } else {
-        if (appDelegate.session.state != FBSessionStateCreated) {
-            // Create a new, logged out session.
-            appDelegate.session = [[FBSession alloc] init];
-        }
-        
-        [self openSession];
+	if (appDelegate.session.state != FBSessionStateCreated) {
+	    // Create a new, logged out session.
+	    appDelegate.session = [[FBSession alloc] init];
+	}
+
+	[self openSession];
     }
 #endif
 }
 
 #ifdef FACEBOOK_SDK
 - (void) openSession {
-    
+
     AppDelegate *appDelegate = __appDelegate;
-    
+
     [FBSession setActiveSession:appDelegate.session];
-    
+
     // if the session isn't open, let's open it now and present the login UX to the user
     [appDelegate.session openWithCompletionHandler:^(FBSession *session,
-                                                     FBSessionState state,
-                                                     NSError *error) {
-        // and here we make sure to update our UX according to the new session state
-        [self sessionStateChanged:session state:state error:error];
+						     FBSessionState state,
+						     NSError *error) {
+	// and here we make sure to update our UX according to the new session state
+	[self sessionStateChanged:session state:state error:error];
 
     }];
 }
@@ -903,22 +909,22 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-    
- 
+
+
     AppDelegate *appDelegate = __appDelegate;
     if (!appDelegate.session.isOpen) {
-        // create a fresh session object
-        appDelegate.session = [[FBSession alloc] init];
-        
-        // if we don't have a cached token, a call to open here would cause UX for login to
-        // occur; we don't want that to happen unless the user clicks the login button, and so
-        // we check here to make sure we have a token before calling open
-        if (appDelegate.session.state == FBSessionStateCreatedTokenLoaded) {
-            
-            [self openSession];
-        }
+	// create a fresh session object
+	appDelegate.session = [[FBSession alloc] init];
+
+	// if we don't have a cached token, a call to open here would cause UX for login to
+	// occur; we don't want that to happen unless the user clicks the login button, and so
+	// we check here to make sure we have a token before calling open
+	if (appDelegate.session.state == FBSessionStateCreatedTokenLoaded) {
+
+	    [self openSession];
+	}
     }
- 
+
 }
 
 - (void)userLoggedIn{
@@ -931,55 +937,55 @@ static void safeSendMessage(const std::string& event, const std::string& message
     // If the session was opened successfully
     if (!error && state == FBSessionStateOpen){
 
-        // Show the user the logged-in UI
-        [self userLoggedIn];
-        safeSendMessage(SESSION_STATE_CHANGED, "Session opened");
-        return;
+	// Show the user the logged-in UI
+	[self userLoggedIn];
+	safeSendMessage(SESSION_STATE_CHANGED, "Session opened");
+	return;
     }
     if (state == FBSessionStateClosed || state == FBSessionStateClosedLoginFailed){
-        // If the session is closed
+	// If the session is closed
 
-        safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
+	safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
 
     }
-    
+
     // Handle errors
     if (error){
-        std::string message;
-        NSString *alertText;
-        NSString *alertTitle;
-        // If the error requires people using an app to make an action outside of the app in order to recover
-        if ([FBErrorUtility shouldNotifyUserForError:error] == YES){
-            message = "Something went wrong. ";
-            message += [[FBErrorUtility userMessageForError:error] UTF8String];
-        } else {
-            
-            // If the user cancelled login, do nothing
-            if ([FBErrorUtility errorCategoryForError:error] == FBErrorCategoryUserCancelled) {
-                message = "User cancelled login";
-                
-                // Handle session closures that happen outside of the app
-            } else if ([FBErrorUtility errorCategoryForError:error] == FBErrorCategoryAuthenticationReopenSession){
-                message = "Session Error. ";
-                message += "Your current session is no longer valid. Please log in again.";
-                
-                // Here we will handle all other errors with a generic error message.
-                // We recommend you check our Handling Errors guide for more information
-                // https://developers.facebook.com/docs/ios/errors/
-            } else {
-                //Get more error information from the error
-                NSDictionary *errorInformation = [[[error.userInfo objectForKey:@"com.facebook.sdk:ParsedJSONResponseKey"] objectForKey:@"body"] objectForKey:@"error"];
-                
-                // Show the user an error message
-                  message = "Something went wrong. ";
-                message += [[NSString stringWithFormat:@"Please retry. \n\n If the problem persists contact us and mention this error code: %@", [errorInformation objectForKey:@"message"]] UTF8String];
-            }
-        }
-        // Clear this token
-        [FBSession.activeSession closeAndClearTokenInformation];
-        
-        safeSendMessage(FACEBOOK_ERROR, message);
-        safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
+	std::string message;
+	NSString *alertText;
+	NSString *alertTitle;
+	// If the error requires people using an app to make an action outside of the app in order to recover
+	if ([FBErrorUtility shouldNotifyUserForError:error] == YES){
+	    message = "Something went wrong. ";
+	    message += [[FBErrorUtility userMessageForError:error] UTF8String];
+	} else {
+
+	    // If the user cancelled login, do nothing
+	    if ([FBErrorUtility errorCategoryForError:error] == FBErrorCategoryUserCancelled) {
+		message = "User cancelled login";
+
+		// Handle session closures that happen outside of the app
+	    } else if ([FBErrorUtility errorCategoryForError:error] == FBErrorCategoryAuthenticationReopenSession){
+		message = "Session Error. ";
+		message += "Your current session is no longer valid. Please log in again.";
+
+		// Here we will handle all other errors with a generic error message.
+		// We recommend you check our Handling Errors guide for more information
+		// https://developers.facebook.com/docs/ios/errors/
+	    } else {
+		//Get more error information from the error
+		NSDictionary *errorInformation = [[[error.userInfo objectForKey:@"com.facebook.sdk:ParsedJSONResponseKey"] objectForKey:@"body"] objectForKey:@"error"];
+
+		// Show the user an error message
+		  message = "Something went wrong. ";
+		message += [[NSString stringWithFormat:@"Please retry. \n\n If the problem persists contact us and mention this error code: %@", [errorInformation objectForKey:@"message"]] UTF8String];
+	    }
+	}
+	// Clear this token
+	[FBSession.activeSession closeAndClearTokenInformation];
+
+	safeSendMessage(FACEBOOK_ERROR, message);
+	safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
     }
 }
 
@@ -988,7 +994,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
     Platform::getPermissions().clear();
     for(NSString* permission in FBSession.activeSession.permissions)
     {
-        Platform::getPermissions().push_back(std::string([permission UTF8String]));
+	Platform::getPermissions().push_back(std::string([permission UTF8String]));
     }
 }
 
@@ -999,20 +1005,20 @@ static void safeSendMessage(const std::string& event, const std::string& message
      startWithCompletionHandler:
      ^(FBRequestConnection *connection, NSDictionary<FBGraphUser> *result, NSError *error)
      {
-         // Did everything come back okay with no errors?
-         if (!error && result) {
-             // If so we can extract out the player's Facebook ID and first name
-             self.mUserName = [[NSString alloc] initWithString:result.first_name];
-             self.mUserID = [[NSString alloc] initWithString:result.objectID];
-   
-         }
-         else
-         {
-             NSLog(@"%@",[error localizedDescription]);
-         }
-         
+	 // Did everything come back okay with no errors?
+	 if (!error && result) {
+	     // If so we can extract out the player's Facebook ID and first name
+	     self.mUserName = [[NSString alloc] initWithString:result.first_name];
+	     self.mUserID = [[NSString alloc] initWithString:result.objectID];
+
+	 }
+	 else
+	 {
+	     NSLog(@"%@",[error localizedDescription]);
+	 }
+
      }];
-    
+
     [self FetchUserPermissions];
 }
 
@@ -1029,7 +1035,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
     return self;
 }
 
-- (void)dealloc 
+- (void)dealloc
 {
     __view = nil;
     [super dealloc];
@@ -1038,7 +1044,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
-    
+
     Platform::memoryWarningCallback();
 }
 
@@ -1046,46 +1052,65 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)loadView
 {
     self.view = [[[View alloc] init] autorelease];
-    if(__view == nil) 
+    if(__view == nil)
     {
-        __view = (View*)self.view;
+	__view = (View*)self.view;
     }
 }
+/*
+- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation
+{
+    return UIInterfaceOrientationLandscapeRight;
+}
 
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+{
+
+}
+
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+}
+
+- (UIInterfaceOrientation)interfaceOrientation
+{
+    return UIInterfaceOrientationLandscapeRight;
+}
+*/
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     // Fetch the supported orientations array
     NSArray *supportedOrientations = NULL;
-    if([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) 
+    if([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad)
     {
-        supportedOrientations = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UISupportedInterfaceOrientations~ipad"];    
+	supportedOrientations = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UISupportedInterfaceOrientations~ipad"];
     }
-    else if([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) 
-    { 
-        supportedOrientations = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UISupportedInterfaceOrientations~iphone"];
-    }
-    
-    if(supportedOrientations == NULL) 
+    else if([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone)
     {
-       supportedOrientations = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UISupportedInterfaceOrientations"]; 
+	supportedOrientations = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UISupportedInterfaceOrientations~iphone"];
+    }
+
+    if(supportedOrientations == NULL)
+    {
+       supportedOrientations = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UISupportedInterfaceOrientations"];
     }
 
     // If no supported orientations default to v1.0 handling (landscape only)
     if(supportedOrientations == nil) {
-        return UIInterfaceOrientationIsLandscape(interfaceOrientation);
+	return UIInterfaceOrientationIsLandscape(interfaceOrientation);
     }
     for(NSString *s in supportedOrientations) {
-        if(interfaceOrientation == UIInterfaceOrientationEnum(s)) return YES;
-    }    
+	if(interfaceOrientation == UIInterfaceOrientationEnum(s)) return YES;
+    }
     return NO;
 }
 
-- (void)startUpdating 
+- (void)startUpdating
 {
     [(View*)self.view startUpdating];
 }
 
-- (void)stopUpdating 
+- (void)stopUpdating
 {
     [(View*)self.view stopUpdating];
 }
@@ -1108,7 +1133,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
 {
     if (motion == UIEventSubtypeMotionShake)
     {
-        gameplay::Game::getInstance()->deviceShakenEvent();
+	gameplay::Game::getInstance()->deviceShakenEvent();
     }
 }
 
@@ -1129,10 +1154,10 @@ static void safeSendMessage(const std::string& event, const std::string& message
     NSArray *pairs = [query componentsSeparatedByString:@"&"];
     NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
     for (NSString *pair in pairs) {
-        NSArray *kv = [pair componentsSeparatedByString:@"="];
-        NSString *val =
-        [kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-        params[kv[0]] = val;
+	NSArray *kv = [pair componentsSeparatedByString:@"="];
+	NSString *val =
+	[kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+	params[kv[0]] = val;
     }
     return params;
 }
@@ -1145,81 +1170,81 @@ static void safeSendMessage(const std::string& event, const std::string& message
 
 - (void) notificationGet:(NSString *)requestid {
     [FBRequestConnection startWithGraphPath:requestid
-                          completionHandler:^(FBRequestConnection *connection,
-                                              id result,
-                                              NSError *error) {
-                              if (!error) {
-                                  
-                                      FbBundle bundle;
-                                      bundle.addPair(std::string([result[@"from"][@"name"] UTF8String]), "from_name");
-                                      bundle.addPair(std::string([result[@"from"][@"id"] UTF8String]), "from_id");
-                                      bundle.addPair(std::string([result[@"id"] UTF8String]), "request_id");
-                                      bundle.addPair(std::string([result[@"message"] UTF8String]), "message");
-                                      
-                                      if(result[@"data"])
-                                      {
-                                         bundle.addPair(std::string([result[@"data"] UTF8String]), "data");
-                                      }
-                                    
-                                      Platform::getNotifications().push_back(bundle);
-                                  if(Platform::getFbListener())
-                                  {
-                                      Platform::getFbListener()->onFacebookEvent(INCOMING_NOTIFICATION);
-                                  }
-                                  
+			  completionHandler:^(FBRequestConnection *connection,
+					      id result,
+					      NSError *error) {
+			      if (!error) {
 
-                              }
-                          }];
+				      FbBundle bundle;
+				      bundle.addPair(std::string([result[@"from"][@"name"] UTF8String]), "from_name");
+				      bundle.addPair(std::string([result[@"from"][@"id"] UTF8String]), "from_id");
+				      bundle.addPair(std::string([result[@"id"] UTF8String]), "request_id");
+				      bundle.addPair(std::string([result[@"message"] UTF8String]), "message");
+
+				      if(result[@"data"])
+				      {
+					 bundle.addPair(std::string([result[@"data"] UTF8String]), "data");
+				      }
+
+				      Platform::getNotifications().push_back(bundle);
+				  if(Platform::getFbListener())
+				  {
+				      Platform::getFbListener()->onFacebookEvent(INCOMING_NOTIFICATION);
+				  }
+
+
+			      }
+			  }];
 }
 
 - (void) handleAppLinkData:(FBAppLinkData *)appLinkData {
     NSString *targetURLString = appLinkData.originalQueryParameters[@"target_url"];
     if (targetURLString) {
-        NSURL *targetURL = [NSURL URLWithString:targetURLString];
-        NSDictionary *targetParams = [self parseURLParams:[targetURL query]];
-        NSString *ref = [targetParams valueForKey:@"ref"];
-        // Check for the ref parameter to check if this is one of
-        // our incoming news feed link, otherwise it can be an
-        // an attribution link
-        if ([ref isEqualToString:@"notif"]) {
-            // Get the request id
-            NSString *requestIDParam = targetParams[@"request_ids"];
-            NSArray *requestIDs = [requestIDParam
-                                   componentsSeparatedByString:@","];
-            
-            for(id element in requestIDs)
-            {
-                [self notificationGet:element];
-            }
-            
-            
-        }
+	NSURL *targetURL = [NSURL URLWithString:targetURLString];
+	NSDictionary *targetParams = [self parseURLParams:[targetURL query]];
+	NSString *ref = [targetParams valueForKey:@"ref"];
+	// Check for the ref parameter to check if this is one of
+	// our incoming news feed link, otherwise it can be an
+	// an attribution link
+	if ([ref isEqualToString:@"notif"]) {
+	    // Get the request id
+	    NSString *requestIDParam = targetParams[@"request_ids"];
+	    NSArray *requestIDs = [requestIDParam
+				   componentsSeparatedByString:@","];
+
+	    for(id element in requestIDs)
+	    {
+		[self notificationGet:element];
+	    }
+
+
+	}
     }
 }
 
 - (BOOL)application:(UIApplication *)application
-            openURL:(NSURL *)url
+	    openURL:(NSURL *)url
   sourceApplication:(NSString *)sourceApplication
-         annotation:(id)annotation {
+	 annotation:(id)annotation {
     // attempt to extract a token from the url
     return [FBAppCall handleOpenURL:url
-                  sourceApplication:sourceApplication
-                    fallbackHandler:^(FBAppCall *call) {
-                        // If there is an active session
-                        if (FBSession.activeSession.isOpen) {
-                            // Check the incoming link
-                            [self handleAppLinkData:call.appLinkData];
-                        } else if (call.accessTokenData) {
-                            // If token data is passed in and there's
-                            // no active session.
-                          /*  if ([self handleAppLinkToken:call.accessTokenData]) {
-                                // Attempt to open the session using the
-                                // cached token and if successful then
-                                // check the incoming link
-                                [self handleAppLinkData:call.appLinkData];
-                            }*/
-                        }
-                    }];
+		  sourceApplication:sourceApplication
+		    fallbackHandler:^(FBAppCall *call) {
+			// If there is an active session
+			if (FBSession.activeSession.isOpen) {
+			    // Check the incoming link
+			    [self handleAppLinkData:call.appLinkData];
+			} else if (call.accessTokenData) {
+			    // If token data is passed in and there's
+			    // no active session.
+			  /*  if ([self handleAppLinkToken:call.accessTokenData]) {
+				// Attempt to open the session using the
+				// cached token and if successful then
+				// check the incoming link
+				[self handleAppLinkData:call.appLinkData];
+			    }*/
+			}
+		    }];
 }
 #endif
 
@@ -1229,22 +1254,22 @@ static void safeSendMessage(const std::string& event, const std::string& message
     [UIApplication sharedApplication].statusBarHidden = YES;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
     application.applicationSupportsShakeToEdit = YES;
-    
+
     [window addSubview:viewController.view];
     [window makeKeyAndVisible];
-    
+
     motionManager = [[CMMotionManager alloc] init];
-    if([motionManager isAccelerometerAvailable] == YES) 
+    if([motionManager isAccelerometerAvailable] == YES)
     {
-        motionManager.accelerometerUpdateInterval = 1 / 40.0;    // 40Hz
-        [motionManager startAccelerometerUpdates];
+	motionManager.accelerometerUpdateInterval = 1 / 40.0;	 // 40Hz
+	[motionManager startAccelerometerUpdates];
     }
     if([motionManager isGyroAvailable] == YES)
     {
-        motionManager.gyroUpdateInterval = 1 / 40.0;    // 40Hz
-        [motionManager startGyroUpdates];
+	motionManager.gyroUpdateInterval = 1 / 40.0;	// 40Hz
+	[motionManager startGyroUpdates];
     }
-    
+
     window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     viewController = [[ViewController alloc] init];
     [window setRootViewController:viewController];
@@ -1252,47 +1277,47 @@ static void safeSendMessage(const std::string& event, const std::string& message
     return YES;
 }
 
-- (void)getAccelerometerPitch:(float*)pitch roll:(float*)roll 
+- (void)getAccelerometerPitch:(float*)pitch roll:(float*)roll
 {
     float p = 0.0f;
     float r = 0.0f;
     CMAccelerometerData* accelerometerData = motionManager.accelerometerData;
-    if(accelerometerData != nil) 
+    if(accelerometerData != nil)
     {
-        float tx, ty, tz;
-        
-        switch ([[UIApplication sharedApplication] statusBarOrientation])
-        {
-        case UIInterfaceOrientationLandscapeRight:
-            tx = -accelerometerData.acceleration.y;
-            ty = accelerometerData.acceleration.x;
-            break;
+	float tx, ty, tz;
 
-        case UIInterfaceOrientationLandscapeLeft:
-            tx = accelerometerData.acceleration.y;
-            ty = -accelerometerData.acceleration.x;
-            break;
+	switch ([[UIApplication sharedApplication] statusBarOrientation])
+	{
+	case UIInterfaceOrientationLandscapeRight:
+	    tx = -accelerometerData.acceleration.y;
+	    ty = accelerometerData.acceleration.x;
+	    break;
 
-        case UIInterfaceOrientationPortraitUpsideDown:
-            tx = -accelerometerData.acceleration.y;
-            ty = -accelerometerData.acceleration.x;
-            break;
+	case UIInterfaceOrientationLandscapeLeft:
+	    tx = accelerometerData.acceleration.y;
+	    ty = -accelerometerData.acceleration.x;
+	    break;
 
-        case UIInterfaceOrientationPortrait:
-            tx = accelerometerData.acceleration.x;
-            ty = accelerometerData.acceleration.y;
-            break;
-        }
-        tz = accelerometerData.acceleration.z;  
-        
-        p = atan(ty / sqrt(tx * tx + tz * tz)) * 180.0f * M_1_PI;
-        r = atan(tx / sqrt(ty * ty + tz * tz)) * 180.0f * M_1_PI;     
+	case UIInterfaceOrientationPortraitUpsideDown:
+	    tx = -accelerometerData.acceleration.y;
+	    ty = -accelerometerData.acceleration.x;
+	    break;
+
+	case UIInterfaceOrientationPortrait:
+	    tx = accelerometerData.acceleration.x;
+	    ty = accelerometerData.acceleration.y;
+	    break;
+	}
+	tz = accelerometerData.acceleration.z;
+
+	p = atan(ty / sqrt(tx * tx + tz * tz)) * 180.0f * M_1_PI;
+	r = atan(tx / sqrt(ty * ty + tz * tz)) * 180.0f * M_1_PI;
     }
-    
-    if(pitch != NULL) 
-        *pitch = p;
-    if(roll != NULL) 
-        *roll = r;
+
+    if(pitch != NULL)
+	*pitch = p;
+    if(roll != NULL)
+	*roll = r;
 }
 
 - (void)getRawAccelX:(float*)x Y:(float*)y Z:(float*)z
@@ -1300,9 +1325,9 @@ static void safeSendMessage(const std::string& event, const std::string& message
     CMAccelerometerData* accelerometerData = motionManager.accelerometerData;
     if(accelerometerData != nil)
     {
-        *x = -9.81f * accelerometerData.acceleration.x;
-        *y = -9.81f * accelerometerData.acceleration.y;
-        *z = -9.81f * accelerometerData.acceleration.z;
+	*x = -9.81f * accelerometerData.acceleration.x;
+	*y = -9.81f * accelerometerData.acceleration.y;
+	*z = -9.81f * accelerometerData.acceleration.z;
     }
 }
 
@@ -1311,9 +1336,9 @@ static void safeSendMessage(const std::string& event, const std::string& message
     CMGyroData* gyroData = motionManager.gyroData;
     if(gyroData != nil)
     {
-        *x = gyroData.rotationRate.x;
-        *y = gyroData.rotationRate.y;
-        *z = gyroData.rotationRate.z;
+	*x = gyroData.rotationRate.x;
+	*y = gyroData.rotationRate.y;
+	*z = gyroData.rotationRate.z;
     }
 }
 
@@ -1323,19 +1348,19 @@ static void safeSendMessage(const std::string& event, const std::string& message
     [viewController stopUpdating];
 }
 
-- (void)applicationDidEnterBackground:(UIApplication*)application 
+- (void)applicationDidEnterBackground:(UIApplication*)application
 {
     Game::getInstance()->applicationDidEnterBackground();
     [viewController stopUpdating];
 }
 
-- (void)applicationWillEnterForeground:(UIApplication*)application 
+- (void)applicationWillEnterForeground:(UIApplication*)application
 {
     [viewController startUpdating];
     Game::getInstance()->applicationWillEnterForeground();
 }
 
-- (void)applicationDidBecomeActive:(UIApplication*)application 
+- (void)applicationDidBecomeActive:(UIApplication*)application
 {
 #ifdef FACEBOOK_SDK
     [FBAppEvents activateApp];
@@ -1345,20 +1370,20 @@ static void safeSendMessage(const std::string& event, const std::string& message
      */
     [viewController startUpdating];
     Game::getInstance()->applicationDidBecomeActive();
-    
-    
+
+
 #ifdef FACEBOOK_SDK
     // We need to properly handle activation of the application with regards to SSO
-    //  (e.g., returning from iOS 6.0 authorization dialog or from fast app switching).
+    //	(e.g., returning from iOS 6.0 authorization dialog or from fast app switching).
     [FBAppCall handleDidBecomeActiveWithSession:self.session];
 #endif
 }
 
-- (void)applicationWillTerminate:(UIApplication*)application 
+- (void)applicationWillTerminate:(UIApplication*)application
 {
     Game::getInstance()->applicationWillTerminate();
     [viewController stopUpdating];
-    
+
     // if the app is going away, we close the session if it is open
     // this is a good idea because things may be hanging off the session, that need
     // releasing (completion block, etc.) and other components in the app may be awaiting
@@ -1368,7 +1393,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
 #endif
 }
 
-- (void)dealloc 
+- (void)dealloc
 {
     [window setRootViewController:nil];
     [viewController release];
@@ -1384,231 +1409,231 @@ double getMachTimeInMilliseconds()
 {
     static const double kOneMillion = 1000 * 1000;
     static mach_timebase_info_data_t s_timebase_info;
-    
-    if (s_timebase_info.denom == 0) 
-        (void) mach_timebase_info(&s_timebase_info);
-    
+
+    if (s_timebase_info.denom == 0)
+	(void) mach_timebase_info(&s_timebase_info);
+
     // mach_absolute_time() returns billionth of seconds, so divide by one million to get milliseconds
     GP_ASSERT(s_timebase_info.denom);
     return ((double)mach_absolute_time() * (double)s_timebase_info.numer) / (kOneMillion * (double)s_timebase_info.denom);
 }
 
-int getKey(unichar keyCode) 
+int getKey(unichar keyCode)
 {
-    switch(keyCode) 
+    switch(keyCode)
     {
-        case 0x0A:
-            return Keyboard::KEY_RETURN;
-        case 0x20:
-            return Keyboard::KEY_SPACE;
-            
-        case 0x30:
-            return Keyboard::KEY_ZERO;
-        case 0x31:
-            return Keyboard::KEY_ONE;
-        case 0x32:
-            return Keyboard::KEY_TWO;
-        case 0x33:
-            return Keyboard::KEY_THREE;
-        case 0x34:
-            return Keyboard::KEY_FOUR;
-        case 0x35:
-            return Keyboard::KEY_FIVE;
-        case 0x36:
-            return Keyboard::KEY_SIX;
-        case 0x37:
-            return Keyboard::KEY_SEVEN;
-        case 0x38:
-            return Keyboard::KEY_EIGHT;
-        case 0x39:
-            return Keyboard::KEY_NINE;
-            
-        case 0x41:
-            return Keyboard::KEY_CAPITAL_A;
-        case 0x42:
-            return Keyboard::KEY_CAPITAL_B;
-        case 0x43:
-            return Keyboard::KEY_CAPITAL_C;
-        case 0x44:
-            return Keyboard::KEY_CAPITAL_D;
-        case 0x45:
-            return Keyboard::KEY_CAPITAL_E;
-        case 0x46:
-            return Keyboard::KEY_CAPITAL_F;
-        case 0x47:
-            return Keyboard::KEY_CAPITAL_G;
-        case 0x48:
-            return Keyboard::KEY_CAPITAL_H;
-        case 0x49:
-            return Keyboard::KEY_CAPITAL_I;
-        case 0x4A:
-            return Keyboard::KEY_CAPITAL_J;
-        case 0x4B:
-            return Keyboard::KEY_CAPITAL_K;
-        case 0x4C:
-            return Keyboard::KEY_CAPITAL_L;
-        case 0x4D:
-            return Keyboard::KEY_CAPITAL_M;
-        case 0x4E:
-            return Keyboard::KEY_CAPITAL_N;
-        case 0x4F:
-            return Keyboard::KEY_CAPITAL_O;
-        case 0x50:
-            return Keyboard::KEY_CAPITAL_P;
-        case 0x51:
-            return Keyboard::KEY_CAPITAL_Q;
-        case 0x52:
-            return Keyboard::KEY_CAPITAL_R;
-        case 0x53:
-            return Keyboard::KEY_CAPITAL_S;
-        case 0x54:
-            return Keyboard::KEY_CAPITAL_T;
-        case 0x55:
-            return Keyboard::KEY_CAPITAL_U;
-        case 0x56:
-            return Keyboard::KEY_CAPITAL_V;
-        case 0x57:
-            return Keyboard::KEY_CAPITAL_W;
-        case 0x58:
-            return Keyboard::KEY_CAPITAL_X;
-        case 0x59:
-            return Keyboard::KEY_CAPITAL_Y;
-        case 0x5A:
-            return Keyboard::KEY_CAPITAL_Z;
-            
-            
-        case 0x61:
-            return Keyboard::KEY_A;
-        case 0x62:
-            return Keyboard::KEY_B;
-        case 0x63:
-            return Keyboard::KEY_C;
-        case 0x64:
-            return Keyboard::KEY_D;
-        case 0x65:
-            return Keyboard::KEY_E;
-        case 0x66:
-            return Keyboard::KEY_F;
-        case 0x67:
-            return Keyboard::KEY_G;
-        case 0x68:
-            return Keyboard::KEY_H;
-        case 0x69:
-            return Keyboard::KEY_I;
-        case 0x6A:
-            return Keyboard::KEY_J;
-        case 0x6B:
-            return Keyboard::KEY_K;
-        case 0x6C:
-            return Keyboard::KEY_L;
-        case 0x6D:
-            return Keyboard::KEY_M;
-        case 0x6E:
-            return Keyboard::KEY_N;
-        case 0x6F:
-            return Keyboard::KEY_O;
-        case 0x70:
-            return Keyboard::KEY_P;
-        case 0x71:
-            return Keyboard::KEY_Q;
-        case 0x72:
-            return Keyboard::KEY_R;
-        case 0x73:
-            return Keyboard::KEY_S;
-        case 0x74:
-            return Keyboard::KEY_T;
-        case 0x75:
-            return Keyboard::KEY_U;
-        case 0x76:
-            return Keyboard::KEY_V;
-        case 0x77:
-            return Keyboard::KEY_W;
-        case 0x78:
-            return Keyboard::KEY_X;
-        case 0x79:
-            return Keyboard::KEY_Y;
-        case 0x7A:
-            return Keyboard::KEY_Z;
-        default:
-            break;
-            
+	case 0x0A:
+	    return Keyboard::KEY_RETURN;
+	case 0x20:
+	    return Keyboard::KEY_SPACE;
+
+	case 0x30:
+	    return Keyboard::KEY_ZERO;
+	case 0x31:
+	    return Keyboard::KEY_ONE;
+	case 0x32:
+	    return Keyboard::KEY_TWO;
+	case 0x33:
+	    return Keyboard::KEY_THREE;
+	case 0x34:
+	    return Keyboard::KEY_FOUR;
+	case 0x35:
+	    return Keyboard::KEY_FIVE;
+	case 0x36:
+	    return Keyboard::KEY_SIX;
+	case 0x37:
+	    return Keyboard::KEY_SEVEN;
+	case 0x38:
+	    return Keyboard::KEY_EIGHT;
+	case 0x39:
+	    return Keyboard::KEY_NINE;
+
+	case 0x41:
+	    return Keyboard::KEY_CAPITAL_A;
+	case 0x42:
+	    return Keyboard::KEY_CAPITAL_B;
+	case 0x43:
+	    return Keyboard::KEY_CAPITAL_C;
+	case 0x44:
+	    return Keyboard::KEY_CAPITAL_D;
+	case 0x45:
+	    return Keyboard::KEY_CAPITAL_E;
+	case 0x46:
+	    return Keyboard::KEY_CAPITAL_F;
+	case 0x47:
+	    return Keyboard::KEY_CAPITAL_G;
+	case 0x48:
+	    return Keyboard::KEY_CAPITAL_H;
+	case 0x49:
+	    return Keyboard::KEY_CAPITAL_I;
+	case 0x4A:
+	    return Keyboard::KEY_CAPITAL_J;
+	case 0x4B:
+	    return Keyboard::KEY_CAPITAL_K;
+	case 0x4C:
+	    return Keyboard::KEY_CAPITAL_L;
+	case 0x4D:
+	    return Keyboard::KEY_CAPITAL_M;
+	case 0x4E:
+	    return Keyboard::KEY_CAPITAL_N;
+	case 0x4F:
+	    return Keyboard::KEY_CAPITAL_O;
+	case 0x50:
+	    return Keyboard::KEY_CAPITAL_P;
+	case 0x51:
+	    return Keyboard::KEY_CAPITAL_Q;
+	case 0x52:
+	    return Keyboard::KEY_CAPITAL_R;
+	case 0x53:
+	    return Keyboard::KEY_CAPITAL_S;
+	case 0x54:
+	    return Keyboard::KEY_CAPITAL_T;
+	case 0x55:
+	    return Keyboard::KEY_CAPITAL_U;
+	case 0x56:
+	    return Keyboard::KEY_CAPITAL_V;
+	case 0x57:
+	    return Keyboard::KEY_CAPITAL_W;
+	case 0x58:
+	    return Keyboard::KEY_CAPITAL_X;
+	case 0x59:
+	    return Keyboard::KEY_CAPITAL_Y;
+	case 0x5A:
+	    return Keyboard::KEY_CAPITAL_Z;
+
+
+	case 0x61:
+	    return Keyboard::KEY_A;
+	case 0x62:
+	    return Keyboard::KEY_B;
+	case 0x63:
+	    return Keyboard::KEY_C;
+	case 0x64:
+	    return Keyboard::KEY_D;
+	case 0x65:
+	    return Keyboard::KEY_E;
+	case 0x66:
+	    return Keyboard::KEY_F;
+	case 0x67:
+	    return Keyboard::KEY_G;
+	case 0x68:
+	    return Keyboard::KEY_H;
+	case 0x69:
+	    return Keyboard::KEY_I;
+	case 0x6A:
+	    return Keyboard::KEY_J;
+	case 0x6B:
+	    return Keyboard::KEY_K;
+	case 0x6C:
+	    return Keyboard::KEY_L;
+	case 0x6D:
+	    return Keyboard::KEY_M;
+	case 0x6E:
+	    return Keyboard::KEY_N;
+	case 0x6F:
+	    return Keyboard::KEY_O;
+	case 0x70:
+	    return Keyboard::KEY_P;
+	case 0x71:
+	    return Keyboard::KEY_Q;
+	case 0x72:
+	    return Keyboard::KEY_R;
+	case 0x73:
+	    return Keyboard::KEY_S;
+	case 0x74:
+	    return Keyboard::KEY_T;
+	case 0x75:
+	    return Keyboard::KEY_U;
+	case 0x76:
+	    return Keyboard::KEY_V;
+	case 0x77:
+	    return Keyboard::KEY_W;
+	case 0x78:
+	    return Keyboard::KEY_X;
+	case 0x79:
+	    return Keyboard::KEY_Y;
+	case 0x7A:
+	    return Keyboard::KEY_Z;
+	default:
+	    break;
+
        // Symbol Row 3
-        case 0x2E:
-            return Keyboard::KEY_PERIOD;
-        case 0x2C:
-            return Keyboard::KEY_COMMA;
-        case 0x3F:
-            return Keyboard::KEY_QUESTION;
-        case 0x21:
-            return Keyboard::KEY_EXCLAM;
-        case 0x27:
-            return Keyboard::KEY_APOSTROPHE;
-            
-        // Symbols Row 2
-        case 0x2D:
-            return Keyboard::KEY_MINUS;
-        case 0x2F:
-            return Keyboard::KEY_SLASH;
-        case 0x3A:
-            return Keyboard::KEY_COLON;
-        case 0x3B:
-            return Keyboard::KEY_SEMICOLON;
-        case 0x28:
-            return Keyboard::KEY_LEFT_PARENTHESIS;
-        case 0x29:
-            return Keyboard::KEY_RIGHT_PARENTHESIS;
-        case 0x24:
-            return Keyboard::KEY_DOLLAR;
-        case 0x26:
-            return Keyboard::KEY_AMPERSAND;
-        case 0x40:
-            return Keyboard::KEY_AT;
-        case 0x22:
-            return Keyboard::KEY_QUOTE;
-            
-        // Numeric Symbols Row 1
-        case 0x5B:
-            return Keyboard::KEY_LEFT_BRACKET;
-        case 0x5D:
-            return Keyboard::KEY_RIGHT_BRACKET;
-        case 0x7B:
-            return Keyboard::KEY_LEFT_BRACE;
-        case 0x7D:
-            return Keyboard::KEY_RIGHT_BRACE;
-        case 0x23:
-            return Keyboard::KEY_NUMBER;
-        case 0x25:
-            return Keyboard::KEY_PERCENT;
-        case 0x5E:
-            return Keyboard::KEY_CIRCUMFLEX;
-        case 0x2A:
-            return Keyboard::KEY_ASTERISK;
-        case 0x2B:
-            return Keyboard::KEY_PLUS;
-        case 0x3D:
-            return Keyboard::KEY_EQUAL;
-            
-        // Numeric Symbols Row 2
-        case 0x5F:
-            return Keyboard::KEY_UNDERSCORE;
-        case 0x5C:
-            return Keyboard::KEY_BACK_SLASH;
-        case 0x7C:
-            return Keyboard::KEY_BAR;
-        case 0x7E:
-            return Keyboard::KEY_TILDE;
-        case 0x3C:
-            return Keyboard::KEY_LESS_THAN;
-        case 0x3E:
-            return Keyboard::KEY_GREATER_THAN;
-        case 0x80:
-            return Keyboard::KEY_EURO;
-        case 0xA3:
-            return Keyboard::KEY_POUND;
-        case 0xA5:
-            return Keyboard::KEY_YEN;
-        case 0xB7:
-            return Keyboard::KEY_MIDDLE_DOT;
+	case 0x2E:
+	    return Keyboard::KEY_PERIOD;
+	case 0x2C:
+	    return Keyboard::KEY_COMMA;
+	case 0x3F:
+	    return Keyboard::KEY_QUESTION;
+	case 0x21:
+	    return Keyboard::KEY_EXCLAM;
+	case 0x27:
+	    return Keyboard::KEY_APOSTROPHE;
+
+	// Symbols Row 2
+	case 0x2D:
+	    return Keyboard::KEY_MINUS;
+	case 0x2F:
+	    return Keyboard::KEY_SLASH;
+	case 0x3A:
+	    return Keyboard::KEY_COLON;
+	case 0x3B:
+	    return Keyboard::KEY_SEMICOLON;
+	case 0x28:
+	    return Keyboard::KEY_LEFT_PARENTHESIS;
+	case 0x29:
+	    return Keyboard::KEY_RIGHT_PARENTHESIS;
+	case 0x24:
+	    return Keyboard::KEY_DOLLAR;
+	case 0x26:
+	    return Keyboard::KEY_AMPERSAND;
+	case 0x40:
+	    return Keyboard::KEY_AT;
+	case 0x22:
+	    return Keyboard::KEY_QUOTE;
+
+	// Numeric Symbols Row 1
+	case 0x5B:
+	    return Keyboard::KEY_LEFT_BRACKET;
+	case 0x5D:
+	    return Keyboard::KEY_RIGHT_BRACKET;
+	case 0x7B:
+	    return Keyboard::KEY_LEFT_BRACE;
+	case 0x7D:
+	    return Keyboard::KEY_RIGHT_BRACE;
+	case 0x23:
+	    return Keyboard::KEY_NUMBER;
+	case 0x25:
+	    return Keyboard::KEY_PERCENT;
+	case 0x5E:
+	    return Keyboard::KEY_CIRCUMFLEX;
+	case 0x2A:
+	    return Keyboard::KEY_ASTERISK;
+	case 0x2B:
+	    return Keyboard::KEY_PLUS;
+	case 0x3D:
+	    return Keyboard::KEY_EQUAL;
+
+	// Numeric Symbols Row 2
+	case 0x5F:
+	    return Keyboard::KEY_UNDERSCORE;
+	case 0x5C:
+	    return Keyboard::KEY_BACK_SLASH;
+	case 0x7C:
+	    return Keyboard::KEY_BAR;
+	case 0x7E:
+	    return Keyboard::KEY_TILDE;
+	case 0x3C:
+	    return Keyboard::KEY_LESS_THAN;
+	case 0x3E:
+	    return Keyboard::KEY_GREATER_THAN;
+	case 0x80:
+	    return Keyboard::KEY_EURO;
+	case 0xA3:
+	    return Keyboard::KEY_POUND;
+	case 0xA5:
+	    return Keyboard::KEY_YEN;
+	case 0xB7:
+	    return Keyboard::KEY_MIDDLE_DOT;
     }
     return Keyboard::KEY_NONE;
 }
@@ -1618,122 +1643,122 @@ int getKey(unichar keyCode)
  */
 int getUnicode(int key)
 {
-    
+
     switch (key)
     {
-        case Keyboard::KEY_BACKSPACE:
-            return 0x0008;
-        case Keyboard::KEY_TAB:
-            return 0x0009;
-        case Keyboard::KEY_RETURN:
-        case Keyboard::KEY_KP_ENTER:
-            return 0x000A;
-        case Keyboard::KEY_ESCAPE:
-            return 0x001B;
-        case Keyboard::KEY_SPACE:
-        case Keyboard::KEY_EXCLAM:
-        case Keyboard::KEY_QUOTE:
-        case Keyboard::KEY_NUMBER:
-        case Keyboard::KEY_DOLLAR:
-        case Keyboard::KEY_PERCENT:
-        case Keyboard::KEY_CIRCUMFLEX:
-        case Keyboard::KEY_AMPERSAND:
-        case Keyboard::KEY_APOSTROPHE:
-        case Keyboard::KEY_LEFT_PARENTHESIS:
-        case Keyboard::KEY_RIGHT_PARENTHESIS:
-        case Keyboard::KEY_ASTERISK:
-        case Keyboard::KEY_PLUS:
-        case Keyboard::KEY_COMMA:
-        case Keyboard::KEY_MINUS:
-        case Keyboard::KEY_PERIOD:
-        case Keyboard::KEY_SLASH:
-        case Keyboard::KEY_ZERO:
-        case Keyboard::KEY_ONE:
-        case Keyboard::KEY_TWO:
-        case Keyboard::KEY_THREE:
-        case Keyboard::KEY_FOUR:
-        case Keyboard::KEY_FIVE:
-        case Keyboard::KEY_SIX:
-        case Keyboard::KEY_SEVEN:
-        case Keyboard::KEY_EIGHT:
-        case Keyboard::KEY_NINE:
-        case Keyboard::KEY_COLON:
-        case Keyboard::KEY_SEMICOLON:
-        case Keyboard::KEY_LESS_THAN:
-        case Keyboard::KEY_EQUAL:
-        case Keyboard::KEY_GREATER_THAN:
-        case Keyboard::KEY_QUESTION:
-        case Keyboard::KEY_AT:
-        case Keyboard::KEY_CAPITAL_A:
-        case Keyboard::KEY_CAPITAL_B:
-        case Keyboard::KEY_CAPITAL_C:
-        case Keyboard::KEY_CAPITAL_D:
-        case Keyboard::KEY_CAPITAL_E:
-        case Keyboard::KEY_CAPITAL_F:
-        case Keyboard::KEY_CAPITAL_G:
-        case Keyboard::KEY_CAPITAL_H:
-        case Keyboard::KEY_CAPITAL_I:
-        case Keyboard::KEY_CAPITAL_J:
-        case Keyboard::KEY_CAPITAL_K:
-        case Keyboard::KEY_CAPITAL_L:
-        case Keyboard::KEY_CAPITAL_M:
-        case Keyboard::KEY_CAPITAL_N:
-        case Keyboard::KEY_CAPITAL_O:
-        case Keyboard::KEY_CAPITAL_P:
-        case Keyboard::KEY_CAPITAL_Q:
-        case Keyboard::KEY_CAPITAL_R:
-        case Keyboard::KEY_CAPITAL_S:
-        case Keyboard::KEY_CAPITAL_T:
-        case Keyboard::KEY_CAPITAL_U:
-        case Keyboard::KEY_CAPITAL_V:
-        case Keyboard::KEY_CAPITAL_W:
-        case Keyboard::KEY_CAPITAL_X:
-        case Keyboard::KEY_CAPITAL_Y:
-        case Keyboard::KEY_CAPITAL_Z:
-        case Keyboard::KEY_LEFT_BRACKET:
-        case Keyboard::KEY_BACK_SLASH:
-        case Keyboard::KEY_RIGHT_BRACKET:
-        case Keyboard::KEY_UNDERSCORE:
-        case Keyboard::KEY_GRAVE:
-        case Keyboard::KEY_A:
-        case Keyboard::KEY_B:
-        case Keyboard::KEY_C:
-        case Keyboard::KEY_D:
-        case Keyboard::KEY_E:
-        case Keyboard::KEY_F:
-        case Keyboard::KEY_G:
-        case Keyboard::KEY_H:
-        case Keyboard::KEY_I:
-        case Keyboard::KEY_J:
-        case Keyboard::KEY_K:
-        case Keyboard::KEY_L:
-        case Keyboard::KEY_M:
-        case Keyboard::KEY_N:
-        case Keyboard::KEY_O:
-        case Keyboard::KEY_P:
-        case Keyboard::KEY_Q:
-        case Keyboard::KEY_R:
-        case Keyboard::KEY_S:
-        case Keyboard::KEY_T:
-        case Keyboard::KEY_U:
-        case Keyboard::KEY_V:
-        case Keyboard::KEY_W:
-        case Keyboard::KEY_X:
-        case Keyboard::KEY_Y:
-        case Keyboard::KEY_Z:
-        case Keyboard::KEY_LEFT_BRACE:
-        case Keyboard::KEY_BAR:
-        case Keyboard::KEY_RIGHT_BRACE:
-        case Keyboard::KEY_TILDE:
-            return key;
-        default:
-            return 0;
+	case Keyboard::KEY_BACKSPACE:
+	    return 0x0008;
+	case Keyboard::KEY_TAB:
+	    return 0x0009;
+	case Keyboard::KEY_RETURN:
+	case Keyboard::KEY_KP_ENTER:
+	    return 0x000A;
+	case Keyboard::KEY_ESCAPE:
+	    return 0x001B;
+	case Keyboard::KEY_SPACE:
+	case Keyboard::KEY_EXCLAM:
+	case Keyboard::KEY_QUOTE:
+	case Keyboard::KEY_NUMBER:
+	case Keyboard::KEY_DOLLAR:
+	case Keyboard::KEY_PERCENT:
+	case Keyboard::KEY_CIRCUMFLEX:
+	case Keyboard::KEY_AMPERSAND:
+	case Keyboard::KEY_APOSTROPHE:
+	case Keyboard::KEY_LEFT_PARENTHESIS:
+	case Keyboard::KEY_RIGHT_PARENTHESIS:
+	case Keyboard::KEY_ASTERISK:
+	case Keyboard::KEY_PLUS:
+	case Keyboard::KEY_COMMA:
+	case Keyboard::KEY_MINUS:
+	case Keyboard::KEY_PERIOD:
+	case Keyboard::KEY_SLASH:
+	case Keyboard::KEY_ZERO:
+	case Keyboard::KEY_ONE:
+	case Keyboard::KEY_TWO:
+	case Keyboard::KEY_THREE:
+	case Keyboard::KEY_FOUR:
+	case Keyboard::KEY_FIVE:
+	case Keyboard::KEY_SIX:
+	case Keyboard::KEY_SEVEN:
+	case Keyboard::KEY_EIGHT:
+	case Keyboard::KEY_NINE:
+	case Keyboard::KEY_COLON:
+	case Keyboard::KEY_SEMICOLON:
+	case Keyboard::KEY_LESS_THAN:
+	case Keyboard::KEY_EQUAL:
+	case Keyboard::KEY_GREATER_THAN:
+	case Keyboard::KEY_QUESTION:
+	case Keyboard::KEY_AT:
+	case Keyboard::KEY_CAPITAL_A:
+	case Keyboard::KEY_CAPITAL_B:
+	case Keyboard::KEY_CAPITAL_C:
+	case Keyboard::KEY_CAPITAL_D:
+	case Keyboard::KEY_CAPITAL_E:
+	case Keyboard::KEY_CAPITAL_F:
+	case Keyboard::KEY_CAPITAL_G:
+	case Keyboard::KEY_CAPITAL_H:
+	case Keyboard::KEY_CAPITAL_I:
+	case Keyboard::KEY_CAPITAL_J:
+	case Keyboard::KEY_CAPITAL_K:
+	case Keyboard::KEY_CAPITAL_L:
+	case Keyboard::KEY_CAPITAL_M:
+	case Keyboard::KEY_CAPITAL_N:
+	case Keyboard::KEY_CAPITAL_O:
+	case Keyboard::KEY_CAPITAL_P:
+	case Keyboard::KEY_CAPITAL_Q:
+	case Keyboard::KEY_CAPITAL_R:
+	case Keyboard::KEY_CAPITAL_S:
+	case Keyboard::KEY_CAPITAL_T:
+	case Keyboard::KEY_CAPITAL_U:
+	case Keyboard::KEY_CAPITAL_V:
+	case Keyboard::KEY_CAPITAL_W:
+	case Keyboard::KEY_CAPITAL_X:
+	case Keyboard::KEY_CAPITAL_Y:
+	case Keyboard::KEY_CAPITAL_Z:
+	case Keyboard::KEY_LEFT_BRACKET:
+	case Keyboard::KEY_BACK_SLASH:
+	case Keyboard::KEY_RIGHT_BRACKET:
+	case Keyboard::KEY_UNDERSCORE:
+	case Keyboard::KEY_GRAVE:
+	case Keyboard::KEY_A:
+	case Keyboard::KEY_B:
+	case Keyboard::KEY_C:
+	case Keyboard::KEY_D:
+	case Keyboard::KEY_E:
+	case Keyboard::KEY_F:
+	case Keyboard::KEY_G:
+	case Keyboard::KEY_H:
+	case Keyboard::KEY_I:
+	case Keyboard::KEY_J:
+	case Keyboard::KEY_K:
+	case Keyboard::KEY_L:
+	case Keyboard::KEY_M:
+	case Keyboard::KEY_N:
+	case Keyboard::KEY_O:
+	case Keyboard::KEY_P:
+	case Keyboard::KEY_Q:
+	case Keyboard::KEY_R:
+	case Keyboard::KEY_S:
+	case Keyboard::KEY_T:
+	case Keyboard::KEY_U:
+	case Keyboard::KEY_V:
+	case Keyboard::KEY_W:
+	case Keyboard::KEY_X:
+	case Keyboard::KEY_Y:
+	case Keyboard::KEY_Z:
+	case Keyboard::KEY_LEFT_BRACE:
+	case Keyboard::KEY_BAR:
+	case Keyboard::KEY_RIGHT_BRACE:
+	case Keyboard::KEY_TILDE:
+	    return key;
+	default:
+	    return 0;
     }
 }
 
 namespace gameplay
 {
-    
+
 extern void print(const char* format, ...)
 {
     GP_ASSERT(format);
@@ -1766,7 +1791,7 @@ int Platform::enterMessagePump()
     return EXIT_SUCCESS;
 }
 
-void Platform::signalShutdown() 
+void Platform::signalShutdown()
 {
     // Cannot 'exit' an iOS Application
     assert(false);
@@ -1815,7 +1840,7 @@ void Platform::setVsync(bool enable)
 void Platform::swapBuffers()
 {
     if (__view)
-        [__view swapBuffers];
+	[__view swapBuffers];
 }
 void Platform::sleep(long ms)
 {
@@ -1838,38 +1863,38 @@ void Platform::getRawSensorValues(float* accelX, float* accelY, float* accelZ, f
     [__appDelegate getRawAccelX:&x Y:&y Z:&z];
     if (accelX)
     {
-        *accelX = x;
+	*accelX = x;
     }
     if (accelY)
     {
-        *accelY = y;
+	*accelY = y;
     }
     if (accelZ)
     {
-        *accelZ = z;
+	*accelZ = z;
     }
 
     [__appDelegate getRawGyroX:&x Y:&y Z:&z];
     if (gyroX)
     {
-        *gyroX = x;
+	*gyroX = x;
     }
     if (gyroY)
     {
-        *gyroY = y;
+	*gyroY = y;
     }
     if (gyroZ)
     {
-        *gyroZ = z;
+	*gyroZ = z;
     }
 }
 
 void Platform::getArguments(int* argc, char*** argv)
 {
     if (argc)
-        *argc = __argc;
+	*argc = __argc;
     if (argv)
-        *argv = __argv;
+	*argv = __argv;
 }
 
 bool Platform::hasMouse()
@@ -1910,28 +1935,28 @@ bool Platform::isMultiSampling()
     return false; //todo
 }
 
-void Platform::setMultiTouch(bool enabled) 
+void Platform::setMultiTouch(bool enabled)
 {
     __view.multipleTouchEnabled = enabled;
 }
 
-bool Platform::isMultiTouch() 
+bool Platform::isMultiTouch()
 {
     return __view.multipleTouchEnabled;
 }
 
-void Platform::displayKeyboard(bool display) 
+void Platform::displayKeyboard(bool display)
 {
-    if(__view) 
+    if(__view)
     {
-        if(display)
-        {
-            [__view showKeyboard];
-        }
-        else
-        {
-            [__view dismissKeyboard];
-        }
+	if(display)
+	{
+	    [__view showKeyboard];
+	}
+	else
+	{
+	    [__view dismissKeyboard];
+	}
     }
 }
 
@@ -1967,7 +1992,7 @@ void Platform::pollGamepadState(Gamepad* gamepad)
 bool Platform::launchURL(const char *url)
 {
     if (url == NULL || *url == '\0')
-        return false;
+	return false;
 
     return [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[NSString stringWithUTF8String: url]]];
 }
@@ -1982,18 +2007,18 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
     int fileCount;
     NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:NULL];
     for (fileCount = 0; fileCount < (int)[directoryContent count]; fileCount++) {
-        NSLog(@"File %d: %@", (fileCount + 1), [directoryContent objectAtIndex:fileCount]);
+	NSLog(@"File %d: %@", (fileCount + 1), [directoryContent objectAtIndex:fileCount]);
     }*/
 
     NSString *documentPath = [paths objectAtIndex:0];
 	return [[documentPath stringByAppendingPathComponent: [NSString stringWithUTF8String: filename2Append]] UTF8String];
 }
-    
+
 void Platform::performFbLoginButtonClick()
 {
     [__appDelegate.viewController perfomFbLoginButtonClick];
 }
-    
+
 bool Platform::isUserLogged()
 {
 #ifdef FACEBOOK_SDK
@@ -2002,157 +2027,157 @@ bool Platform::isUserLogged()
     return false;
 #endif
 }
-    
-    
+
+
 static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
 {
     NSMutableArray *objects = [NSMutableArray array];
     NSMutableArray *keys = [NSMutableArray array];
-    
+
     const std::vector<std::string>& bundle = fbBundle.getData();
-    
+
     if(!bundle.size()) return nil;
-    
+
     for(int i=0; i<bundle.size(); i+=2)
     {
-        NSString* object = [NSString stringWithCString:bundle[i].c_str() encoding:[NSString defaultCStringEncoding]];
-        NSString* key = [NSString stringWithCString:bundle[i+1].c_str() encoding:[NSString defaultCStringEncoding]];
-        
-        [objects addObject:object];
-        [keys addObject:key];
+	NSString* object = [NSString stringWithCString:bundle[i].c_str() encoding:[NSString defaultCStringEncoding]];
+	NSString* key = [NSString stringWithCString:bundle[i+1].c_str() encoding:[NSString defaultCStringEncoding]];
+
+	[objects addObject:object];
+	[keys addObject:key];
     }
-    
+
     return [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
 }
-    
+
 void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method,
-                           const std::string& callbackId)
+			   const std::string& callbackId)
 {
 #ifdef FACEBOOK_SDK
     NSMutableDictionary* params = convertToDictionary(bundle);
     NSString* path = [NSString stringWithUTF8String: graphPath.c_str()];
-    
+
     NSString* httpMethod;
-    
+
     switch(method){
-        case HTTP_GET:
-            httpMethod = @"GET";
-            break;
-        case HTTP_POST:
-            httpMethod = @"POST";
-            break;
-        case HTTP_DELETE:
-            httpMethod = @"DELETE";
-            break;
+	case HTTP_GET:
+	    httpMethod = @"GET";
+	    break;
+	case HTTP_POST:
+	    httpMethod = @"POST";
+	    break;
+	case HTTP_DELETE:
+	    httpMethod = @"DELETE";
+	    break;
     }
-    
+
     static std::string staticMessage;
-    
+
     staticMessage = callbackId;
-    
+
     [FBRequestConnection startWithGraphPath:path
-                                 parameters:params
-                                 HTTPMethod:httpMethod
-                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-        
-        if (error) {
-            safeSendMessage(FACEBOOK_ERROR);
-        }
-        else {
-            safeSendMessage(staticMessage);
-        }
-            
+				 parameters:params
+				 HTTPMethod:httpMethod
+			  completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+
+	if (error) {
+	    safeSendMessage(FACEBOOK_ERROR);
+	}
+	else {
+	    safeSendMessage(staticMessage);
+	}
+
     }];
 #endif
 }
-    
-void Platform::sendRequestDialog(const FbBundle&        bundle,
-                                 const std::string&     title,
-                                 const std::string&     message,
-                                 const std::string&     callbackId)
+
+void Platform::sendRequestDialog(const FbBundle&	bundle,
+				 const std::string&	title,
+				 const std::string&	message,
+				 const std::string&	callbackId)
 {
     NSMutableDictionary* params = convertToDictionary(bundle);
     NSString* m =[NSString stringWithCString:message.c_str() encoding:[NSString defaultCStringEncoding]];
     NSString* t =[NSString stringWithCString:title.c_str() encoding:[NSString defaultCStringEncoding]];
-    
+
     static std::string staticEvent = callbackId;
 
 #ifdef FACEBOOK_SDK
-        [FBWebDialogs
-         presentRequestsDialogModallyWithSession:nil
-         message:m
-         title:t
-         parameters:params
-         handler:^(FBWebDialogResult result, NSURL *resultURL, NSError *error) {
-             if (error) {
-                 // Error launching the dialog or sending the request.
-                 safeSendMessage(FACEBOOK_ERROR, "Error sending request.");
-             } else {
-                 if (result == FBWebDialogResultDialogNotCompleted) {
-                     // User clicked the "x" icon
-                     NSLog(@"User canceled request.");
-                 } else {
-                     // Handle the send request callback
-                     NSDictionary *urlParams = [__appDelegate.viewController parseURLParams:[resultURL query]];
-                     if (![urlParams valueForKey:@"request"]) {
-                         // User clicked the Cancel button
-                         NSLog(@"User canceled request.");
-                     } else {
-                         // User clicked the Send button
-                         safeSendMessage(staticEvent);
-                     }
-                 }
-             }
-         }];
+	[FBWebDialogs
+	 presentRequestsDialogModallyWithSession:nil
+	 message:m
+	 title:t
+	 parameters:params
+	 handler:^(FBWebDialogResult result, NSURL *resultURL, NSError *error) {
+	     if (error) {
+		 // Error launching the dialog or sending the request.
+		 safeSendMessage(FACEBOOK_ERROR, "Error sending request.");
+	     } else {
+		 if (result == FBWebDialogResultDialogNotCompleted) {
+		     // User clicked the "x" icon
+		     NSLog(@"User canceled request.");
+		 } else {
+		     // Handle the send request callback
+		     NSDictionary *urlParams = [__appDelegate.viewController parseURLParams:[resultURL query]];
+		     if (![urlParams valueForKey:@"request"]) {
+			 // User clicked the Cancel button
+			 NSLog(@"User canceled request.");
+		     } else {
+			 // User clicked the Send button
+			 safeSendMessage(staticEvent);
+		     }
+		 }
+	     }
+	 }];
 #endif
 }
-    
+
 void Platform::updateFriendsAsync(const std::string& callbackId)
 {
     m_friendsInfo.clear();
 #ifdef FACEBOOK_SDK
     static std::string staticString;
     staticString = callbackId;
-    
+
     NSString* scores = @"/scores";
-    
+
     NSString* graphPath = [NSString stringWithFormat:@"%@%@", [__appDelegate.viewController getFbAppId] , scores ];
-    
+
     [FBRequestConnection startWithGraphPath:graphPath parameters:nil HTTPMethod:@"GET" completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-        
-        if(error)
-        {
-            safeSendMessage(FACEBOOK_ERROR, "error fetching friends data");
-        }
-        
-        if (result && !error) {
-            
-            NSArray *array = [result objectForKey:@"data"];
-            
-            for(id element in array)
-            {
-                NSString *name      = [[element objectForKey:@"user"] objectForKey:@"name"];
-                NSString *userId    = [[element objectForKey:@"user"] objectForKey:@"id"];
-                int      score      = [[element objectForKey:@"score"] intValue];
-                
-                FbFriendInfo fbfriend = { std::string([name UTF8String]), std::string([userId UTF8String]), score };
-                m_friendsInfo.push_back(fbfriend);
-            }
-            
-            safeSendMessage(staticString);
-            
-        }
-        
+
+	if(error)
+	{
+	    safeSendMessage(FACEBOOK_ERROR, "error fetching friends data");
+	}
+
+	if (result && !error) {
+
+	    NSArray *array = [result objectForKey:@"data"];
+
+	    for(id element in array)
+	    {
+		NSString *name	    = [[element objectForKey:@"user"] objectForKey:@"name"];
+		NSString *userId    = [[element objectForKey:@"user"] objectForKey:@"id"];
+		int	 score	    = [[element objectForKey:@"score"] intValue];
+
+		FbFriendInfo fbfriend = { std::string([name UTF8String]), std::string([userId UTF8String]), score };
+		m_friendsInfo.push_back(fbfriend);
+	    }
+
+	    safeSendMessage(staticString);
+
+	}
+
     }];
 #endif
 }
-    
+
 std::string Platform::getUserId()
 {
     return std::string([__appDelegate.viewController.mUserID UTF8String]);
 }
-    
-    
+
+
 std::string Platform::getAppId()
 {
 #ifdef FACEBOOK_SDK
@@ -2161,45 +2186,45 @@ std::string Platform::getAppId()
     return "";
 #endif
 }
-    
-    
+
+
 void Platform::requestNewPermissionAsync(const std::string& permission,
-                                         const std::string& callbackId)
+					 const std::string& callbackId)
 {
-    
+
    NSString* perm = [NSString stringWithCString:permission.c_str() encoding:[NSString defaultCStringEncoding]];
-    
+
 #ifdef FACEBOOK_SDK
     [FBSession.activeSession requestNewPublishPermissions:[NSArray arrayWithObject:perm]
-                                          defaultAudience:FBSessionDefaultAudienceFriends
-                                        completionHandler:^(FBSession *session, NSError *error) {
-                                            __block NSString *alertText;
-                                            __block NSString *alertTitle;
-                                            if (!error) {
-                                                if ([FBSession.activeSession.permissions
-                                                     indexOfObject:perm] == NSNotFound){
-                                                    // Permission not granted, tell the user we will not publish
-                                                    alertTitle = @"Permission not granted";
-                                                    alertText = @"Your action will not be published to Facebook.";
-                                                    [[[UIAlertView alloc] initWithTitle:alertTitle
-                                                                                message:alertText
-                                                                               delegate:__appDelegate
-                                                                      cancelButtonTitle:@"OK!"
-                                                                      otherButtonTitles:nil] show];
-                                                } else {
-                                       
-                                                    [__appDelegate.viewController FetchUserPermissions];
-                                                    safeSendMessage(callbackId);
-                                                
-                                                }
-                                                
-                                            } else {
-                                                safeSendMessage(FACEBOOK_ERROR,"error requesting additional permission");
-                                            }
-                                        }];
+					  defaultAudience:FBSessionDefaultAudienceFriends
+					completionHandler:^(FBSession *session, NSError *error) {
+					    __block NSString *alertText;
+					    __block NSString *alertTitle;
+					    if (!error) {
+						if ([FBSession.activeSession.permissions
+						     indexOfObject:perm] == NSNotFound){
+						    // Permission not granted, tell the user we will not publish
+						    alertTitle = @"Permission not granted";
+						    alertText = @"Your action will not be published to Facebook.";
+						    [[[UIAlertView alloc] initWithTitle:alertTitle
+										message:alertText
+									       delegate:__appDelegate
+								      cancelButtonTitle:@"OK!"
+								      otherButtonTitles:nil] show];
+						} else {
+
+						    [__appDelegate.viewController FetchUserPermissions];
+						    safeSendMessage(callbackId);
+
+						}
+
+					    } else {
+						safeSendMessage(FACEBOOK_ERROR,"error requesting additional permission");
+					    }
+					}];
 #endif
 }
-    
+
 
 }
 
