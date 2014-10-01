@@ -224,7 +224,7 @@ Font::Text* Font::createText(const char* text, const Rectangle& area, const Vect
         }
         else
         {
-            tokenLength = (unsigned int)strcspn(token, " \r\n\t");
+			tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
             tokenWidth = getTokenWidth(token, tokenLength, size, scale);
             iteration = 1;
             startIndex = 0;
@@ -422,6 +422,7 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
             char delimiter = cursor[0];
             while (!done &&
                    (delimiter == ' ' ||
+				   delimiter == '#'  ||
                    delimiter == '\t' ||
                    delimiter == '\r' ||
                    delimiter == '\n' ||
@@ -429,6 +430,8 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
             {
                 switch (delimiter)
                 {
+				case '#':
+					xPos += size >> 3;
                 case ' ':
                     xPos += size >> 1;
                     break;
@@ -480,6 +483,9 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
             // Draw this character.
             switch (c)
             {
+			case '#':
+                xPos += size >> 3;
+                break;
             case ' ':
                 xPos += size >> 1;
                 break;
@@ -582,7 +588,7 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
         }
         else
         {
-            tokenLength = (unsigned int)strcspn(token, " \r\n\t");
+			tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
             tokenWidth = getTokenWidth(token, tokenLength, size, scale);
             iteration = 1;
             startIndex = 0;
@@ -811,6 +817,7 @@ void Font::measureText(const char* text, const Rectangle& clip, unsigned int siz
             // Handle delimiters until next token.
             char delimiter = token[0];
             while (delimiter == ' ' ||
+					delimiter == '#' ||
                     delimiter == '\t' ||
                     delimiter == '\r' ||
                     delimiter == '\n' ||
@@ -818,6 +825,9 @@ void Font::measureText(const char* text, const Rectangle& clip, unsigned int siz
             {
                 switch (delimiter)
                 {
+					case '#':
+                        delimWidth += size >> 3;
+                        break;
                     case ' ':
                         delimWidth += size >> 1;
                         break;
@@ -877,7 +887,7 @@ void Font::measureText(const char* text, const Rectangle& clip, unsigned int siz
             }
 
             // Measure the next token.
-            unsigned int tokenLength = (unsigned int)strcspn(token, " \r\n\t");
+			unsigned int tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
             unsigned int tokenWidth = getTokenWidth(token, tokenLength, size, scale);
 
             // Wrap if necessary.
@@ -1144,6 +1154,7 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                 // Handle delimiters until next token.
                 char delimiter = token[0];
                 while (delimiter == ' ' ||
+					   delimiter == '#' ||
                        delimiter == '\t' ||
                        delimiter == '\r' ||
                        delimiter == '\n' ||
@@ -1151,6 +1162,10 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                 {
                     switch (delimiter)
                     {
+						case '#':
+                            delimWidth += size >> 3;
+                            lineLength++;
+                            break;
                         case ' ':
                             delimWidth += size >> 1;
                             lineLength++;
@@ -1191,7 +1206,7 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                     break;
                 }
 
-                unsigned int tokenLength = (unsigned int)strcspn(token, " \r\n\t");
+				unsigned int tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
                 tokenWidth += getTokenWidth(token, tokenLength, size, scale);
 
                 // Wrap if necessary.
@@ -1385,7 +1400,7 @@ int Font::getIndexOrLocation(const char* text, const Rectangle& area, unsigned i
         }
         else
         {
-            tokenLength = (unsigned int)strcspn(token, " \r\n\t");
+			tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
             tokenWidth = getTokenWidth(token, tokenLength, size, scale);
             iteration = 1;
             startIndex = 0;
@@ -1567,7 +1582,7 @@ unsigned int Font::getReversedTokenLength(const char* token, const char* bufStar
     char c = cursor[0];
     unsigned int length = 0;
 
-    while (cursor != bufStart && c != ' ' && c != '\r' && c != '\n' && c != '\t')
+	while (cursor != bufStart && c != ' ' && c != '#' && c != '\r' && c != '\n' && c != '\t')
     {
         length++;
         cursor--;
@@ -1596,6 +1611,7 @@ int Font::handleDelimiters(const char** token, const unsigned int size, const in
     char delimiter = *token[0];
     bool nextLine = true;
     while (delimiter == ' ' ||
+			delimiter == '#' ||
             delimiter == '\t' ||
             delimiter == '\r' ||
             delimiter == '\n' ||
@@ -1612,7 +1628,15 @@ int Font::handleDelimiters(const char** token, const unsigned int size, const in
 
         switch (delimiter)
         {
-            case ' ':
+			case '#':
+                *xPos += size >> 3;
+                (*lineLength)++;
+                if (charIndex)
+                {
+                    (*charIndex)++;
+                }
+                break;
+			case ' ':
                 *xPos += size >> 1;
                 (*lineLength)++;
                 if (charIndex)
