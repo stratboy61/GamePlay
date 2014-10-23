@@ -113,7 +113,7 @@ Font* Font::create(const char* family, Style style, unsigned int size, Glyph* gl
     }
 
     // Create batch for the font.
-    SpriteBatch* batch = SpriteBatch::create(texture, __fontEffect, 128);
+    SpriteBatch* batch = SpriteBatch::create(texture, __fontEffect, 256);
     
     // Release __fontEffect since the SpriteBatch keeps a reference to it
     SAFE_RELEASE(__fontEffect);
@@ -260,7 +260,7 @@ Font::Text* Font::createText(const char* text, const Rectangle& area, const Vect
 
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            char c = token[i];
+            unsigned char c = token[i];
             int glyphIndex = c - 32; // HACK for ASCII
         
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
@@ -626,7 +626,7 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
         GP_ASSERT(_batch);
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            char c = token[i];
+            unsigned char c = token[i];
             int glyphIndex = c - 32; // HACK for ASCII
         
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
@@ -1431,7 +1431,7 @@ int Font::getIndexOrLocation(const char* text, const Rectangle& area, unsigned i
         GP_ASSERT(_glyphs);
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            char c = token[i];
+            unsigned char c = token[i];
             int glyphIndex = c - 32; // HACK for ASCII
         
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
@@ -1550,7 +1550,7 @@ unsigned int Font::getTokenWidth(const char* token, unsigned int length, unsigne
     unsigned int tokenWidth = 0;
     for (unsigned int i = 0; i < length; ++i)
     {
-        char c = token[i];
+        unsigned char c = token[i];
         switch (c)
         {
         case ' ':
