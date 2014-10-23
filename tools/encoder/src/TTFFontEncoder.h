@@ -2,7 +2,7 @@
 #include FT_FREETYPE_H
 
 #define START_INDEX     32
-#define END_INDEX       127
+#define END_INDEX       255
 #define GLYPH_PADDING   4
 
 namespace gameplay
