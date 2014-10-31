@@ -399,11 +399,12 @@ Stream* FileSystem::open(const char* path, size_t mode)
     if ((mode & WRITE) != 0) {
         modeStr[0] = 'w';
 	}
-/*#ifdef __ANDROID__
+#ifdef __ANDROID__
     if ((mode & WRITE) != 0)
     {
         // Open a file on the SD card
-        std::string fullPath(__resourcePath);
+        //std::string fullPath(__resourcePath);
+        std::string fullPath(m_resourcePathList.front());
         fullPath += resolvePath(path);
 
         size_t index = fullPath.rfind('/');
@@ -421,9 +422,20 @@ Stream* FileSystem::open(const char* path, size_t mode)
     else
     {
         // Open a file in the read-only asset directory
-        return FileStreamAndroid::create(resolvePath(path), modeStr);
+		FileStreamAndroid *a_stream = FileStreamAndroid::create(resolvePath(path), modeStr);
+		if (!a_stream) {
+GP_WARN("could not find %s in apk. trying to locate it in %s", resolvePath(path), m_resourcePathList.front().c_str());
+			std::string fullPath(m_resourcePathList.front());
+			fullPath += resolvePath(path);
+		    FileStream* n_stream = FileStream::create(fullPath.c_str(), modeStr);
+			if (!n_stream) {
+GP_WARN("no luck with %s. returning NULL", resolvePath(path));
+			}
+			return n_stream;
+		}
+        return a_stream;
     }
-#else*/
+#else
 	std::string fullPath = FileSystem::resolvePath(path);
 	if (mode & READ) {
 		bool bFound = false;
@@ -465,7 +477,7 @@ Stream* FileSystem::open(const char* path, size_t mode)
 #endif
     FileStream* stream = FileStream::create(fullPath.c_str(), modeStr);
     return stream;
-//#endif
+#endif
 }
 
 FILE* FileSystem::openFile(const char* filePath, const char* mode)
@@ -473,19 +485,25 @@ FILE* FileSystem::openFile(const char* filePath, const char* mode)
     GP_ASSERT(filePath);
     GP_ASSERT(mode);
 
-    std::string fullPath;
-	bool bFound = false;
-	for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
-		getFullPath(filePath, *cit, fullPath);
-
-		gp_stat_struct s;
-		bFound |= (stat(fullPath.c_str(), &s) == 0);
-		if (bFound) {
-			break;
+	std::string fullPath(filePath);
+	const char c = *mode;
+	if (c == 'r') {
+		bool bFound = false;
+		for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
+			getFullPath(filePath, *cit, fullPath);
+GP_WARN("searching %s in %s", filePath, fullPath.c_str());
+			gp_stat_struct s;
+			bFound |= (stat(fullPath.c_str(), &s) == 0);
+			if (bFound) {
+				break;
+			}
 		}
-	}
-	if (!bFound) {
-		return NULL;
+#ifndef __ANDROID__
+		if (!bFound) {
+			GP_WARN("could not find %s in resourcePathList. returning NULL.", filePath);
+			return NULL;
+		}
+#endif
 	}
 
 	createFileFromAsset(filePath);
@@ -567,6 +585,7 @@ bool FileSystem::isAbsolutePath(const char* filePath)
 void FileSystem::createFileFromAsset(const char* path)
 {
 #ifdef __ANDROID__
+GP_WARN("createFileFromAsset - %s", path);
     static std::set<std::string> upToDateAssets;
 
     GP_ASSERT(path);

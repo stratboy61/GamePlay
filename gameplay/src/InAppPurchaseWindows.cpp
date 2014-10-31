@@ -57,9 +57,10 @@ namespace gameplay
         return "";
     }
     
-    std::string InAppPurchaseWrapper::getPathForContent(const std::string &/*productIdentifier*/) const
+    std::string InAppPurchaseWrapper::getPathForContent(const std::string &productIdentifier) const
     {
-        return "";
+		std::string result("res/extras/");
+		return result + productIdentifier + "/";
     }
     
     std::string InAppPurchaseWrapper::getPathForContent(const InAppPurchaseItem &/*product*/) const
