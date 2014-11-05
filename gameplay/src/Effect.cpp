@@ -21,7 +21,7 @@ Effect::~Effect()
     __effectCache.erase(_id);
 
     // Free uniforms.
-#if 1
+#if !REPLACE_UNIFORMS_MAP
     for (std::map<std::string, Uniform*>::iterator itr = _uniforms.begin(); itr != _uniforms.end(); ++itr)
 #else
     for (std::vector<UniformPair>::iterator itr = _uniforms.begin(); itr != _uniforms.end(); ++itr)
@@ -421,6 +421,9 @@ Effect* Effect::createFromSource(const char* vshPath, const char* vshSource, con
             GLenum uniformType;
             GLint uniformLocation;
             unsigned int samplerIndex = 0;
+#if REPLACE_UNIFORMS_MAP
+            effect->_uniforms.reserve(activeUniforms);
+#endif
             for (int i = 0; i < activeUniforms; ++i)
             {
                 // Query uniform info.
@@ -456,12 +459,13 @@ Effect* Effect::createFromSource(const char* vshPath, const char* vshSource, con
                 {
                     uniform->_index = 0;
                 }
-#if 1
+#if !REPLACE_UNIFORMS_MAP
                 effect->_uniforms[uniformName] = uniform;
 #else
-                UniformPair uniformPair = { std::string(uniformName), uniform };
-                std::vector<UniformPair>::iterator iter = std::lower_bound(effect->_uniforms.begin(), effect->_uniforms.end(), uniformPair, pair_uniform_str_less());
-                effect->_uniforms.insert(iter, uniformPair);
+                UniformPair uniformPair = { fnv_32a_str(uniformName), uniform };
+                //std::vector<UniformPair>::iterator iter = std::lower_bound(effect->_uniforms.begin(), effect->_uniforms.end(), uniformPair, pair_uniform_str_less());
+                //effect->_uniforms.insert(iter, uniformPair);
+                effect->_uniforms.push_back(uniformPair);
 #endif
             }
             SAFE_DELETE_ARRAY(uniformName);
@@ -484,28 +488,54 @@ VertexAttribute Effect::getVertexAttribute(const char* name) const
     
 Uniform* Effect::getUniform(const char* name) const
 {
-#if 1
+#if !REPLACE_UNIFORMS_MAP
     std::map<std::string, Uniform*>::const_iterator itr = _uniforms.find(name);
-#else
-    std::vector<UniformPair>::const_iterator itr = std::lower_bound(_uniforms.begin(), _uniforms.end(), name, pair_uniform_str_less());
-#endif
     return (itr == _uniforms.end() ? NULL : itr->second);
+#else
+    //std::vector<UniformPair>::const_iterator itr = std::lower_bound(_uniforms.begin(), _uniforms.end(), name, pair_uniform_str_less());
+    //return (itr == _uniforms.end() ? NULL : itr->second);
+    uint32_t hash = fnv_32a_str((char *)name);
+    std::vector<UniformPair>::const_iterator itr = _uniforms.begin();
+    std::vector<UniformPair>::const_iterator itr_end = _uniforms.end();
+    while (itr != itr_end)
+    {
+        if (hash == itr->first)
+        {
+            return itr->second;
+        }
+        ++itr;
+    }
+    return NULL;
+#endif
 }
 
     
 Uniform* Effect::getUniform(const std::string& name) const
 {
-#if 1
+#if !REPLACE_UNIFORMS_MAP
     std::map<std::string, Uniform*>::const_iterator itr = _uniforms.find(name);
-#else
-    std::vector<UniformPair>::const_iterator itr = std::lower_bound(_uniforms.begin(), _uniforms.end(), name, pair_uniform_str_less());
-#endif
     return (itr == _uniforms.end() ? NULL : itr->second);
+#else
+    //std::vector<UniformPair>::const_iterator itr = std::lower_bound(_uniforms.begin(), _uniforms.end(), name, pair_uniform_str_less());
+    //return (itr == _uniforms.end() ? NULL : itr->second);
+    uint32_t hash = fnv_32a_str((char *)name.c_str());
+    std::vector<UniformPair>::const_iterator itr = _uniforms.begin();
+    std::vector<UniformPair>::const_iterator itr_end = _uniforms.end();
+    while (itr != itr_end)
+    {
+        if (hash == itr->first)
+        {
+            return itr->second;
+        }
+        ++itr;
+    }
+    return NULL;
+#endif
 }
     
 Uniform* Effect::getUniform(unsigned int index) const
 {
-#if 1
+#if !REPLACE_UNIFORMS_MAP
     unsigned int i = 0;
     for (std::map<std::string, Uniform*>::const_iterator itr = _uniforms.begin(); itr != _uniforms.end(); ++itr, ++i)
     {
@@ -641,8 +671,10 @@ void Effect::setValue(Uniform* uniform, const Texture::Sampler** values, unsigne
 
 void Effect::bind()
 {
-   GL_ASSERT( glUseProgram(_program) );
-
+    if (__currentEffect != this)
+    {
+        GL_ASSERT( glUseProgram(_program) );
+    }
     __currentEffect = this;
 }
 

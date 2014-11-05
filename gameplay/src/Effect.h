@@ -8,6 +8,8 @@
 #include "Matrix.h"
 #include "Texture.h"
 
+#define REPLACE_UNIFORMS_MAP 1
+
 namespace gameplay
 {
 
@@ -231,10 +233,10 @@ public:
      */
     static Effect* getCurrentEffect();
 
-#if 0
+#if REPLACE_UNIFORMS_MAP
     struct UniformPair
     {
-        std::string first;
+        uint32_t first;//std::string first;
         Uniform* second;
     };
 #endif
@@ -261,7 +263,7 @@ private:
     GLuint _program;
     std::string _id;
     std::map<std::string, VertexAttribute> _vertexAttributes;
-#if 1
+#if !REPLACE_UNIFORMS_MAP
     std::map<std::string, Uniform*> _uniforms;
 #else
     std::vector<UniformPair> _uniforms;
