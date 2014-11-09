@@ -127,6 +127,9 @@ public:
      */
     void setPitch(float pitch);
 
+    void setPosition(const gameplay::Vector3 &position);
+    void setRollOff(float rollOff);
+
     /**
      * Gets the velocity of the audio source.
      *

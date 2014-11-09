@@ -1354,7 +1354,6 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
     /**FACEBOOK FUNCTIONS**/
     
 FacebookListener*            Platform::m_fbListener = NULL;
-Platform::MemoryWarningFunc	 Platform::m_memoryWarningFunc = NULL;
 std::vector<FbFriendInfo>    Platform::m_friendsInfo;
 std::vector<FbBundle>        Platform::m_notifications;
 std::vector<std::string>     Platform::m_permissions;
