@@ -2,6 +2,15 @@
 #include "Image.h"
 #include "Texture.h"
 #include "FileSystem.h"
+#ifdef __ANDROID__
+#define KTX_OPENGL_ES2 1
+#include "ktx.h"
+#endif
+
+// ETC (GL_OES_compressed_ETC1_RGB8_texture) : most embedded gpus
+#ifndef GL_ETC1_RGB8_OES
+#define GL_ETC1_RGB8_OES 0x8D64
+#endif
 
 // PVRTC (GL_IMG_texture_compression_pvrtc) : Imagination based gpus
 #ifndef GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
@@ -110,11 +119,19 @@ Texture* Texture::create(const char* path, bool generateMipmaps)
                     texture = create(image, generateMipmaps);
                 SAFE_RELEASE(image);
             }
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
             else if (tolower(ext[1]) == 'p' && tolower(ext[2]) == 'v' && tolower(ext[3]) == 'r')
             {
                 // PowerVR Compressed Texture RGBA.
                 texture = createCompressedPVRTC(path);
             }
+#elif __ANDROID__
+            else if (tolower(ext[1]) == 'k' && tolower(ext[2]) == 't' && tolower(ext[3]) == 'x')
+            {
+                // Ericsson Compressed Texture RGB.
+                texture = createCompressedETC(path);
+            }
+#endif
             else if (tolower(ext[1]) == 'd' && tolower(ext[2]) == 'd' && tolower(ext[3]) == 's')
             {
                 // DDS file format (DXT/S3TC) compressed textures
@@ -126,8 +143,12 @@ Texture* Texture::create(const char* path, bool generateMipmaps)
     // Malek -- begin
     else
     {
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
         // PowerVR Compressed Texture RGBA.
         texture = createCompressedPVRTC(path);
+#elif __ANDROID__
+		texture = createCompressedETC(path);
+#endif
         if (!texture)
         {
             // DDS file format (DXT/S3TC) compressed textures
@@ -242,6 +263,73 @@ static unsigned int computePVRTCDataSize(int width, int height, int bpp)
     return widthBlocks * heightBlocks * ((blockSize  * bpp) >> 3);
 }
 
+#if __ANDROID__
+
+Texture* Texture::createCompressedETC(const char* path)
+{
+    // Malek -- begin
+    char newPath[512];
+    strncpy(newPath, FileSystem::resolvePath(path), 512);
+    char* ext = strrchr(newPath, '.');
+    if (ext == NULL)
+    {
+        strncat(newPath, ".ktx", 5);
+        if (!FileSystem::fileExists(newPath))
+            return NULL;
+    }
+    // Malek -- end
+    
+    std::auto_ptr<Stream> stream(FileSystem::open(newPath));
+    if (stream.get() == NULL || !stream->canRead())
+    {
+        GP_ERROR("Failed to load file '%s'.", newPath);
+        return NULL;
+    }
+
+	GLuint textureId = 0;
+    GLenum target;
+    GLenum glerror;
+    GLboolean isMipmapped;
+    KTX_error_code ktxerror;
+
+	GLuint size = stream->length();
+	GLubyte *data = new GLubyte[size];
+	size_t read = stream->read(data, size, 1);
+    ktxerror = ktxLoadTextureM(data, size, &textureId, &target, NULL, &isMipmapped, &glerror, 0, NULL);
+	
+	// Free data.
+    SAFE_DELETE_ARRAY(data);
+
+    if (KTX_SUCCESS == ktxerror) 
+	{
+		Filter minFilter = isMipmapped ? NEAREST_MIPMAP_LINEAR : LINEAR;
+		GL_ASSERT( glBindTexture(target, textureId) );
+		GL_ASSERT( glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minFilter) );
+
+		//GLint width, height;
+		//GL_ASSERT( glGetTexLevelParameteriv(target, 0, GL_TEXTURE_WIDTH, &width) );
+		//GL_ASSERT( glGetTexLevelParameteriv(target, 0, GL_TEXTURE_HEIGHT, &height) );
+
+		Texture* texture = new Texture();
+		texture->_handle = textureId;
+		texture->_width = 0;
+		texture->_height = 0;
+		texture->_mipmapped = isMipmapped;
+		texture->_compressed = true;
+		texture->_minFilter = minFilter;
+        
+		return texture;
+    }
+	else
+	{
+		 GP_ERROR("Failed to process file '%s'.", newPath);
+	}
+	
+	return NULL;
+}
+
+#endif
+
 Texture* Texture::createCompressedPVRTC(const char* path)
 {
     // Malek -- begin
@@ -262,7 +350,7 @@ Texture* Texture::createCompressedPVRTC(const char* path)
         GP_ERROR("Failed to load file '%s'.", newPath);
         return NULL;
     }
-
+	
     // Read first 4 bytes to determine PVRTC format.
     size_t read;
     unsigned int version;
@@ -385,6 +473,7 @@ GLubyte* Texture::readCompressedPVRTC(const char* path, Stream* stream, GLsizei*
     }
 
     int bpp;
+	int rate = 0;
     switch (header.pixelFormat[0])
     {
     case 0:
@@ -403,6 +492,11 @@ GLubyte* Texture::readCompressedPVRTC(const char* path, Stream* stream, GLsizei*
         *format = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
         bpp = 4;
         break;
+	case 6:
+		*format = GL_ETC1_RGB8_OES;
+		bpp = 4;
+		rate = 1;
+		break;
     default:
         // Unsupported format.
         GP_ERROR("Unsupported pixel format value (%d) in PVR file '%s'.", header.pixelFormat[0], path);
@@ -426,7 +520,7 @@ GLubyte* Texture::readCompressedPVRTC(const char* path, Stream* stream, GLsizei*
     size_t dataSize = 0;
     for (unsigned int level = 0; level < header.mipMapCount; ++level)
     {
-        dataSize += computePVRTCDataSize(w, h, bpp);
+        dataSize += computePVRTCDataSize(w, h, bpp) >> rate;
         w = std::max(w>>1, 1);
         h = std::max(h>>1, 1);
     }

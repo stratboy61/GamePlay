@@ -281,7 +281,8 @@ LOCAL_SRC_FILES := \
     lua/lua_VerticalLayout.cpp
 
     
-LOCAL_CFLAGS := -D__ANDROID__ -I"../external-deps/lua/include" -I"../external-deps/bullet/include" -I"../external-deps/libpng/include" -I"../external-deps/oggvorbis/include" -I"../external-deps/openal/include"
+LOCAL_CFLAGS := -D__ANDROID__ -I"../external-deps/lua/include" -I"../external-deps/bullet/include" -I"../external-deps/libpng/include" -I"../external-deps/oggvorbis/include" -I"../external-deps/openal/include" -I"../external-deps/libktx/include"
+	
 LOCAL_STATIC_LIBRARIES := android_native_app_glue
 
 include $(BUILD_STATIC_LIBRARY)

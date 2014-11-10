@@ -983,12 +983,22 @@ bool Properties::getPath(const char* name, std::string* path) const
             strncpy(newPath, valueString, len);
             ext = &newPath[len];
             *ext = 0;
+#if __ANDROID__
+            strncat(newPath, ".ktx", 5);
+            if (FileSystem::fileExists(newPath))
+            {
+                found = true;
+            }
+            else 
+#elif TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
             strncat(newPath, ".pvr", 5);
             if (FileSystem::fileExists(newPath))
             {
                 found = true;
             }
-            else {
+            else 
+#endif
+			{
                 *ext = 0;
                 strncat(newPath, ".png", 5);
                 if (FileSystem::fileExists(newPath))

@@ -273,6 +273,8 @@ private:
      */
     Texture& operator=(const Texture&);
 
+	static Texture* createCompressedETC(const char* path);
+
     static Texture* createCompressedPVRTC(const char* path);
 
     static Texture* createCompressedDDS(const char* path);
