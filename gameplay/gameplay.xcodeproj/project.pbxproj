@@ -14,9 +14,8 @@
 		0F022E961998F9C30046495B /* InAppPurchaseiOS.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E951998F9C30046495B /* InAppPurchaseiOS.mm */; };
 		0F022E981998F9CB0046495B /* InAppPurchaseMacOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */; };
 		0F022E9A1998FCA30046495B /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F022E991998FCA30046495B /* StoreKit.framework */; };
-		0F022E9F1998FE320046495B /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */; };
-		0F022EA01998FE660046495B /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */; };
 		0F022EA21998FE6E0046495B /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F022EA11998FE6E0046495B /* StoreKit.framework */; };
+		0F363F081A07937300B8EFF7 /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F363F071A07937300B8EFF7 /* FacebookSDK.framework */; };
 		3C81A95F1987DFCA001CC8BD /* FbUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */; };
 		3C81A9601987DFCA001CC8BD /* FbUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */; };
 		3C81A9611987DFCA001CC8BD /* FbUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 3C81A95E1987DFCA001CC8BD /* FbUtils.h */; };
@@ -1188,7 +1187,7 @@
 		0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = InAppPurchaseMacOSX.mm; path = src/InAppPurchaseMacOSX.mm; sourceTree = SOURCE_ROOT; };
 		0F022E991998FCA30046495B /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		0F022EA11998FE6E0046495B /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.0.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
-		3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FacebookSDK.framework; path = "../external-deps/facebook-ios-sdk-sdk-version-3.15.0/build/FacebookSDK.framework"; sourceTree = "<group>"; };
+		0F363F071A07937300B8EFF7 /* FacebookSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FacebookSDK.framework; path = "../external-deps/facebook-ios-sdk-version-3.18.1/FacebookSDK.framework"; sourceTree = "<group>"; };
 		3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FbUtils.cpp; path = src/FbUtils.cpp; sourceTree = SOURCE_ROOT; };
 		3C81A95E1987DFCA001CC8BD /* FbUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FbUtils.h; path = src/FbUtils.h; sourceTree = SOURCE_ROOT; };
 		4201818D14A41B18008C3F56 /* MeshBatch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MeshBatch.cpp; path = src/MeshBatch.cpp; sourceTree = SOURCE_ROOT; };
@@ -1803,7 +1802,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0F022E9F1998FE320046495B /* FacebookSDK.framework in Frameworks */,
 				0F022E9A1998FCA30046495B /* StoreKit.framework in Frameworks */,
 				5B21E99616153890006EBEAC /* IOKit.framework in Frameworks */,
 				5B2BC7641512516B00D176CD /* libz.dylib in Frameworks */,
@@ -1819,11 +1817,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				0F022EA21998FE6E0046495B /* StoreKit.framework in Frameworks */,
-				0F022EA01998FE660046495B /* FacebookSDK.framework in Frameworks */,
 				BD2636E516CF5B7400CFE15F /* CoreMotion.framework in Frameworks */,
 				BD2636E616CF5B7400CFE15F /* Foundation.framework in Frameworks */,
 				BD2636E716CF5B7400CFE15F /* OpenAL.framework in Frameworks */,
 				BD2636E816CF5B7400CFE15F /* OpenGLES.framework in Frameworks */,
+				0F363F081A07937300B8EFF7 /* FacebookSDK.framework in Frameworks */,
 				BD2636E916CF5B7400CFE15F /* QuartzCore.framework in Frameworks */,
 				BD2636EA16CF5B7400CFE15F /* UIKit.framework in Frameworks */,
 			);
@@ -2462,9 +2460,9 @@
 		42CCD4AF146D811D00353661 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0F363F071A07937300B8EFF7 /* FacebookSDK.framework */,
 				0F022EA11998FE6E0046495B /* StoreKit.framework */,
 				0F022E991998FCA30046495B /* StoreKit.framework */,
-				3C79201F1988FA1B0010FF26 /* FacebookSDK.framework */,
 				5B04C5FE14BFE52F00EB0071 /* MacOSX */,
 				5B04C5FD14BFE52300EB0071 /* iOS */,
 			);
@@ -3937,9 +3935,7 @@
 				EXECUTABLE_PREFIX = lib;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"../external-deps/facebook-ios-sdk-version-3.18.1",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3993,9 +3989,7 @@
 				EXECUTABLE_PREFIX = lib;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"../external-deps/facebook-ios-sdk-version-3.18.1",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;

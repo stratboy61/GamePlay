@@ -243,10 +243,15 @@ Texture* Texture::create(TextureHandle handle, int width, int height, Format for
 // Computes the size of a PVRTC data chunk for a mipmap level of the given size.
 static unsigned int computePVRTCDataSize(int width, int height, int bpp)
 {
+    if (bpp == 1)
+    {
+        return width * height;
+    }
+ 
     int blockSize;
     int widthBlocks;
     int heightBlocks;
-
+    
     if (bpp == 4)
     {
         blockSize = 4 * 4; // Pixel by pixel block size for 4bpp
@@ -391,7 +396,7 @@ Texture* Texture::createCompressedPVRTC(const char* path)
     }
     stream->close();
 
-    int bpp = (format == GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG || format == GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG) ? 2 : 4;
+    int bpp = (format == GL_ALPHA) ? 1 : (format == GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG || format == GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG) ? 2 : 4;
 
     // Generate our texture.
     GLuint textureId;
@@ -406,7 +411,7 @@ Texture* Texture::createCompressedPVRTC(const char* path)
     texture->_width = width;
     texture->_height = height;
     texture->_mipmapped = mipMapCount > 1;
-    texture->_compressed = true;
+    texture->_compressed = bpp > 1;
     texture->_minFilter = minFilter;
 
     // Load the data for each level.
@@ -416,8 +421,10 @@ Texture* Texture::createCompressedPVRTC(const char* path)
         unsigned int dataSize = computePVRTCDataSize(width, height, bpp);
 
         // Upload data to GL.
-        GL_ASSERT( glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0, dataSize, ptr) );
-
+        if (bpp > 1)
+            GL_ASSERT( glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0, dataSize, ptr) );
+        else
+            GL_ASSERT( glTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0, format, GL_UNSIGNED_BYTE, ptr) );
         width = std::max(width >> 1, 1);
         height = std::max(height >> 1, 1);
         ptr += dataSize;
@@ -465,42 +472,51 @@ GLubyte* Texture::readCompressedPVRTC(const char* path, Stream* stream, GLsizei*
         return NULL;
     }
 
+    int bpp;
+    
     if (header.pixelFormat[1] != 0)
     {
-        // Unsupported pixel format.
-        GP_ERROR("Unsupported pixel format in PVR file '%s'. (MSB == %d != 0)", path, header.pixelFormat[1]);
-        return NULL;
+        if (header.pixelFormat[0] == 97 && header.pixelFormat[1] == 8) // 'a8'
+        {
+            *format = GL_ALPHA;
+            bpp = 1;
+        }
+        else {
+            // Unsupported pixel format.
+            GP_ERROR("Unsupported pixel format in PVR file '%s'. (MSB == %d != 0)", path, header.pixelFormat[1]);
+            return NULL;
+        }
     }
-
-    int bpp;
-	int rate = 0;
-    switch (header.pixelFormat[0])
+    else
     {
-    case 0:
-        *format = GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
-        bpp = 2;
-        break;
-    case 1:
-        *format = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
-        bpp = 2;
-        break;
-    case 2:
-        *format = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
-        bpp = 4;
-        break;
-    case 3:
-        *format = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
-        bpp = 4;
-        break;
-	case 6:
-		*format = GL_ETC1_RGB8_OES;
-		bpp = 4;
-		rate = 1;
-		break;
-    default:
-        // Unsupported format.
-        GP_ERROR("Unsupported pixel format value (%d) in PVR file '%s'.", header.pixelFormat[0], path);
-        return NULL;
+        switch (header.pixelFormat[0])
+        {
+            case 0:
+                *format = GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
+                bpp = 2;
+                break;
+            case 1:
+                *format = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+                bpp = 2;
+                break;
+            case 2:
+                *format = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
+                bpp = 4;
+                break;
+            case 3:
+                *format = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+                bpp = 4;
+                break;
+/*			case 6:
+				*format = GL_ETC1_RGB8_OES;
+				bpp = 4;
+				rate = 1;
+				break;*/
+            default:
+                // Unsupported format.
+                GP_ERROR("Unsupported pixel format value (%d) in PVR file '%s'.", header.pixelFormat[0], path);
+                return NULL;
+        }
     }
 
     *width = (GLsizei)header.width;
@@ -518,11 +534,17 @@ GLubyte* Texture::readCompressedPVRTC(const char* path, Stream* stream, GLsizei*
     int w = *width;
     int h = *height;
     size_t dataSize = 0;
-    for (unsigned int level = 0; level < header.mipMapCount; ++level)
-    {
-        dataSize += computePVRTCDataSize(w, h, bpp) >> rate;
-        w = std::max(w>>1, 1);
-        h = std::max(h>>1, 1);
+
+    if (bpp > 1) {
+        for (unsigned int level = 0; level < header.mipMapCount; ++level)
+        {
+            dataSize += computePVRTCDataSize(w, h, bpp);
+            w = std::max(w>>1, 1);
+            h = std::max(h>>1, 1);
+        }
+    }
+    else {
+        dataSize = w*h;
     }
 
     // Read data.

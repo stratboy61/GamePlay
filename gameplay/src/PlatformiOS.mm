@@ -16,10 +16,13 @@
 #import <OpenGLES/ES2/glext.h>
 #import <mach/mach_time.h>
 
-//#define FACEBOOK_SDK
+#define FACEBOOK_SDK
 #ifdef FACEBOOK_SDK
 #import <FacebookSDK/FacebookSDK.h>
 #endif
+
+//#define UIScreenMainScreenScale     [[UIScreen mainScreen] scale]
+#define UIScreenMainScreenScale     ([[UIScreen mainScreen] scale] > 1.0 ? ([[UIScreen mainScreen] bounds].size.height < 768 ? 2.0 : 1.25) : 1.0)
 
 #define UIInterfaceOrientationEnum(x) ([x isEqualToString:@"UIInterfaceOrientationPortrait"]?UIInterfaceOrientationPortrait:			    \
 				      ([x isEqualToString:@"UIInterfaceOrientationPortraitUpsideDown"]?UIInterfaceOrientationPortraitUpsideDown:    \
@@ -27,21 +30,21 @@
 					UIInterfaceOrientationLandscapeRight)))
 #define DeviceOrientedSize(o)	      ( ( ( [[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending ) ? \
 					    ( (o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?			   \
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale]):	\
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale]) )  \
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale):	\
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale) )  \
 					: \
 					    ( (o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?			   \
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale]):	\
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale], [[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale]) )  \
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale):	\
+					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale) )  \
 					) )
 
 using namespace std;
 using namespace gameplay;
 
 // UIScreen bounds are provided as if device was in portrait mode Gameplay defaults to landscape
-extern const int WINDOW_WIDTH  = [[UIScreen mainScreen] bounds].size.height * [[UIScreen mainScreen] scale];
-extern const int WINDOW_HEIGHT = [[UIScreen mainScreen] bounds].size.width * [[UIScreen mainScreen] scale];
-extern const int WINDOW_SCALE = [[UIScreen mainScreen] scale];
+extern const int WINDOW_WIDTH  = [[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale;
+extern const int WINDOW_HEIGHT = [[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale;
+extern const float WINDOW_SCALE = UIScreenMainScreenScale;
 
 int __argc = 0;
 char** __argv = 0;
@@ -199,7 +202,7 @@ int getUnicode(int key);
 	}
 
 	// Configure the CAEAGLLayer and setup out the rendering context
-	CGFloat scale = [[UIScreen mainScreen] scale];
+	CGFloat scale = UIScreenMainScreenScale;
 	CAEAGLLayer* layer = (CAEAGLLayer *)self.layer;
 	layer.opaque = TRUE;
 	layer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:

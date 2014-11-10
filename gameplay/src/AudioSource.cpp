@@ -222,6 +222,16 @@ void AudioSource::setPitch(float pitch)
     _pitch = pitch;
 }
 
+void AudioSource::setRollOff(float rollOff)
+{
+    AL_CHECK( alSourcef(_alSource, AL_ROLLOFF_FACTOR, rollOff) );
+}
+
+void AudioSource::setPosition(const Vector3 &position)
+{
+	AL_CHECK( alSourcefv(_alSource, AL_POSITION, (const ALfloat*)&position.x) );
+}
+
 const Vector3& AudioSource::getVelocity() const
 {
     return _velocity;
