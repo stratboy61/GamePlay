@@ -7,7 +7,7 @@ namespace gameplay
 {
 
 AudioListener::AudioListener()
-    : _gain(1.0f), _camera(NULL)
+    : _gain(1.0f), _camera(NULL), m_cameraMode(ALCM_LISTENER_ATTACHED_TO_CAMERA)
 {
 }
 
@@ -108,8 +108,10 @@ void AudioListener::setCamera(Camera* c)
         if (_camera)
         {
             GP_ASSERT(_camera->getNode());
-            _camera->getNode()->removeListener(this);
-            SAFE_RELEASE(_camera);
+			if (m_cameraMode == ALCM_LISTENER_ATTACHED_TO_CAMERA) {
+				_camera->getNode()->removeListener(this);
+				SAFE_RELEASE(_camera);
+			}
         }
 
         // Connect the new camera.
@@ -118,8 +120,10 @@ void AudioListener::setCamera(Camera* c)
         if (_camera)
         {
             GP_ASSERT(_camera->getNode());
-            _camera->addRef();
-            _camera->getNode()->addListener(this);
+			if (m_cameraMode == ALCM_LISTENER_ATTACHED_TO_CAMERA) {
+				_camera->addRef();
+				_camera->getNode()->addListener(this);
+			}
         }
     }
 }

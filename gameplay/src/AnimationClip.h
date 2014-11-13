@@ -418,6 +418,7 @@ private:
     float _speed;                                       // The speed that the clip is playing. Default is 1.0. Negative goes in reverse.
     double _timeStarted;                                // The game time when this clip was actually started.
     float _elapsedTime;                                 // Time elapsed while the clip is running.
+    float _lastCurrentTime;
     AnimationClip* _crossFadeToClip;                    // The clip to cross fade to.
     float _crossFadeOutElapsed;                         // The amount of time that has elapsed for the crossfade.
     unsigned long _crossFadeOutDuration;                // The duration of the cross fade.

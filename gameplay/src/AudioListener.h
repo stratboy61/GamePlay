@@ -19,6 +19,10 @@ class AudioListener : public Transform::Listener
 
 public:
 
+	enum AudioListenerCameraModeEnum {
+		ALCM_LISTENER_ATTACHED_TO_CAMERA,
+		ALCM_LISTENER_NOT_ATTACHED_TO_CAMERA
+	};
     /**
      * Gets the single instance of the audio listener.
      *
@@ -142,6 +146,7 @@ public:
      * @param camera The camera that is associated with the audio listener
      */
     void setCamera(Camera* camera);
+	void setCameraMode(AudioListenerCameraModeEnum value) {m_cameraMode = value;}
 
 private:
 
@@ -165,6 +170,7 @@ private:
     Vector3 _velocity;
     Vector3 _orientation[2];
     Camera* _camera;
+	AudioListenerCameraModeEnum m_cameraMode;
 };
 
 }

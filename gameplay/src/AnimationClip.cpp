@@ -12,7 +12,7 @@ namespace gameplay
 AnimationClip::AnimationClip(const char* id, Animation* animation, unsigned long startTime, unsigned long endTime)
     : _id(id), _animation(animation), _startTime(startTime), _endTime(endTime), _duration(_endTime - _startTime), 
       _stateBits(0x00), _repeatCount(1.0f), _loopBlendTime(0), _activeDuration(_duration * _repeatCount), _speed(1.0f), _timeStarted(0), 
-      _elapsedTime(0), _crossFadeToClip(NULL), _crossFadeOutElapsed(0), _crossFadeOutDuration(0), _blendWeight(1.0f), 
+      _elapsedTime(0), _lastCurrentTime(0), _crossFadeToClip(NULL), _crossFadeOutElapsed(0), _crossFadeOutDuration(0), _blendWeight(1.0f), 
       _beginListeners(NULL), _endListeners(NULL), _listeners(NULL), _listenerItr(NULL), _scriptListeners(NULL), _locomotionClip(false),
 	  _synchronized(false), _restart(false), m_lastMin(-1), m_lastMax(-1), m_lastIndex(-1)
 {
@@ -433,6 +433,10 @@ bool AnimationClip::update(float elapsedTime)
         {
             // Animation is running normally.
             currentTime = fmodf(_elapsedTime, _duration + _loopBlendTime);
+			if (_listeners && (currentTime < _lastCurrentTime)) { // we cycled back to the beginning
+				*_listenerItr = _listeners->begin();
+			}
+			_lastCurrentTime = currentTime;
         }
     }
 
@@ -443,19 +447,21 @@ bool AnimationClip::update(float elapsedTime)
 
         if (_speed >= 0.0f)
         {
-            while (*_listenerItr != _listeners->end() && _elapsedTime >= (long) (**_listenerItr)->_eventTime)
+            while (*_listenerItr != _listeners->end() && currentTime >= (long) (**_listenerItr)->_eventTime)
             {
                 GP_ASSERT(_listenerItr);
                 GP_ASSERT(**_listenerItr);
                 GP_ASSERT((**_listenerItr)->_listener);
 
-                (**_listenerItr)->_listener->animationEvent(this, Listener::TIME);
+				if (!isClipStateBitSet(CLIP_IS_FADING_OUT_BIT)) {
+					(**_listenerItr)->_listener->animationEvent(this, Listener::TIME);
+				}
                 ++*_listenerItr;
             }
         }
         else
         {
-            while (*_listenerItr != _listeners->begin() && _elapsedTime <= (long) (**_listenerItr)->_eventTime)
+            while (*_listenerItr != _listeners->begin() && currentTime <= (long) (**_listenerItr)->_eventTime)
             {
                 GP_ASSERT(_listenerItr);
                 GP_ASSERT(**_listenerItr);
