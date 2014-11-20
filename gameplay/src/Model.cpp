@@ -332,7 +332,60 @@ static bool drawWireframe(MeshPart* part)
     }
 }
 
-void Model::draw(bool wireframe)
+void Model::drawMeshPart(unsigned int index, bool wireframe)
+{
+	unsigned int partCount = _mesh->getPartCount();
+    if (partCount == 0)
+    {
+        // No mesh parts (index buffers).
+        if (_material)
+        {
+            Technique* technique = _material->getTechnique();
+            GP_ASSERT(technique);
+            unsigned int passCount = technique->getPassCount();
+            for (unsigned int i = 0; i < passCount; ++i)
+            {
+                Pass* pass = technique->getPassByIndex(i);
+                GP_ASSERT(pass);
+                pass->bind();
+                GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) );
+                if (!wireframe || !drawWireframe(_mesh))
+                {
+                    GL_ASSERT( glDrawArrays(_mesh->getPrimitiveType(), 0, _mesh->getVertexCount()) );
+                }
+                pass->unbind();
+            }
+        }
+    }
+    else
+    {
+        MeshPart* part = _mesh->getPart(index);
+        GP_ASSERT(part);
+
+        // Get the material for this mesh part.
+        Material* material = getMaterial(index);
+        if (material)
+        {
+            Technique* technique = material->getTechnique();
+            GP_ASSERT(technique);
+            unsigned int passCount = technique->getPassCount();
+            for (unsigned int j = 0; j < passCount; ++j)
+            {
+                Pass* pass = technique->getPassByIndex(j);
+                GP_ASSERT(pass);
+                pass->bind();
+                GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, part->_indexBuffer) );
+                if (!wireframe || !drawWireframe(part))
+                {
+                    GL_ASSERT( glDrawElements(part->getPrimitiveType(), part->getIndexCount(), part->getIndexFormat(), 0) );
+                }
+                pass->unbind();
+            }
+        }
+    }
+}
+
+void Model::draw(bool wireframe, int start, int end)
 {
     GP_ASSERT(_mesh);
 
@@ -361,7 +414,8 @@ void Model::draw(bool wireframe)
     }
     else
     {
-        for (unsigned int i = 0; i < partCount; ++i)
+		unsigned int last = end == -1 ? partCount : end;
+        for (unsigned int i = start; i < last; ++i)
         {
             MeshPart* part = _mesh->getPart(i);
             GP_ASSERT(part);

@@ -154,8 +154,17 @@ public:
      * and so on, should be set up before calling this method.
      *
      * @param wireframe If true, draw the model in wireframe mode.
+	 * @param start Start of Mesh Parts range
+	 * @param end End of Mesh Parts range (-1 means end of array)
      */
-    void draw(bool wireframe = false);
+    void draw(bool wireframe = false, int start = 0, int end = -1);
+
+    /**
+     * Draws a mesh part instance.
+     *
+	 * @param index Mesh Part index
+	 */
+	void drawMeshPart(unsigned int index = 0, bool wireframe = false);
 
 private:
 
