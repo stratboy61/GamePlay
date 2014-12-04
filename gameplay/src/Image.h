@@ -19,7 +19,8 @@ public:
     enum Format
     {
         RGB,
-        RGBA
+        RGBA,
+		GREYSCALE
     };
 
     /**

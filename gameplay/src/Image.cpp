@@ -76,12 +76,17 @@ Image* Image::create(const char* path)
     // Indicate that we already read the first 8 bytes (signature).
     png_set_sig_bytes(png, 8);
 
-    // Read the entire image into memory.
-    png_read_png(png, info, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_PACKING | PNG_TRANSFORM_EXPAND, NULL);
+	// Get info from PNG header
+	png_read_info(png, info);
+	unsigned int width;
+	unsigned int height;
+	int bit_depth;
+	int color_type;
+	png_get_IHDR(png, info, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
 
     Image* image = new Image();
-    image->_width = png_get_image_width(png, info);
-    image->_height = png_get_image_height(png, info);
+    image->_width = width;
+    image->_height = height;
 
     png_byte colorType = png_get_color_type(png, info);
     switch (colorType)
@@ -92,7 +97,12 @@ Image* Image::create(const char* path)
 
     case PNG_COLOR_TYPE_RGB:
         image->_format = Image::RGB;
-        break;
+	    break;
+
+	case PNG_COLOR_TYPE_PALETTE:
+	case PNG_COLOR_TYPE_GRAY:
+		image->_format = Image::GREYSCALE;
+		break;
 
     default:
         GP_ERROR("Unsupported PNG color type (%d) for image file '%s'.", (int)colorType, newPath);
@@ -100,17 +110,35 @@ Image* Image::create(const char* path)
         return NULL;
     }
 
+    if (bit_depth == 16) {
+        png_set_strip_16(png);
+	}
+
+    if(color_type == PNG_COLOR_TYPE_RGBA && color_type == PNG_COLOR_TYPE_RGBA) {
+		if (png_get_valid(png, info, PNG_INFO_tRNS)) {
+			GP_ASSERT(colorType == PNG_COLOR_TYPE_RGBA);
+			png_set_tRNS_to_alpha(png);    
+		}
+		//else // Malek: OpenGL does this automatically, no need to expand 24-bit RGB to RGBA
+		//    png_set_filler(png, 0xff, PNG_FILLER_AFTER);
+	}
+
+    png_read_update_info(png, info);
+	
     size_t stride = png_get_rowbytes(png, info);
 
     // Allocate image data.
     image->_data = new unsigned char[stride * image->_height];
 
     // Read rows into image data.
-    png_bytepp rows = png_get_rows(png, info);
+	png_bytepp row_pointers = (png_bytep *)new unsigned char[(sizeof(png_bytep) * height)];
     for (unsigned int i = 0; i < image->_height; ++i)
     {
-        memcpy(image->_data+(stride * (image->_height-1-i)), rows[i], stride);
+		row_pointers[i] = (png_bytep)(image->_data + ((height - (i + 1)) * stride));
     }
+
+	png_read_image(png, row_pointers);
+	delete[] row_pointers;
 
     // Clean up.
     png_destroy_read_struct(&png, &info, NULL);
