@@ -100,6 +100,15 @@ public:
     static double getGameTime();
 
     /**
+     * Gets the frame relative elapsed time (in milliseconds). 
+     *
+     * 
+     * @return The elapsed frame time (in milliseconds).
+     */
+    static double getElapsedTime();
+
+
+    /**
      * Gets the game state.
      *
      * @return The current game state.
@@ -750,6 +759,7 @@ private:
     unsigned int _pausedCount;                  // Number of times pause() has been called.
     static double _pausedTimeLast;              // The last time paused.
     static double _pausedTimeTotal;             // The total time paused.
+	static double _elapsedTime;                 // The last time elapsed between two rendered frames.
     double _frameLastFPS;                       // The last time the frame count was updated.
     unsigned int _frameCount;                   // The current frame count.
     unsigned int _frameRate;                    // The current frame rate.

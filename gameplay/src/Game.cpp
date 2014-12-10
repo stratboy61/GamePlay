@@ -18,6 +18,7 @@ namespace gameplay
 static Game* __gameInstance = NULL;
 double Game::_pausedTimeLast = 0.0;
 double Game::_pausedTimeTotal = 0.0;
+double Game::_elapsedTime = 0.0;
 
 Game::Game()
     : _initialized(false), _state(UNINITIALIZED), _pausedCount(0),
@@ -60,6 +61,11 @@ double Game::getAbsoluteTime()
 double Game::getGameTime()
 {
     return Platform::getAbsoluteTime() - _pausedTimeTotal;
+}
+
+double Game::getElapsedTime()
+{
+    return _elapsedTime;
 }
 
 void Game::setVsync(bool enable)
@@ -296,7 +302,27 @@ void Game::frame()
     // Fire time events to scheduled TimeListeners
     fireTimeEvents(frameTime);
 
+	if (frameTime < lastFrameTime)
+		frameTime = lastFrameTime + 1000.0/60.0;
+    // Update Time.
+    float elapsedTime = (frameTime - lastFrameTime);
+	lastFrameTime = frameTime;
+	// MALEK: Limit frame time explosion.
+	if (elapsedTime>250.0)
+		elapsedTime = 250.0;
+
 #define USE_ACCUMULATOR 1
+
+#if USE_ACCUMULATOR 
+	// MALEK : Fixed Time Update
+	static const double FRAME_RATE = 60.0;
+	static const double UPDATE_RATE = 30.0;
+	static const double MS_PER_FRAME = 1000.0/FRAME_RATE;
+	static const double MS_PER_UPDATE = 1000.0/UPDATE_RATE;
+	static const int MAX_LOOP = 3;
+#endif
+
+	_elapsedTime = elapsedTime;
 
     if (_state == Game::RUNNING)
     {
@@ -305,26 +331,12 @@ void Game::frame()
         GP_ASSERT(_physicsController);
         GP_ASSERT(_aiController);
 
-        // Update Time.
-        float elapsedTime = (frameTime - lastFrameTime);
-        lastFrameTime = frameTime;
-
-		// MALEK: Limit frame time explosion.
-		if (elapsedTime>250.0)
-			elapsedTime = 250.0;
-
 #if USE_ACCUMULATOR
-		// MALEK : Fixed Time Update
-		static const double FRAME_RATE = 60.0;
-		static const double UPDATE_RATE = 30.0;
-		static const double MS_PER_FRAME = 1000.0/FRAME_RATE;
-		static const double MS_PER_UPDATE = 1000.0/UPDATE_RATE;
-		static const int MAX_LOOP = 3;
+		// MALEK: --->
 		// catchup accumulators
 		static double accumulatedFrame = 0.0;
 		static double accumulatedUpdate = 0.0;
 
-		// MALEK: --->
 		float realElapsedTime = elapsedTime;
 		accumulatedFrame += elapsedTime;
 		accumulatedUpdate += elapsedTime;
@@ -332,7 +344,7 @@ void Game::frame()
 		int updateloop = 0;
 
 		// Update gamepads.
-		Gamepad::updateInternal(elapsedTime);
+		Gamepad::updateInternal(realElapsedTime);
 
 		// Update forms.
 		Form::updateInternal(realElapsedTime);
@@ -354,7 +366,7 @@ void Game::frame()
 
 
 
-		updateloop = 0;
+			updateloop = 0;
 
 			elapsedTime = (float)MS_PER_UPDATE;
 
@@ -363,11 +375,11 @@ void Game::frame()
 
 		// MALEK <---
 #else		
-			// Update the scheduled and running animations.
-			_animationController->update(elapsedTime);
+			// Update gamepads.
+			Gamepad::updateInternal(elapsedTime);
 
-			// Update the physics.
-			_physicsController->update(elapsedTime);
+			// Update forms.
+			Form::updateInternal(elapsedTime);
 #endif
 			// Update the scheduled and running animations.
 			_animationController->update(elapsedTime);
