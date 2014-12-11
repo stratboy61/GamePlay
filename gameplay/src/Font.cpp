@@ -470,7 +470,7 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
         GP_ASSERT(_batch);
         for (size_t i = startIndex; i < length; i += (size_t)iteration)
         {
-            char c = 0;
+            int c = 0;
             if (rightToLeft)
             {
                 c = cursor[i];
@@ -479,6 +479,33 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
             {
                 c = text[i];
             }
+
+			// UTF-8 conversion
+			unsigned char byte = (unsigned char)(c & 0xFF);
+			if (byte >= 0x80)
+			{
+				// 2-byte sequence ?
+				if ((byte & 0xE0) == 0xC0) {
+					unsigned char byte2 = text[++i];
+					c = ((byte & 0x1F) << 6) | byte2;
+				}
+				// 3-byte sequence ?
+				else if ((byte & 0xF0) == 0xE0) {
+					unsigned char byte2 = text[++i];
+					unsigned char byte3 = text[++i];
+					c = ((byte & 0x0F) << 12) | (byte2 << 6) | byte3;
+				}
+				// 4-byte sequence ?
+				else if ((byte & 0xF8) == 0xF0) {
+					unsigned char byte2 = text[++i];
+					unsigned char byte3 = text[++i];
+					unsigned char byte4 = text[++i];
+					c = ((byte & 0x0F) << 0x12) | (byte2 << 0x0C) | (byte3 << 0x06) | byte4;
+				}
+				else {
+					GP_ASSERT("invalid UTF-8 encoding !");
+				}
+			}
 
             // Draw this character.
             switch (c)
@@ -626,7 +653,35 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
         GP_ASSERT(_batch);
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            unsigned char c = token[i];
+            int c = token[i];
+
+			// UTF-8 conversion
+			unsigned char byte = (unsigned char)(c & 0xFF);
+			if (byte >= 0x80)
+			{
+				// 2-byte sequence ?
+				if ((byte & 0xE0) == 0xC0) {
+					unsigned char byte2 = token[++i];
+					c = ((byte & 0x1F) << 6) | byte2;
+				}
+				// 3-byte sequence ?
+				else if ((byte & 0xF0) == 0xE0) {
+					unsigned char byte2 = token[++i];
+					unsigned char byte3 = token[++i];
+					c = ((byte & 0x0F) << 12) | (byte2 << 6) | byte3;
+				}
+				// 4-byte sequence ?
+				else if ((byte & 0xF8) == 0xF0) {
+					unsigned char byte2 = token[++i];
+					unsigned char byte3 = token[++i];
+					unsigned char byte4 = token[++i];
+					c = ((byte & 0x0F) << 0x12) | (byte2 << 0x0C) | (byte3 << 0x06) | byte4;
+				}
+				else {
+					GP_ASSERT("invalid UTF-8 encoding !");
+				}
+			}
+
             int glyphIndex = c - 32; // HACK for ASCII
         
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
