@@ -302,10 +302,11 @@ void Game::frame()
     // Fire time events to scheduled TimeListeners
     fireTimeEvents(frameTime);
 
-	if (frameTime < lastFrameTime)
-		frameTime = lastFrameTime + 1000.0/60.0;
-    // Update Time.
-    float elapsedTime = (frameTime - lastFrameTime);
+    float elapsedTime = 1000.0/30.0;
+    if (frameTime > lastFrameTime) {
+        // Update Time.
+        elapsedTime = (frameTime - lastFrameTime);
+    }
 	lastFrameTime = frameTime;
 	// MALEK: Limit frame time explosion.
 	if (elapsedTime>250.0)
