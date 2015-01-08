@@ -143,6 +143,16 @@ public:
     Texture::Sampler* setValue(const char* texturePath, bool generateMipmaps);
 
     /**
+     * Loads a cubemap texture sampler from the specified paths and sets it as the value of this parameter.
+     *
+     * @param texturePaths The path to the cubemap textures to set.
+     * @param generateMipmaps True to generate a full mipmap chain for the texture, false otherwise.
+     *
+     * @return The texture sampler that was set for this material parameter.
+     */
+    Texture::Sampler* setValue(const std::vector<const char*> &texturePaths, bool generateMipmaps);
+
+    /**
      * Stores a float value in this parameter.
      *
      * @param value The value to set.
@@ -247,6 +257,16 @@ public:
      * @return The texture sampler that was set for this material parameter.
      */
     Texture::Sampler* setSampler(const char* texturePath, bool generateMipmaps);
+
+    /**
+     * Loads a cubemap texture sampler from the specified paths and sets it as the value of this parameter.
+     *
+     * @param texturePaths The paths to the cubemap textures to set.
+     * @param generateMipmaps True to generate a full mipmap chain for the texture, false otherwise.
+     *
+     * @return The texture sampler that was set for this material parameter.
+     */
+    Texture::Sampler* setSampler(const std::vector<const char*> &texturePaths, bool generateMipmaps);
 
     /**
      * Stores a Sampler value in this parameter.

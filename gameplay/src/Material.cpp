@@ -411,24 +411,45 @@ void Material::loadRenderState(RenderState* renderState, Properties* properties)
                 continue;
             }
 
+			bool mipmap = ns->getBool("mipmap");
             // Get the texture path.
-            std::string path;
-            if (!ns->getPath("path", &path))
-            {
-                GP_ERROR("Texture sampler '%s' is missing required image file path.", name);
-                continue;
-            }
+			Texture::Sampler* sampler = NULL;
+			std::string path;
+			if (!ns->getPath("path", &path))
+			{
+				std::vector<std::string> paths;
+				std::vector<const char *> c_paths;
+				if (!ns->getPath("multipath", paths))
+				{
+					GP_ERROR("Texture sampler '%s' is missing required image file path.", name);
+					continue;
+				}
+				else
+				{
+					GP_ASSERT(paths.size() >= 6);
+					c_paths.reserve(paths.size());
+					for (unsigned int index = 0; index < paths.size(); ++index) {
+						c_paths.push_back(paths[index].c_str());
+					}
+					// Set the sampler parameter.
+					GP_ASSERT(renderState->getParameter(name));
+					sampler = renderState->getParameter(name)->setValue(c_paths, mipmap);
+				}
+			}
+			else
+			{
+				// Set the sampler parameter.
+				GP_ASSERT(renderState->getParameter(name));
+				sampler = renderState->getParameter(name)->setValue(path.c_str(), mipmap);
+			}
 
-            // Read texture state (booleans default to 'false' if not present).
-            bool mipmap = ns->getBool("mipmap");
+            // Read texture state (booleans default to 'false' if not present).            
             Texture::Wrap wrapS = parseTextureWrapMode(ns->getString("wrapS"), Texture::REPEAT);
             Texture::Wrap wrapT = parseTextureWrapMode(ns->getString("wrapT"), Texture::REPEAT);
             Texture::Filter minFilter = parseTextureFilterMode(ns->getString("minFilter"), mipmap ? Texture::NEAREST_MIPMAP_LINEAR : Texture::LINEAR);
             Texture::Filter magFilter = parseTextureFilterMode(ns->getString("magFilter"), Texture::LINEAR);
 
             // Set the sampler parameter.
-            GP_ASSERT(renderState->getParameter(name));
-            Texture::Sampler* sampler = renderState->getParameter(name)->setValue(path.c_str(), mipmap);
             if (sampler)
             {
                 sampler->setWrapMode(wrapS, wrapT);

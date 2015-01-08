@@ -261,6 +261,20 @@ Texture::Sampler* MaterialParameter::setValue(const char* texturePath, bool gene
     return sampler;
 }
 
+Texture::Sampler* MaterialParameter::setValue(const std::vector<const char*> &texturePaths, bool generateMipmaps)
+{
+	GP_ASSERT(texturePaths.size() >= 6);
+    clearValue();
+
+    Texture::Sampler* sampler = Texture::Sampler::create(texturePaths, generateMipmaps);
+    if (sampler)
+    {
+        _value.samplerValue = sampler;
+        _type = MaterialParameter::SAMPLER;
+    }
+    return sampler;
+}
+
 void MaterialParameter::setFloat(float value)
 {
     setValue(value);
@@ -415,6 +429,12 @@ Texture::Sampler* MaterialParameter::setSampler(const char* texturePath, bool ge
 {
     return setValue(texturePath, generateMipmaps);
 }
+
+Texture::Sampler* MaterialParameter::setSampler(const std::vector<const char*> &texturePaths, bool generateMipmaps)
+{
+    return setValue(texturePaths, generateMipmaps);
+}
+
 
 void MaterialParameter::setSampler(const Texture::Sampler* value)
 {

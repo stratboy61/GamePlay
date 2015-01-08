@@ -54,7 +54,7 @@ namespace gameplay
 static std::vector<Texture*> __textureCache;
 static TextureHandle __currentTextureId;
 
-Texture::Texture() : _handle(0), _format(UNKNOWN), _width(0), _height(0), _mipmapped(false), _cached(false), _compressed(false),
+Texture::Texture() : _handle(0), _format(UNKNOWN), _width(0), _height(0), _mipmapped(false), _cached(false), _compressed(false), _cubemap(false),
     _wrapS(Texture::REPEAT), _wrapT(Texture::REPEAT), _minFilter(Texture::NEAREST_MIPMAP_LINEAR), _magFilter(Texture::LINEAR)
 {
 }
@@ -181,6 +181,102 @@ Texture* Texture::create(const char* path, bool generateMipmaps)
     return NULL;
 }
 
+Texture* Texture::create(const std::vector<const char*> &paths, bool generateMipmaps)
+{
+	GP_ASSERT(paths.size() >= 6);
+
+    // Search texture cache first.
+    /*for (size_t i = 0, count = __textureCache.size(); i < count; ++i)
+    {
+        Texture* t = __textureCache[i];
+        GP_ASSERT(t);
+        if (t->_path == paths[0] + "cube")
+        {
+            // If 'generateMipmaps' is true, call Texture::generateMipamps() to force the 
+            // texture to generate its mipmap chain if it hasn't already done so.
+            if (generateMipmaps)
+            {
+                t->generateMipmaps();
+            }
+
+            // Found a match.
+            t->addRef();
+
+            return t;
+        }
+    }*/
+
+    Texture* texture = NULL;
+	Texture::Format format = UNKNOWN;
+	Image *images[6];
+	static const GLenum directions[6] = { GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
+										GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 
+										GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+
+    // Filter loading based on file extension.
+	
+	for (unsigned int cubeFace = 0; cubeFace < 6; ++cubeFace)
+	{
+	    //const char* ext = strrchr(FileSystem::resolvePath(paths[cubeFace]), '.');
+        //switch (strlen(ext))
+        //{
+        //case 4:
+        //    if (tolower(ext[1]) == 'p' && tolower(ext[2]) == 'n' && tolower(ext[3]) == 'g')
+            {
+                images[cubeFace] = Image::create(paths[cubeFace]);               
+            }
+		//default:
+		//	break;
+		//}
+	}
+	
+    switch (images[0]->getFormat())
+    {
+    case Image::RGB:
+        format = Texture::RGB; break;
+    case Image::RGBA:
+        format = Texture::RGBA; break;
+    case Image::GREYSCALE:
+        format = Texture::LUMINANCE; break;
+    default:
+        GP_ERROR("Unsupported image format (%d).", images[0]->getFormat());        
+    }
+
+	if (format != UNKNOWN)
+	{
+		// Create and load the texture.
+		GLuint textureId;
+		GL_ASSERT( glGenTextures(1, &textureId) );
+		GL_ASSERT( glBindTexture(GL_TEXTURE_CUBE_MAP, textureId) );
+		GL_ASSERT( glPixelStorei(GL_UNPACK_ALIGNMENT, 1) );
+
+		GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE) );
+		// Set initial minification filter based on whether or not mipmaping was enabled.
+		Filter minFilter = generateMipmaps ? NEAREST_MIPMAP_LINEAR : LINEAR;
+		GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, minFilter) );
+		GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+
+		texture = new Texture();
+		texture->_handle = textureId;
+		texture->_format = format;
+		texture->_width = images[0]->getWidth();
+		texture->_height = images[0]->getHeight();
+		texture->_minFilter = minFilter;
+		texture->_cubemap = true;
+	}
+
+	for (int cubeFace = 5; cubeFace >= 0; --cubeFace)
+	{
+		texture->setCubeFace(images[cubeFace], directions[cubeFace]);
+		SAFE_RELEASE(images[cubeFace]);
+	}
+
+	GL_ASSERT( glBindTexture(GL_TEXTURE_CUBE_MAP, 0) );
+	GL_ASSERT( glBindTexture(GL_TEXTURE_2D, __currentTextureId) );
+
+	return texture;
+}
+
 Texture* Texture::create(Image* image, bool generateMipmaps)
 {
     GP_ASSERT(image);
@@ -237,10 +333,24 @@ Texture* Texture::create(TextureHandle handle, int width, int height, Format for
     texture->_handle = handle;
     texture->_format = format;
     texture->_width = width;
-    texture->_height = height;
+    texture->_height = height;	
 
     return texture;
 }
+
+bool Texture::setCubeFace(const Image* image, GLenum direction, bool generateMip)
+{
+    GP_ASSERT(image);
+
+	GL_ASSERT( glTexImage2D(direction, 0, (GLenum)_format, _width, _height, 0, (GLenum)_format, GL_UNSIGNED_BYTE, image->getData()) );
+    if (generateMip)
+    {
+        generateMipmaps();
+    }
+
+	return true;
+}
+
 
 // Computes the size of a PVRTC data chunk for a mipmap level of the given size.
 static unsigned int computePVRTCDataSize(int width, int height, int bpp)
@@ -1044,6 +1154,12 @@ Texture::Sampler* Texture::Sampler::create(const char* path, bool generateMipmap
     return texture ? new Sampler(texture) : NULL;
 }
 
+Texture::Sampler* Texture::Sampler::create(const std::vector<const char*> &paths, bool generateMipmaps)
+{
+    Texture* texture = Texture::create(paths, generateMipmaps);
+    return texture ? new Sampler(texture) : NULL;
+}
+
 void Texture::Sampler::setWrapMode(Wrap wrapS, Wrap wrapT)
 {
     _wrapS = wrapS;
@@ -1065,30 +1181,32 @@ void Texture::Sampler::bind()
 {
     GP_ASSERT(_texture);
 
-    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _texture->_handle) );
+	GLenum textureType = !_texture->_cubemap ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP;
+
+    GL_ASSERT( glBindTexture(textureType, _texture->_handle) );
 
     if (_texture->_minFilter != _minFilter)
     {
         _texture->_minFilter = _minFilter;
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLenum)_minFilter) );
+        GL_ASSERT( glTexParameteri(textureType, GL_TEXTURE_MIN_FILTER, (GLenum)_minFilter) );
     }
 
     if (_texture->_magFilter != _magFilter)
     {
         _texture->_magFilter = _magFilter;
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLenum)_magFilter) );
+        GL_ASSERT( glTexParameteri(textureType, GL_TEXTURE_MAG_FILTER, (GLenum)_magFilter) );
     }
 
     if (_texture->_wrapS != _wrapS)
     {
         _texture->_wrapS = _wrapS;
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (GLenum)_wrapS) );
+        GL_ASSERT( glTexParameteri(textureType, GL_TEXTURE_WRAP_S, (GLenum)_wrapS) );
     }
 
     if (_texture->_wrapT != _wrapT)
     {
         _texture->_wrapT = _wrapT;
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLenum)_wrapT) );
+        GL_ASSERT( glTexParameteri(textureType, GL_TEXTURE_WRAP_T, (GLenum)_wrapT) );
     }
 }
 

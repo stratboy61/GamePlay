@@ -93,6 +93,17 @@ public:
         static Sampler* create(const char* path, bool generateMipmaps = false);
 
         /**
+         * Creates a sampler for the specified cubemap texture.
+         *
+         * @param path Path to the texture to create a sampler for.
+         * @param generateMipmaps True to force a full mipmap chain to be generated for the texture, false otherwise.
+         *
+         * @return The new sampler.
+         * @script{create}
+         */
+		static Sampler* create(const std::vector<const char*> &paths, bool generateMipmaps = false);
+
+        /**
          * Sets the wrap mode for this sampler.
          *
          * @param wrapS The horizontal wrap mode.
@@ -152,6 +163,20 @@ public:
      * @script{create}
      */
     static Texture* create(const char* path, bool generateMipmaps = false);
+
+    /**
+     * Creates a cubemap texture from the given image resources.
+     *
+     * Note that for textures that include mipmap data in the source data (such as most compressed textures),
+     * the generateMipmaps flags should NOT be set to true.
+     *
+     * @param path The image resource path.
+     * @param generateMipmaps true to auto-generate a full mipmap chain, false otherwise.
+     * 
+     * @return The new texture, or NULL if the texture could not be loaded/created.
+     * @script{create}
+     */
+    static Texture* create(const std::vector<const char*> &paths, bool generateMipmaps = false);
 
     /**
      * Creates a texture from the given image.
@@ -246,6 +271,11 @@ public:
     bool isCompressed() const;
 
     /**
+     * Determines if this texture is a cube texture.
+     */
+    bool isCubeMap() const;
+
+    /**
      * Returns the texture handle.
      *
      * @return The texture handle.
@@ -274,6 +304,8 @@ private:
      */
     Texture& operator=(const Texture&);
 
+	bool setCubeFace(const Image *image, GLenum direction, bool generateMip = false);
+
 	static Texture* createCompressedETC(const char* path);
 
     static Texture* createCompressedPVRTC(const char* path);
@@ -294,6 +326,7 @@ private:
     bool _mipmapped;
     bool _cached;
     bool _compressed;
+	bool _cubemap;
     Wrap _wrapS;
     Wrap _wrapT;
     Filter _minFilter;
