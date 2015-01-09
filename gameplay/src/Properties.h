@@ -391,7 +391,22 @@ public:
      * @script{ignore}
      */
     bool getPath(const char* name, std::string* path) const;
-    
+
+    /**
+     * Gets the file paths for the given property if the files exists.
+     * 
+     * This method will first search for the file relative to the working directory.
+     * If the file is not found then it will search relative to the directory the bundle file is in.
+     * 
+     * @param name The name of the property.
+     * @param path The strings to copy the paths to if the files exists.
+     * 
+     * @return True if the property exists and the files exists, false otherwise.
+     *
+     * @script{ignore}
+     */
+    bool getPath(const char* name, std::vector<std::string>& paths) const;
+
     // Called by resolveInheritance().
     void mergeWith(Properties* overrides);
 

@@ -1051,6 +1051,102 @@ bool Properties::getPath(const char* name, std::string* path) const
     return false;
 }
 
+bool Properties::getPath(const char* name, std::vector<std::string>& paths) const
+{
+    GP_ASSERT(name);
+    std::string valueString = getString(name);
+	if (!valueString.empty())
+    {
+		unsigned int count = 0;
+		size_t pos = valueString.find(';');
+		while (pos != std::string::npos)
+		{
+			paths.push_back(valueString.substr(0, pos));
+			valueString.replace(0, pos+1, "");
+			pos = valueString.find(';');
+			++count;
+		}
+
+		if (valueString.length()) {
+			paths.push_back(valueString);
+			++count;
+		}
+
+		for (unsigned int index = 0; index < count; ++index)
+		{
+			const char *path = paths[index].c_str();
+			
+			bool found = false;
+			size_t len = strlen(path);
+			char* ext = (char *)&path[len-4];
+			if (valueString[0] != '@' && *ext != '.')
+			{
+				char newPath[512];
+				strncpy(newPath, path, len);
+				ext = &newPath[len];
+				*ext = 0;
+	#if __ANDROID__
+				strncat(newPath, ".ktx", 5);
+				if (FileSystem::fileExists(newPath))
+				{
+					found = true;
+				}
+				else 
+	#elif TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+				strncat(newPath, ".pvr", 5);
+				if (FileSystem::fileExists(newPath))
+				{
+					found = true;
+				}
+				else 
+	#endif
+				{
+					*ext = 0;
+					strncat(newPath, ".png", 5);
+					if (FileSystem::fileExists(newPath))
+					{
+						found = true;
+					}
+					else {
+						*ext = 0;
+						strncat(newPath, ".dds", 5);
+						if (FileSystem::fileExists(newPath))
+						{
+							found = true;
+						}
+					}
+				}
+            
+				if (!found) {					
+					return false;
+				}
+			}
+			// Malek --- end
+			
+		    if (!FileSystem::fileExists(path))
+			{			
+				const Properties* prop = this;
+				while (prop != NULL)
+				{
+					// Search for the file path relative to the bundle file
+					const std::string* dirPath = prop->_dirPath;
+					if (dirPath != NULL && !dirPath->empty())
+					{
+						std::string relativePath = *dirPath;
+						relativePath.append(valueString);
+						if (!FileSystem::fileExists(relativePath.c_str()))
+						{
+							return false;
+						}
+					}
+					prop = prop->_parent;
+				}
+			}
+		}
+    }
+    return true;
+}
+
 Properties* Properties::clone()
 {
     Properties* p = new Properties();
