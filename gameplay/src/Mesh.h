@@ -108,6 +108,19 @@ public:
     static Mesh* createQuadFullscreen();
 
     /**
+     * Creates a new 1-Unit Cube Map Mesh.
+     *
+     * The returned mesh's vertex format includes a 3-element (x,y,z) position     
+     *
+     * This method returns a mesh describing a unit cube using
+     * normalized device coordinates for vertex positions.
+     * 
+     * @return The newly created mesh.
+     * @script{create}
+     */
+    static Mesh* createUnitCubeMap();
+
+    /**
      * Creates lines between 2 or more points passed in as a Vector3 array.
      *
      * The mesh contains only position data using lines to connect the vertices.

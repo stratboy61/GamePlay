@@ -150,6 +150,66 @@ Mesh* Mesh::createQuad(const Vector3& p1, const Vector3& p2, const Vector3& p3, 
     return mesh;
 }
 
+Mesh* Mesh::createUnitCubeMap()
+{ 
+    float vertices[] =
+    {
+		-1.0F, 1.0F, 1.0F, // (0) Top-left near
+		1.0F, 1.0F, 1.0F, // (1) Top-right near
+		-1.0F, -1.0F, 1.0F, // (2) Bottom-left near
+		1.0F, -1.0F, 1.0F, // (3) Bottom-right near
+		-1.0F, 1.0F, -1.0F, // (4) Top-left far
+		1.0F, 1.0F, -1.0F, // (5) Top-right far
+		-1.0F, -1.0F, -1.0F, // (6) Bottom-left far
+		1.0F, -1.0F, -1.0F // (7) Bottom-right far
+    };
+
+    VertexFormat::Element elements[] =
+    {
+        VertexFormat::Element(VertexFormat::POSITION, 3)		
+    };
+    Mesh* mesh = Mesh::createMesh(VertexFormat(elements, 1), 8, false);
+    if (mesh == NULL)
+    {
+        GP_ERROR("Failed to create mesh.");
+        return NULL;
+    }
+
+    mesh->_primitiveType = TRIANGLES;
+    mesh->setVertexData(vertices, 0, 8);
+
+	mesh->addPart(TRIANGLES, INDEX16, 36);
+
+	// faces are declared in CLOCKWISE (CW) order !
+	// this avoids changing backface culling render state.
+	GLushort indices[] = 
+	{
+		// Right (+X)
+		5, 7, 1,
+		1, 7, 3,
+		// Left (-X)
+		0, 2, 4,
+		4, 2, 6,
+		// Top (+Y)
+		5, 1, 4,
+		4, 1, 0,
+		// Bottom (-Y)
+		6, 2, 7,
+		7, 2, 3,
+		// Front (+Z)
+		1, 3, 0,
+		0, 3, 2,
+		// Back (-Z)
+		4, 6, 5,
+		5, 6, 7
+	};
+
+	mesh->getPart(0)->setIndexData(indices, 0, 36);
+
+    return mesh;
+}
+
+
 Mesh* Mesh::createLines(Vector3* points, unsigned int pointCount)
 {
     GP_ASSERT(points);
