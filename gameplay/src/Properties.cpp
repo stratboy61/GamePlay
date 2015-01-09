@@ -1057,6 +1057,8 @@ bool Properties::getPath(const char* name, std::vector<std::string>& paths) cons
     std::string valueString = getString(name);
 	if (!valueString.empty())
     {
+		char newPath[512];
+
 		unsigned int count = 0;
 		size_t pos = valueString.find(';');
 		while (pos != std::string::npos)
@@ -1074,15 +1076,15 @@ bool Properties::getPath(const char* name, std::vector<std::string>& paths) cons
 
 		for (unsigned int index = 0; index < count; ++index)
 		{
+			bool found = false;
 			const char *path = paths[index].c_str();
 			
-			bool found = false;
-			size_t len = strlen(path);
+			size_t len = strlen(path);	
+			strncpy(newPath, path, len);
+			
 			char* ext = (char *)&path[len-4];
 			if (valueString[0] != '@' && *ext != '.')
-			{
-				char newPath[512];
-				strncpy(newPath, path, len);
+			{								
 				ext = &newPath[len];
 				*ext = 0;
 	#if __ANDROID__
@@ -1123,7 +1125,7 @@ bool Properties::getPath(const char* name, std::vector<std::string>& paths) cons
 			}
 			// Malek --- end
 			
-		    if (!FileSystem::fileExists(path))
+		    if (!FileSystem::fileExists(newPath))
 			{			
 				const Properties* prop = this;
 				while (prop != NULL)
