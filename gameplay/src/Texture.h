@@ -304,7 +304,7 @@ private:
      */
     Texture& operator=(const Texture&);
 
-	bool setCubeFace(const Image *image, GLenum direction, bool generateMip = false);
+	bool setCubeFace(GLubyte *data, GLenum direction, unsigned int mipMapCountOrGenerateMipMap);
 
 	static Texture* createCompressedETC(const char* path);
 

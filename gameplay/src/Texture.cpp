@@ -207,40 +207,79 @@ Texture* Texture::create(const std::vector<const char*> &paths, bool generateMip
     }*/
 
     Texture* texture = NULL;
+    bool compressed = false;
+    GLsizei width, height;
+    GLuint mipMapCount = 0;
 	Texture::Format format = UNKNOWN;
-	Image *images[6];
+    GLubyte *data[6];
+
 	static const GLenum directions[6] = { GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
 										GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 
 										GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
     // Filter loading based on file extension.
-	
+    
 	for (unsigned int cubeFace = 0; cubeFace < 6; ++cubeFace)
 	{
-	    //const char* ext = strrchr(FileSystem::resolvePath(paths[cubeFace]), '.');
-        //switch (strlen(ext))
-        //{
-        //case 4:
-        //    if (tolower(ext[1]) == 'p' && tolower(ext[2]) == 'n' && tolower(ext[3]) == 'g')
+	    const char* ext = strrchr(paths[cubeFace], '.');
+        switch (strlen(ext))
+        {
+        case 4:
+            if (tolower(ext[1]) == 'p' && tolower(ext[2]) == 'n' && tolower(ext[3]) == 'g')
             {
-                images[cubeFace] = Image::create(paths[cubeFace]);               
+                Image *img = Image::create(paths[cubeFace]);
+                data[cubeFace] = img->getData();
+                
+                switch (img->getFormat())
+                {
+                    case Image::RGB:
+                        format = Texture::RGB; break;
+                    case Image::RGBA:
+                        format = Texture::RGBA; break;
+                    case Image::GREYSCALE:
+                        format = Texture::LUMINANCE; break;
+                    default:
+                        GP_ERROR("Unsupported image format (%d).", img->getFormat());
+                }
+                width = img->getWidth();
+                height = img->getHeight();
+                mipMapCount = generateMipmaps;
             }
-		//default:
-		//	break;
-		//}
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+            else if (tolower(ext[1]) == 'p' && tolower(ext[2]) == 'v' && tolower(ext[3]) == 'r')
+            {
+                const char *newPath = FileSystem::resolvePath(paths[cubeFace]);
+                std::auto_ptr<Stream> stream(FileSystem::open(newPath));
+                if (stream.get() == NULL || !stream->canRead())
+                {
+                    GP_ERROR("Failed to load file '%s'.", newPath);
+                    return NULL;
+                }
+                // PowerVR Compressed Texture RGBA.
+                data[cubeFace] = readCompressedPVRTC(newPath, stream.get(), &width, &height, (GLenum*)&format, &mipMapCount);
+                stream->close();
+                
+                int bpp = ((GLenum)format == GL_ALPHA) ? 1 : (((GLenum)format == GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG || (GLenum)format == GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG) ? 2 : 4);
+                compressed = bpp > 1;
+            }
+#elif __ANDROID__
+            else if (tolower(ext[1]) == 'k' && tolower(ext[2]) == 't' && tolower(ext[3]) == 'x')
+            {
+                // Ericsson Compressed Texture RGB.
+                texture = createCompressedETC(paths[cubeFace]);
+            }
+#endif
+            else if (tolower(ext[1]) == 'd' && tolower(ext[2]) == 'd' && tolower(ext[3]) == 's')
+            {
+                // DDS file format (DXT/S3TC) compressed textures
+                texture = createCompressedDDS(paths[cubeFace]);
+            }
+		default:
+			break;
+		}
 	}
 	
-    switch (images[0]->getFormat())
-    {
-    case Image::RGB:
-        format = Texture::RGB; break;
-    case Image::RGBA:
-        format = Texture::RGBA; break;
-    case Image::GREYSCALE:
-        format = Texture::LUMINANCE; break;
-    default:
-        GP_ERROR("Unsupported image format (%d).", images[0]->getFormat());        
-    }
+
 
 	if (format != UNKNOWN)
 	{
@@ -248,27 +287,31 @@ Texture* Texture::create(const std::vector<const char*> &paths, bool generateMip
 		GLuint textureId;
 		GL_ASSERT( glGenTextures(1, &textureId) );
 		GL_ASSERT( glBindTexture(GL_TEXTURE_CUBE_MAP, textureId) );
-		GL_ASSERT( glPixelStorei(GL_UNPACK_ALIGNMENT, 1) );
+		//GL_ASSERT( glPixelStorei(GL_UNPACK_ALIGNMENT, 1) );
 
-		GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE) );
 		// Set initial minification filter based on whether or not mipmaping was enabled.
-		Filter minFilter = generateMipmaps ? NEAREST_MIPMAP_LINEAR : LINEAR;
+		Filter minFilter = (/*generateMipmaps ||*/ mipMapCount>1) ? NEAREST_MIPMAP_LINEAR : LINEAR;
 		GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, minFilter) );
 		GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-
-		texture = new Texture();
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
+        
+        texture = new Texture();
 		texture->_handle = textureId;
 		texture->_format = format;
-		texture->_width = images[0]->getWidth();
-		texture->_height = images[0]->getHeight();
+		texture->_width = width;
+		texture->_height = height;
 		texture->_minFilter = minFilter;
 		texture->_cubemap = true;
+        texture->_wrapS = CLAMP;
+        texture->_wrapT = CLAMP;
+        texture->_compressed = compressed;
 	}
 
 	for (int cubeFace = 5; cubeFace >= 0; --cubeFace)
 	{
-		texture->setCubeFace(images[cubeFace], directions[cubeFace]);
-		SAFE_RELEASE(images[cubeFace]);
+        texture->setCubeFace(data[cubeFace], directions[cubeFace], (compressed ? mipMapCount : generateMipmaps));
+		SAFE_DELETE_ARRAY(data[cubeFace]);
 	}
 
 	GL_ASSERT( glBindTexture(GL_TEXTURE_CUBE_MAP, 0) );
@@ -337,20 +380,6 @@ Texture* Texture::create(TextureHandle handle, int width, int height, Format for
 
     return texture;
 }
-
-bool Texture::setCubeFace(const Image* image, GLenum direction, bool generateMip)
-{
-    GP_ASSERT(image);
-
-	GL_ASSERT( glTexImage2D(direction, 0, (GLenum)_format, _width, _height, 0, (GLenum)_format, GL_UNSIGNED_BYTE, image->getData()) );
-    if (generateMip)
-    {
-        generateMipmaps();
-    }
-
-	return true;
-}
-
 
 // Computes the size of a PVRTC data chunk for a mipmap level of the given size.
 static unsigned int computePVRTCDataSize(int width, int height, int bpp)
@@ -1081,6 +1110,43 @@ Texture* Texture::createCompressedDDS(const char* path)
     return texture;
 }
 
+bool Texture::setCubeFace(GLubyte *data, GLenum direction, unsigned int mipMapCountOrGenerateMipMap)
+{
+    if (_compressed)
+    {
+        // Load the data for each level.
+        int width = _width;
+        int height = _height;
+        GLubyte* ptr = data;
+        
+        int bpp = ((GLenum)_format == GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG || (GLenum)_format == GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG) ? 2 : 4;
+        
+        for (unsigned int level = 0; level < mipMapCountOrGenerateMipMap; ++level)
+        {
+            unsigned int dataSize = computePVRTCDataSize(width, height, bpp);
+            
+            // Upload data to GL.
+            if (bpp > 1)
+                GL_ASSERT( glCompressedTexImage2D(direction, level, _format, width, height, 0, dataSize, ptr) );
+            else
+                GL_ASSERT( glTexImage2D(direction, level, _format, width, height, 0, _format, GL_UNSIGNED_BYTE, ptr) );
+            width = std::max(width >> 1, 1);
+            height = std::max(height >> 1, 1);
+            ptr += dataSize;
+        }
+    }
+    else
+    {
+        GL_ASSERT( glTexImage2D(direction, 0, (GLenum)_format, _width, _height, 0, (GLenum)_format, GL_UNSIGNED_BYTE, data) );
+        
+        if (mipMapCountOrGenerateMipMap)
+        {
+            generateMipmaps();
+        }
+    }
+    return true;
+}
+    
 Texture::Format Texture::getFormat() const
 {
     return _format;

@@ -1125,8 +1125,12 @@ bool Properties::getPath(const char* name, std::vector<std::string>& paths) cons
 			}
 			// Malek --- end
 			
-		    if (!FileSystem::fileExists(newPath))
-			{			
+		    if (FileSystem::fileExists(newPath))
+            {
+                paths[index].assign(newPath);
+            }
+            else
+			{
 				const Properties* prop = this;
 				while (prop != NULL)
 				{
