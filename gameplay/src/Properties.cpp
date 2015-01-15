@@ -1079,8 +1079,9 @@ bool Properties::getPath(const char* name, std::vector<std::string>& paths) cons
 			bool found = false;
 			const char *path = paths[index].c_str();
 			
-			size_t len = strlen(path);	
-			strncpy(newPath, path, len);
+			size_t len = strlen(path);
+			GP_ASSERT(len < 512);
+			strncpy(newPath, path, len+1);
 			
 			char* ext = (char *)&path[len-4];
 			if (valueString[0] != '@' && *ext != '.')
