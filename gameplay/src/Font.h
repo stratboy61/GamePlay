@@ -250,6 +250,8 @@ public:
      */
     static Justify getJustify(const char* justify);
 
+	int findGlyphIndex(int unicode);
+
 private:
 
     /**

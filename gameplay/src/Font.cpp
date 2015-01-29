@@ -157,6 +157,71 @@ void Font::start()
     _batch->start();
 }
 
+
+// TODO: right to left support !
+static int decodeUTF8(const char *token, int &i)
+{
+	int c = token[i];
+	// UTF-8 conversion
+	unsigned char byte = (unsigned char)(c & 0xFF);
+	if (byte >= 0x80)
+	{
+		// 2-byte sequence ?
+		if ((byte & 0xE0) == 0xC0) {
+			unsigned char byte2 = token[++i] & 0x3f;
+			c = ((byte & 0x1F) << 6) | byte2;
+		}
+		// 3-byte sequence ?
+		else if ((byte & 0xF0) == 0xE0) {
+			unsigned char byte2 = token[++i] & 0x3f;
+			unsigned char byte3 = token[++i] & 0x3f;
+			c = ((byte & 0x0F) << 12) | (byte2 << 6) | byte3;
+		}
+		// 4-byte sequence ?
+		else if ((byte & 0xF8) == 0xF0) {
+			unsigned char byte2 = token[++i] & 0x3f;
+			unsigned char byte3 = token[++i] & 0x3f;
+			unsigned char byte4 = token[++i] & 0x3f;
+			c = ((byte & 0x0F) << 0x12) | (byte2 << 0x0C) | (byte3 << 0x06) | byte4;
+		}
+		else {
+			GP_ASSERT("invalid UTF-8 encoding !");
+			return 32;
+		}
+	}
+
+	return c;
+}
+
+int Font::findGlyphIndex(int unicode)
+{
+	if (unicode < 256) {
+		return unicode - 32; // hack 
+	}
+
+	unsigned int begin = 256 - 32;
+	unsigned int end = _glyphCount-1;
+	if (unicode < _glyphs[begin].code || unicode > _glyphs[end].code) {
+		return -1;
+	}
+	
+	unsigned int index = (begin + end + 1)/2;
+	
+	while (unicode != _glyphs[index].code)
+	{
+		if (unicode < _glyphs[index].code) {
+			end = index - 1;			
+		}
+		else if (unicode > _glyphs[index].code) {
+			begin = index + 1;
+		}
+
+		index = (begin + end + 1)/2;
+	}
+	
+	return index;
+}
+
 Font::Text* Font::createText(const char* text, const Rectangle& area, const Vector4& color, unsigned int size, Justify justify,
     bool wrap, bool rightToLeft, const Rectangle* clip)
 {
@@ -260,9 +325,10 @@ Font::Text* Font::createText(const char* text, const Rectangle& area, const Vect
 
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            unsigned char c = token[i];
-            int glyphIndex = c - 32; // HACK for ASCII
-        
+			int c = decodeUTF8(token, i);
+
+            int glyphIndex = findGlyphIndex(c);
+			
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
             {
                 Glyph& g = _glyphs[glyphIndex];
@@ -468,44 +534,17 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
 
         GP_ASSERT(_glyphs);
         GP_ASSERT(_batch);
-        for (size_t i = startIndex; i < length; i += (size_t)iteration)
+        for (int i = startIndex; i < (int)length; i += iteration)
         {
             int c = 0;
             if (rightToLeft)
             {
-                c = cursor[i];
+                c = cursor[i];				
             }
             else
             {
-                c = text[i];
+                c = decodeUTF8(text, i);
             }
-
-			// UTF-8 conversion
-			unsigned char byte = (unsigned char)(c & 0xFF);
-			if (byte >= 0x80)
-			{
-				// 2-byte sequence ?
-				if ((byte & 0xE0) == 0xC0) {
-					unsigned char byte2 = text[++i];
-					c = ((byte & 0x1F) << 6) | byte2;
-				}
-				// 3-byte sequence ?
-				else if ((byte & 0xF0) == 0xE0) {
-					unsigned char byte2 = text[++i];
-					unsigned char byte3 = text[++i];
-					c = ((byte & 0x0F) << 12) | (byte2 << 6) | byte3;
-				}
-				// 4-byte sequence ?
-				else if ((byte & 0xF8) == 0xF0) {
-					unsigned char byte2 = text[++i];
-					unsigned char byte3 = text[++i];
-					unsigned char byte4 = text[++i];
-					c = ((byte & 0x0F) << 0x12) | (byte2 << 0x0C) | (byte3 << 0x06) | byte4;
-				}
-				else {
-					GP_ASSERT("invalid UTF-8 encoding !");
-				}
-			}
 
             // Draw this character.
             switch (c)
@@ -525,7 +564,7 @@ void Font::drawText(const char* text, int x, int y, const Vector4& color, unsign
                 xPos += (size >> 1)*4;
                 break;
             default:
-                int index = c - 32; // HACK for ASCII
+                int index = findGlyphIndex(c);
                 if (index >= 0 && index < (int)_glyphCount)
                 {
                     Glyph& g = _glyphs[index];
@@ -653,36 +692,9 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
         GP_ASSERT(_batch);
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            int c = token[i];
+            int c = decodeUTF8(token, i);
 
-			// UTF-8 conversion
-			unsigned char byte = (unsigned char)(c & 0xFF);
-			if (byte >= 0x80)
-			{
-				// 2-byte sequence ?
-				if ((byte & 0xE0) == 0xC0) {
-					unsigned char byte2 = token[++i];
-					c = ((byte & 0x1F) << 6) | byte2;
-				}
-				// 3-byte sequence ?
-				else if ((byte & 0xF0) == 0xE0) {
-					unsigned char byte2 = token[++i];
-					unsigned char byte3 = token[++i];
-					c = ((byte & 0x0F) << 12) | (byte2 << 6) | byte3;
-				}
-				// 4-byte sequence ?
-				else if ((byte & 0xF8) == 0xF0) {
-					unsigned char byte2 = token[++i];
-					unsigned char byte3 = token[++i];
-					unsigned char byte4 = token[++i];
-					c = ((byte & 0x0F) << 0x12) | (byte2 << 0x0C) | (byte3 << 0x06) | byte4;
-				}
-				else {
-					GP_ASSERT("invalid UTF-8 encoding !");
-				}
-			}
-
-            int glyphIndex = c - 32; // HACK for ASCII
+            int glyphIndex = findGlyphIndex(c);
         
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
             {
@@ -1486,8 +1498,9 @@ int Font::getIndexOrLocation(const char* text, const Rectangle& area, unsigned i
         GP_ASSERT(_glyphs);
         for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
         {
-            unsigned char c = token[i];
-            int glyphIndex = c - 32; // HACK for ASCII
+            int c = decodeUTF8(token, i);
+
+            int glyphIndex = findGlyphIndex(c);
         
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
             {
@@ -1603,9 +1616,9 @@ unsigned int Font::getTokenWidth(const char* token, unsigned int length, unsigne
 
     // Calculate width of word or line.
     unsigned int tokenWidth = 0;
-    for (unsigned int i = 0; i < length; ++i)
+    for (int i = 0; i < (int)length; ++i)
     {
-        unsigned char c = token[i];
+        int c = decodeUTF8(token, i);
         switch (c)
         {
         case ' ':
@@ -1615,7 +1628,7 @@ unsigned int Font::getTokenWidth(const char* token, unsigned int length, unsigne
             tokenWidth += (size >> 1)*4;
             break;
         default:
-            int glyphIndex = c - 32;
+            int glyphIndex = findGlyphIndex(c);
             if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
             {
                 Glyph& g = _glyphs[glyphIndex];

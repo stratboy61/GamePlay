@@ -15,6 +15,8 @@ public:
     unsigned int index;
     unsigned int width;
     float uvCoords[4];
+
+	bool operator<(const Glyph &other);
 };
 
 /**
@@ -28,6 +30,6 @@ public:
  * 
  * @return 0 if successful, -1 if error.
  */
-int writeFont(const char* inFilePath, const char* outFilePath, unsigned int fontSize, const char* id, bool fontpreview);
+int writeFont(const char* inFilePath, const char* outFilePath, const char *inFileLocale, unsigned int fontSize, const char* id, bool fontpreview);
 
 }

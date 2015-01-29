@@ -291,6 +291,11 @@ void EncoderArguments::printUsage() const
     exit(8);
 }
 
+const std::string& EncoderArguments::getFontLocaleFromFilePath() const
+{
+    return _fontLocaleFromFilePath;
+}
+
 bool EncoderArguments::fontPreviewEnabled() const
 {
     return _fontPreview;
@@ -384,6 +389,17 @@ void EncoderArguments::readOption(const std::vector<std::string>& options, size_
     }
     switch (str[1])
     {
+	case 'c':
+        // read two strings, make sure not to go out of bounds
+        if ((*index + 1) >= options.size())
+        {
+            LOG(1, "Error: -c requires 2 arguments.\n");
+            _parseError = true;
+            return;
+        }		
+		(*index)++;
+		_fontLocaleFromFilePath = options[*index];
+		break;
     case 'g':
         if (str.compare("-groupAnimations:auto") == 0 || str.compare("-g:auto") == 0)
         {

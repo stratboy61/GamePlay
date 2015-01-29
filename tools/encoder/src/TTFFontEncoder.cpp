@@ -34,10 +34,118 @@ static void writeString(FILE* fp, const char* str)
     }
 }
 
-int writeFont(const char* inFilePath, const char* outFilePath, unsigned int fontSize, const char* id, bool fontpreview = false)
+int decodeUTF8(const char *text, int &i)
 {
-    Glyph glyphArray[END_INDEX - START_INDEX];
+	int c = (text[i] & 0xff);
+	// UTF-8 conversion
+	unsigned char byte = (unsigned char)c;
+	if (byte >= 0x80)
+	{
+		// 2-byte sequence ?
+		if ((byte & 0xE0) == 0xC0) {
+			int byte2 = text[++i] & 0x3f;
+			c = ((byte & 0x1F) << 6) | byte2;
+		}
+		// 3-byte sequence ?
+		else if ((byte & 0xF0) == 0xE0) {
+			int byte2 = text[++i] & 0x3f;
+			int byte3 = text[++i] & 0x3f;
+			c = ((byte & 0x0F) << 12) | (byte2 << 6) | byte3;
+		}
+		// 4-byte sequence ?
+		else if ((byte & 0xF8) == 0xF0) {
+			int byte2 = text[++i] & 0x3f;
+			int byte3 = text[++i] & 0x3f;
+			int byte4 = text[++i] & 0x3f;
+			c = ((byte & 0x0F) << 0x12) | (byte2 << 0x0C) | (byte3 << 0x06) | byte4;
+		}
+		else {
+			return -1;//GP_ASSERT("invalid UTF-8 encoding !");
+		}
+	}
+
+	if ( c >= 0xD800 && c <= 0xDBFF )
+	{
+		assert("TODO: handle surrogate pairs !");
+	}
+
+	return c;
+}
+
+bool parseLocalisedText(const char *filename, std::vector<Glyph> &glyphs)
+{
+	int value = -1;
+
+	FILE *file = fopen(filename, "rb");
+	if (file == NULL)
+		return false;
+	fseek(file, 0, SEEK_END);
+	unsigned int fileLength = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	if (fileLength == 0) {
+		goto _closeFile;
+	}
+	char *text = new char[fileLength+1];
+	memset(text, 0, fileLength+1);
+	fread(text, fileLength+1, 1, file);
+	int i = 0;	
+	Glyph tempGlyph;
+	memset(&tempGlyph, 0, sizeof(Glyph));
+	value = 0;
+
+	// check BOM
+	if ((unsigned char)text[i] == 0xEF) {
+		// skip 0xEF, 0xBB, 0xBF
+		i += 3;
+	}
+
+	while (value >= 0 && text[i])
+	{
+		if (((unsigned int)text[i]) > 32)
+		{
+			value = decodeUTF8(text, i);
+			tempGlyph.index = value;
+			std::vector<Glyph>::iterator found = std::lower_bound(glyphs.begin(), glyphs.end(), tempGlyph);
+			if (found == glyphs.end() || found->index > value) {
+				glyphs.push_back(tempGlyph);
+				std::sort(glyphs.begin(), glyphs.end());
+			}
+		}
+		++i;
+	}
+
+	delete[] text;
+_closeFile:
+	fclose(file);
+
+	return (value != -1);
+}
+
+bool Glyph::operator<(const Glyph &other)
+{
+	return (index < other.index);
+}
+
+
+int writeFont(const char* inFilePath, const char* outFilePath, const char *inFileLocale, unsigned int fontSize, const char* id, bool fontpreview = false)
+{
+    std::vector<Glyph> glyphArray;
+	unsigned int latinExtendedRange = (END_INDEX - START_INDEX)+1;
+	glyphArray.reserve(latinExtendedRange);
+	Glyph tempGlyph;
+	memset(&tempGlyph, 0, sizeof(Glyph));
+	for (unsigned int index = 0; index < latinExtendedRange; ++index)
+	{
+		tempGlyph.index = index+32;
+		glyphArray.push_back(tempGlyph);
+	}
     
+	if (inFileLocale && !parseLocalisedText(inFileLocale, glyphArray))
+	{
+		LOG(1, "parseLocalisedText error!\n");
+		return -1;
+	}
+
     // Initialize freetype library.
     FT_Library library;
     FT_Error error = FT_Init_FreeType(&library);
@@ -86,8 +194,14 @@ int writeFont(const char* inFilePath, const char* outFilePath, unsigned int font
     int rowSize = 0; // Stores the total number of rows required to all glyphs.
     
     // Find the width of the image.
-    for (unsigned char ascii = START_INDEX; ascii < END_INDEX; ++ascii)
+    //for (unsigned int ascii = START_INDEX; ascii < END_INDEX; ++ascii)
+	std::vector<Glyph>::iterator iter = glyphArray.begin();
+	std::vector<Glyph>::iterator iter_end = glyphArray.end();
+	while (iter != iter_end)
     {
+		unsigned int ascii = iter->index;
+		++iter;
+
         // Load glyph image into the slot (erase previous one)
         error = FT_Load_Char(face, ascii, FT_LOAD_RENDER);
         if (error)
@@ -131,8 +245,14 @@ int writeFont(const char* inFilePath, const char* outFilePath, unsigned int font
 
         // Find out the squared texture size that would fit all the require font glyphs.
         i = 0;
-        for (unsigned char ascii = START_INDEX; ascii < END_INDEX; ++ascii)
+        //for (unsigned int ascii = START_INDEX; ascii < END_INDEX; ++ascii)
+		std::vector<Glyph>::iterator iter = glyphArray.begin();
+		std::vector<Glyph>::iterator iter_end = glyphArray.end();
+		while (iter != iter_end)
         {
+			unsigned int ascii = iter->index;
+			iter++;
+
             // Load glyph image into the slot (erase the previous one).
             error = FT_Load_Char(face, ascii, FT_LOAD_RENDER);
             if (error)
@@ -198,8 +318,14 @@ int writeFont(const char* inFilePath, const char* outFilePath, unsigned int font
     penY = 0;
     row = 0;
     i = 0;
-    for (unsigned char ascii = START_INDEX; ascii < END_INDEX; ++ascii)
+    //for (unsigned char ascii = START_INDEX; ascii < END_INDEX; ++ascii)
+	iter = glyphArray.begin();
+	iter_end = glyphArray.end();
+	while (iter != iter_end)
     {
+		unsigned int ascii = iter->index;
+		++iter;
+
         // Load glyph image into the slot (erase the previous one).
         error = FT_Load_Char(face, ascii, FT_LOAD_RENDER);
         if (error)
@@ -281,12 +407,15 @@ int writeFont(const char* inFilePath, const char* outFilePath, unsigned int font
 
     // Character set.
     // TODO: Empty for now
-    writeString(gpbFp, "");
+	if (glyphArray.size() <= ((END_INDEX - START_INDEX)+1))
+		writeString(gpbFp, "");
+	else
+		writeString(gpbFp, "subset");
     
     // Glyphs.
-    unsigned int glyphSetSize = END_INDEX - START_INDEX;
+	unsigned int glyphSetSize = glyphArray.size();//END_INDEX - START_INDEX;
     writeUint(gpbFp, glyphSetSize);
-    fwrite(&glyphArray, sizeof(Glyph), glyphSetSize, gpbFp);
+    fwrite(&glyphArray[0], sizeof(Glyph), glyphSetSize, gpbFp);
     
     // Texture.
     unsigned int textureSize = imageWidth * imageHeight;
