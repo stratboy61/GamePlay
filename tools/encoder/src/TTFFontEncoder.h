@@ -30,6 +30,6 @@ public:
  * 
  * @return 0 if successful, -1 if error.
  */
-int writeFont(const char* inFilePath, const char* outFilePath, const char *inFileLocale, unsigned int fontSize, const char* id, bool fontpreview);
+int writeFont(const char* inFilePath, const char* outFilePath, const char* inAdditionalPath, const char *inFileLocale, unsigned int fontSize, const char* id, bool fontpreview);
 
 }

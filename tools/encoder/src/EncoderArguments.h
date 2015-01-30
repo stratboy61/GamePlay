@@ -96,6 +96,8 @@ public:
     std::string getOutputFileExtension() const;
 
 	const std::string& getFontLocaleFromFilePath() const;
+	const std::string& getAdditionalFilePath() const;
+	void setFontSize(unsigned int size);
 
     const std::vector<std::string>& getGroupAnimationNodeId() const;
     const std::vector<std::string>& getGroupAnimationAnimationId() const;
@@ -192,6 +194,7 @@ private:
 private:
     
     std::string _filePath;
+	std::string _additionalFilePath;
     std::string _fileOutputPath;
     std::string _nodeId;
 	std::string _fontLocaleFromFilePath;

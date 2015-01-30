@@ -207,7 +207,7 @@ int Font::findGlyphIndex(int unicode)
 	
 	unsigned int index = (begin + end + 1)/2;
 	
-	while (unicode != _glyphs[index].code)
+	while (unicode != _glyphs[index].code && (end > begin))
 	{
 		if (unicode < _glyphs[index].code) {
 			end = index - 1;			
@@ -219,7 +219,7 @@ int Font::findGlyphIndex(int unicode)
 		index = (begin + end + 1)/2;
 	}
 	
-	return index;
+	return (end >= begin) ? index : 32;
 }
 
 Font::Text* Font::createText(const char* text, const Rectangle& area, const Vector4& color, unsigned int size, Justify justify,

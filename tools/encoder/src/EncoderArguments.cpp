@@ -131,6 +131,20 @@ std::string EncoderArguments::getOutputFilePath() const
             outputFilePath.append("_normalmap");
         }
 
+		if (_fontSize)
+		{
+			char size[5];
+			size[0] = '_';
+			itoa(_fontSize, &size[1], 10);
+			outputFilePath.append(size);
+		}
+		/*if (_additionalFilePath)
+		{
+			 int pos = _additionalFilePath.find_last_of('.');
+			 std::string additional(pos > 0 ? _additionalFilePath.substr(0, pos) : _additionalFilePath);
+			 outputFilePath.append(additional);
+		}*/
+
         outputFilePath.append(getOutputFileExtension());
         return outputFilePath;
     }
@@ -296,6 +310,16 @@ const std::string& EncoderArguments::getFontLocaleFromFilePath() const
     return _fontLocaleFromFilePath;
 }
 
+const std::string& EncoderArguments::getAdditionalFilePath() const
+{
+    return _additionalFilePath;
+}
+
+void EncoderArguments::setFontSize(unsigned int size) 
+{
+	_fontSize = size;
+}
+
 bool EncoderArguments::fontPreviewEnabled() const
 {
     return _fontPreview;
@@ -389,11 +413,22 @@ void EncoderArguments::readOption(const std::vector<std::string>& options, size_
     }
     switch (str[1])
     {
+	case 'a':
+        // read two strings, make sure not to go out of bounds
+        if ((*index + 1) >= options.size())
+        {
+            LOG(1, "Error: -a requires 1 argument.\n");
+            _parseError = true;
+            return;
+        }		
+		(*index)++;
+		_additionalFilePath = options[*index];
+		break;
 	case 'c':
         // read two strings, make sure not to go out of bounds
         if ((*index + 1) >= options.size())
         {
-            LOG(1, "Error: -c requires 2 arguments.\n");
+            LOG(1, "Error: -c requires 1 argument.\n");
             _parseError = true;
             return;
         }		

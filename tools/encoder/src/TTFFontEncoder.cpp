@@ -104,11 +104,14 @@ bool parseLocalisedText(const char *filename, std::vector<Glyph> &glyphs)
 		if (((unsigned int)text[i]) > 32)
 		{
 			value = decodeUTF8(text, i);
-			tempGlyph.index = value;
-			std::vector<Glyph>::iterator found = std::lower_bound(glyphs.begin(), glyphs.end(), tempGlyph);
-			if (found == glyphs.end() || found->index > value) {
-				glyphs.push_back(tempGlyph);
-				std::sort(glyphs.begin(), glyphs.end());
+			if (value > 255)
+			{
+				tempGlyph.index = value;
+				std::vector<Glyph>::iterator found = std::lower_bound(glyphs.begin(), glyphs.end(), tempGlyph);
+				if (found == glyphs.end() || found->index > value) {
+					glyphs.push_back(tempGlyph);
+					std::sort(glyphs.begin(), glyphs.end());
+				}
 			}
 		}
 		++i;
@@ -127,9 +130,11 @@ bool Glyph::operator<(const Glyph &other)
 }
 
 
-int writeFont(const char* inFilePath, const char* outFilePath, const char *inFileLocale, unsigned int fontSize, const char* id, bool fontpreview = false)
+int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdditionalPath, const char *inFileLocale, unsigned int fontSize, const char* id, bool fontpreview = false)
 {
     std::vector<Glyph> glyphArray;
+	std::vector<Glyph> additionalGlyphArray;
+
 	unsigned int latinExtendedRange = (END_INDEX - START_INDEX)+1;
 	glyphArray.reserve(latinExtendedRange);
 	Glyph tempGlyph;
@@ -138,12 +143,6 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
 	{
 		tempGlyph.index = index+32;
 		glyphArray.push_back(tempGlyph);
-	}
-    
-	if (inFileLocale && !parseLocalisedText(inFileLocale, glyphArray))
-	{
-		LOG(1, "parseLocalisedText error!\n");
-		return -1;
 	}
 
     // Initialize freetype library.
@@ -154,9 +153,17 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
         LOG(1, "FT_Init_FreeType error: %d \n", error);
         return -1;
     }
-    
+
+	if (inAdditionalPath && inFileLocale && !parseLocalisedText(inFileLocale, additionalGlyphArray))
+	{
+		LOG(1, "parseLocalisedText error!\n");
+		return -1;
+	}
+   
     // Initialize font face.
     FT_Face face;
+	
+
     error = FT_New_Face(library, inFilePath, 0, &face);
     if (error)
     {
@@ -177,6 +184,33 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
         LOG(1, "FT_Set_Char_Size error: %d \n", error);
         return -1;
     }
+
+	 // Initialize additional font face.
+	FT_Face additionalFace;	
+	if (inAdditionalPath)
+	{
+		error = FT_New_Face(library, inAdditionalPath, 0, &additionalFace);
+		if (error)
+		{
+			LOG(1, "FT_New_Face on additional font error: %d \n", error);
+			return -1;
+		}
+    
+		// Set the pixel size.
+		error = FT_Set_Char_Size(
+			    additionalFace, // handle to face object.
+				0,              // char_width in 1/64th of points.
+				fontSize * 64,   // char_height in 1/64th of points.
+				0,              // horizontal device resolution (defaults to 72 dpi if resolution (0, 0)).
+				0 );            // vertical device resolution.
+    
+		if (error)
+		{
+			LOG(1, "FT_Set_Char_Size on additional font error: %d \n", error);
+			return -1;
+		}
+	}
+
 
     /* 
     error = FT_Set_Pixel_Sizes(face, FONT_SIZE, 0);
@@ -219,6 +253,35 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
         rowSize = (rowSize < bitmapRows) ? bitmapRows : rowSize;
     }
 
+	if (inAdditionalPath)
+	{
+		slot = additionalFace->glyph;
+
+		iter = additionalGlyphArray.begin();
+		iter_end = additionalGlyphArray.end();
+		while (iter != iter_end)
+		{
+			unsigned int ascii = iter->index;
+			++iter;
+
+			// Load glyph image into the slot (erase previous one)
+			error = FT_Load_Char(additionalFace, ascii, FT_LOAD_RENDER);
+			if (error)
+			{
+				LOG(1, "FT_Load_Char error : %d \n", error);
+			}
+        
+			int bitmapRows = slot->bitmap.rows;
+			actualfontHeight = (actualfontHeight < bitmapRows) ? bitmapRows : actualfontHeight;
+        
+			if (slot->bitmap.rows > slot->bitmap_top)
+			{
+				bitmapRows += (slot->bitmap.rows - slot->bitmap_top);
+			}
+			rowSize = (rowSize < bitmapRows) ? bitmapRows : rowSize;
+		}
+	}
+
     // Include padding in the rowSize.
     rowSize += GLYPH_PADDING;
     
@@ -235,6 +298,8 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
     int advance;
     int i;
 
+	bool processAdditional = false;
+
     while (textureSizeFound == false)
     {
         imageWidth =  (unsigned int)pow(2.0, powerOf2);
@@ -243,18 +308,21 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
         penY = 0;
         row = 0;
 
+		FT_Face currentFace = !processAdditional ? face : additionalFace;
+		slot = currentFace->glyph;
+
         // Find out the squared texture size that would fit all the require font glyphs.
         i = 0;
         //for (unsigned int ascii = START_INDEX; ascii < END_INDEX; ++ascii)
-		std::vector<Glyph>::iterator iter = glyphArray.begin();
-		std::vector<Glyph>::iterator iter_end = glyphArray.end();
+		std::vector<Glyph>::iterator iter = !processAdditional ? glyphArray.begin() : additionalGlyphArray.begin();
+		std::vector<Glyph>::iterator iter_end = !processAdditional ? glyphArray.end() : additionalGlyphArray.end();
 		while (iter != iter_end)
         {
 			unsigned int ascii = iter->index;
 			iter++;
 
             // Load glyph image into the slot (erase the previous one).
-            error = FT_Load_Char(face, ascii, FT_LOAD_RENDER);
+            error = FT_Load_Char(currentFace, ascii, FT_LOAD_RENDER);
             if (error)
             {
                 LOG(1, "FT_Load_Char error : %d \n", error);
@@ -287,9 +355,17 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
             // Move Y back to the top of the row.
             penY = row * rowSize;
 
-            if (ascii == (END_INDEX-1))
+            if (iter == iter_end)// (ascii == (END_INDEX-1))
             {
-                textureSizeFound = true;
+				if (!inAdditionalPath) {
+					textureSizeFound = true;
+				}
+				else {
+					if (!processAdditional)
+						processAdditional = true;
+					else
+						textureSizeFound = true;
+				}
             }
 
             i++;
@@ -318,6 +394,8 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
     penY = 0;
     row = 0;
     i = 0;
+	slot = face->glyph;
+
     //for (unsigned char ascii = START_INDEX; ascii < END_INDEX; ++ascii)
 	iter = glyphArray.begin();
 	iter_end = glyphArray.end();
@@ -376,7 +454,70 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
         penX += advance; // Move X to next glyph position
         i++;
     }
+	
+	if (inAdditionalPath)
+	{
+		i = 0;
+		slot = additionalFace->glyph;
 
+		iter = additionalGlyphArray.begin();
+		iter_end = additionalGlyphArray.end();
+		while (iter != iter_end)
+		{
+			unsigned int ascii = iter->index;
+			++iter;
+
+			// Load glyph image into the slot (erase the previous one).
+			error = FT_Load_Char(additionalFace, ascii, FT_LOAD_RENDER);
+			if (error)
+			{
+				LOG(1, "FT_Load_Char error : %d \n", error);
+			}
+
+			// Glyph image.
+			unsigned char* glyphBuffer =  slot->bitmap.buffer;
+			int glyphWidth = slot->bitmap.pitch;
+			int glyphHeight = slot->bitmap.rows;
+
+			advance = glyphWidth + GLYPH_PADDING;//((int)slot->advance.x >> 6) + GLYPH_PADDING;
+
+			// If we reach the end of the image wrap aroud to the next row.
+			if ((penX + advance) > (int)imageWidth)
+			{
+				penX = 0;
+				row += 1;
+				penY = row * rowSize;
+				if (penY + rowSize > (int)imageHeight)
+				{
+					free(imageBuffer);
+					LOG(1, "Image size exceeded!");
+					return -1;
+				}
+			}
+        
+			// penY should include the glyph offsets.
+			penY += (actualfontHeight - glyphHeight) + (glyphHeight - slot->bitmap_top);
+
+			// Draw the glyph to the bitmap with a one pixel padding.
+			drawBitmap(imageBuffer, penX, penY, imageWidth, glyphBuffer, glyphWidth, glyphHeight);
+        
+			// Move Y back to the top of the row.
+			penY = row * rowSize;
+
+			additionalGlyphArray[i].index = ascii;
+			additionalGlyphArray[i].width = advance - GLYPH_PADDING;
+        
+			// Generate UV coords.
+			additionalGlyphArray[i].uvCoords[0] = (float)penX / (float)imageWidth;
+			additionalGlyphArray[i].uvCoords[1] = (float)penY / (float)imageHeight;
+			additionalGlyphArray[i].uvCoords[2] = (float)(penX + advance - GLYPH_PADDING) / (float)imageWidth;
+			additionalGlyphArray[i].uvCoords[3] = (float)(penY + rowSize) / (float)imageHeight;
+
+			// Set the pen position for the next glyph
+			penX += advance; // Move X to next glyph position
+			i++;
+		}
+	}
 
     FILE *gpbFp = fopen(outFilePath, "wb");
     
@@ -407,15 +548,13 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
 
     // Character set.
     // TODO: Empty for now
-	if (glyphArray.size() <= ((END_INDEX - START_INDEX)+1))
-		writeString(gpbFp, "");
-	else
-		writeString(gpbFp, "subset");
-    
+	writeString(gpbFp, "");
+	
     // Glyphs.
-	unsigned int glyphSetSize = glyphArray.size();//END_INDEX - START_INDEX;
+	unsigned int glyphSetSize = glyphArray.size() + additionalGlyphArray.size();//END_INDEX - START_INDEX;
     writeUint(gpbFp, glyphSetSize);
-    fwrite(&glyphArray[0], sizeof(Glyph), glyphSetSize, gpbFp);
+    fwrite(&glyphArray[0], sizeof(Glyph), glyphArray.size(), gpbFp);
+	fwrite(&additionalGlyphArray[0], sizeof(Glyph), additionalGlyphArray.size(), gpbFp);
     
     // Texture.
     unsigned int textureSize = imageWidth * imageHeight;
@@ -443,6 +582,11 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inFil
     // Cleanup resources.
     free(imageBuffer);
     
+	if (inAdditionalPath)
+	{
+		FT_Done_Face(additionalFace);
+	}
+
     FT_Done_Face(face);
     FT_Done_FreeType(library);
     return 0;
