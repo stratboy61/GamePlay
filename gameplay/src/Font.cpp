@@ -277,7 +277,9 @@ Font::Text* Font::createText(const char* text, const Rectangle& area, const Vect
         bool truncated = false;
         unsigned int tokenLength;
         unsigned int tokenWidth;
-        unsigned int startIndex;
+        unsigned int subTokenLength; // when token cannot be split
+		unsigned int startIndex;
+		
         if (rightToLeft)
         {
             tokenLength = getReversedTokenLength(token, text);
@@ -290,16 +292,20 @@ Font::Text* Font::createText(const char* text, const Rectangle& area, const Vect
         else
         {
 			tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
-            tokenWidth = getTokenWidth(token, tokenLength, size, scale);
+			subTokenLength = strlen(token);
+            if (subTokenLength != tokenLength)
+				tokenWidth = getTokenWidth(token, tokenLength, size, scale);
+			else			
+				tokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, area.width, subTokenLength);
             iteration = 1;
             startIndex = 0;
         }
 
         // Wrap if necessary.
-        if (wrap && (xPos + (int)tokenWidth > area.x + area.width || (rightToLeft && currentLineLength > lineLength)))
+        if (wrap && (xPos + (int)tokenWidth > area.x + area.width || (subTokenLength < tokenLength) || (rightToLeft && currentLineLength > lineLength)))
         {
             yPos += (int)size;
-            currentLineLength = tokenLength;
+            currentLineLength = (subTokenLength < tokenLength) ? subTokenLength : tokenLength;
 
             if (xPositionsIt != xPositions.end())
             {
@@ -640,8 +646,9 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
         }
 
         bool truncated = false;
-        unsigned int tokenLength;
-        unsigned int tokenWidth;
+        unsigned int tokenLength = 0;
+		unsigned int subTokenLength = 0; // when token cannot be split
+        unsigned int tokenWidth;		
         unsigned int startIndex;
         if (rightToLeft)
         {
@@ -655,16 +662,20 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
         else
         {
 			tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
-            tokenWidth = getTokenWidth(token, tokenLength, size, scale);
+			subTokenLength = strlen(token);            
+            if (subTokenLength != tokenLength)
+				tokenWidth = getTokenWidth(token, tokenLength, size, scale);
+			else			
+				tokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, area.width, subTokenLength);
             iteration = 1;
             startIndex = 0;
         }
 
+		currentLineLength = (subTokenLength < tokenLength) ? subTokenLength : tokenLength;
         // Wrap if necessary.
-        if (wrap && (xPos + (int)tokenWidth > area.x + area.width || (rightToLeft && currentLineLength > lineLength)))
+        if (wrap && (xPos + (int)tokenWidth > area.x + area.width || (subTokenLength < tokenLength) || (rightToLeft && currentLineLength > lineLength)))
         {
-            yPos += (int)size;
-            currentLineLength = tokenLength;
+            yPos += (int)size;            
 
             if (xPositionsIt != xPositions.end())
             {
@@ -690,7 +701,7 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
 
         GP_ASSERT(_glyphs);
         GP_ASSERT(_batch);
-        for (int i = startIndex; i < (int)tokenLength && i >= 0; i += iteration)
+        for (int i = startIndex; i < (int)currentLineLength && i >= 0; i += iteration)
         {
             int c = decodeUTF8(token, i);
 
@@ -759,7 +770,7 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
             }
             else
             {
-                token += tokenLength;
+                token += currentLineLength;
             }
         }
         else
@@ -783,12 +794,12 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
             else
             {
                 // Skip the rest of this line.
-                size_t tokenLength = strcspn(token, "\n");
+                size_t len = (subTokenLength < tokenLength) ? subTokenLength : strcspn(token, "\n");
 
-                if (tokenLength > 0)
+                if (len > 0)
                 {                
                     // Get first token of next line.
-                    token += tokenLength;
+                    token += len;
                 }
             }
         }
@@ -955,10 +966,16 @@ void Font::measureText(const char* text, const Rectangle& clip, unsigned int siz
 
             // Measure the next token.
 			unsigned int tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
-            unsigned int tokenWidth = getTokenWidth(token, tokenLength, size, scale);
+			unsigned int subTokenLength = strlen(token);
+            unsigned int tokenWidth = 0;
+			if (subTokenLength != tokenLength)
+				tokenWidth = getTokenWidth(token, tokenLength, size, scale);
+			else
+				tokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, clip.width, subTokenLength);
+			unsigned int currentTokenLength = (subTokenLength < tokenLength) ? subTokenLength : tokenLength;
 
             // Wrap if necessary.
-            if (lineWidth + tokenWidth + delimWidth > clip.width)
+            if (lineWidth + tokenWidth + delimWidth > clip.width || (subTokenLength < tokenLength))
             {
                 // Add line-height to vertical cursor.
                 yPos += size;
@@ -987,7 +1004,7 @@ void Font::measureText(const char* text, const Rectangle& clip, unsigned int siz
 
             delimWidth = 0;
             lineWidth += tokenWidth;
-            token += tokenLength;
+            token += currentTokenLength;
         }
     }
     else
@@ -1274,10 +1291,11 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                 }
 
 				unsigned int tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
-                tokenWidth += getTokenWidth(token, tokenLength, size, scale);
+				unsigned int subTokenLength = 0;
+                unsigned int subTokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, area.width, subTokenLength);
 
                 // Wrap if necessary.
-                if (lineWidth + tokenWidth + delimWidth > area.width)
+                if (lineWidth + tokenWidth + subTokenWidth + delimWidth > area.width || subTokenLength < tokenLength)
                 {
                     *yPosition += size;
 
@@ -1288,7 +1306,7 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                     }
                     else
                     {
-                        addLineInfo(area, lineWidth, tokenLength, hAlign, xPositions, lineLengths, rightToLeft);
+                        addLineInfo(area, lineWidth, subTokenLength, hAlign, xPositions, lineLengths, rightToLeft);
                     }
 
                     // Move token to the next line.
@@ -1297,14 +1315,15 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                     delimWidth = 0;
                 }
                 else
-                {
+                {					
                     lineWidth += delimWidth;
                     delimWidth = 0;
                 }
 
+				tokenWidth += subTokenWidth;
                 lineWidth += tokenWidth;
-                lineLength += tokenLength;
-                token += tokenLength;
+                lineLength += subTokenLength;
+                token += subTokenLength;
             }
 
             // Final calculation of vertical position.
@@ -1638,6 +1657,48 @@ unsigned int Font::getTokenWidth(const char* token, unsigned int length, unsigne
         }
     }
 
+    return tokenWidth;
+}
+
+unsigned int Font::getSubTokenWidthAndLength(const char* token, unsigned int length, unsigned int size, float scale, unsigned int maxWidth, unsigned int &subLength)
+{
+    GP_ASSERT(token);
+    GP_ASSERT(_glyphs);
+
+    // Calculate width of word or line.
+	subLength = 0;
+    unsigned int tokenWidth = 0;
+	int i = 0;
+    for (; i < (int)length; ++i)
+    {
+        int c = decodeUTF8(token, i);
+        switch (c)
+        {
+        case ' ':
+            tokenWidth += size >> 1;
+            break;
+        case '\t':
+            tokenWidth += (size >> 1)*4;
+            break;
+        default:
+            int glyphIndex = findGlyphIndex(c);
+            if (glyphIndex >= 0 && glyphIndex < (int)_glyphCount)
+            {
+                Glyph& g = _glyphs[glyphIndex];
+                float glyphWidth = floor(g.width * scale + (float)(size >> 3));
+				tokenWidth += glyphWidth;
+				if (tokenWidth >= maxWidth) {
+					tokenWidth -= glyphWidth;
+					i -= 2;
+					subLength = (unsigned)i;
+					return tokenWidth;
+				}
+            }
+            break;
+        }
+    }
+
+	subLength = (unsigned)i;
     return tokenWidth;
 }
 

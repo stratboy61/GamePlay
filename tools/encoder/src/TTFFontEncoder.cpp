@@ -154,15 +154,14 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         return -1;
     }
 
-	if (inAdditionalPath && inFileLocale && !parseLocalisedText(inFileLocale, additionalGlyphArray))
+	if (inFileLocale[0] && !parseLocalisedText(inFileLocale, additionalGlyphArray))
 	{
 		LOG(1, "parseLocalisedText error!\n");
 		return -1;
 	}
    
     // Initialize font face.
-    FT_Face face;
-	
+    FT_Face face;	
 
     error = FT_New_Face(library, inFilePath, 0, &face);
     if (error)
@@ -187,7 +186,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 
 	 // Initialize additional font face.
 	FT_Face additionalFace;	
-	if (inAdditionalPath)
+	if (inAdditionalPath[0])
 	{
 		error = FT_New_Face(library, inAdditionalPath, 0, &additionalFace);
 		if (error)
@@ -253,7 +252,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         rowSize = (rowSize < bitmapRows) ? bitmapRows : rowSize;
     }
 
-	if (inAdditionalPath)
+	if (inAdditionalPath[0])
 	{
 		slot = additionalFace->glyph;
 
@@ -357,7 +356,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 
             if (iter == iter_end)// (ascii == (END_INDEX-1))
             {
-				if (!inAdditionalPath) {
+				if (!inAdditionalPath[0]) {
 					textureSizeFound = true;
 				}
 				else {
@@ -455,7 +454,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         i++;
     }
 	
-	if (inAdditionalPath)
+	if (inAdditionalPath[0])
 	{
 		i = 0;
 		slot = additionalFace->glyph;
@@ -554,7 +553,9 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 	unsigned int glyphSetSize = glyphArray.size() + additionalGlyphArray.size();//END_INDEX - START_INDEX;
     writeUint(gpbFp, glyphSetSize);
     fwrite(&glyphArray[0], sizeof(Glyph), glyphArray.size(), gpbFp);
-	fwrite(&additionalGlyphArray[0], sizeof(Glyph), additionalGlyphArray.size(), gpbFp);
+	if (additionalGlyphArray.size()) {
+		fwrite(&additionalGlyphArray[0], sizeof(Glyph), additionalGlyphArray.size(), gpbFp);
+	}
     
     // Texture.
     unsigned int textureSize = imageWidth * imageHeight;
@@ -582,7 +583,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
     // Cleanup resources.
     free(imageBuffer);
     
-	if (inAdditionalPath)
+	if (inAdditionalPath[0])
 	{
 		FT_Done_Face(additionalFace);
 	}

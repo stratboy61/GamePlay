@@ -320,7 +320,7 @@ private:
                            const int destIndex = -1, Justify justify = ALIGN_TOP_LEFT, bool wrap = true, bool rightToLeft = false);
 
     unsigned int getTokenWidth(const char* token, unsigned length, unsigned int size, float scale);
-
+	unsigned int getSubTokenWidthAndLength(const char* token, unsigned length, unsigned int size, float scale, unsigned int maxWidth, unsigned int &subLength);
     unsigned int getReversedTokenLength(const char* token, const char* bufStart);
 
     int handleDelimiters(const char** token, const unsigned int size, const int iteration, const int areaX, int* xPos, int* yPos, unsigned int* lineLength,
