@@ -70,7 +70,12 @@ extern void print(const char* format, ...);
 
 // Assert macros.
 #ifdef _DEBUG
-#define GP_ASSERT(expression) assert(expression)
+#define GP_ASSERT(expression) if (!(expression)) { \
+		gameplay::Logger::log(gameplay::Logger::LEVEL_ERROR, "%s -- ", __current__func__); \
+		gameplay::Logger::log(gameplay::Logger::LEVEL_ERROR, #expression); \
+		gameplay::Logger::log(gameplay::Logger::LEVEL_ERROR, "\n"); \
+		assert(expression); \
+	}
 #else
 #define GP_ASSERT(expression)
 #endif

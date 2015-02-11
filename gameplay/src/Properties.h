@@ -237,7 +237,7 @@ public:
      * @return The value of the given property as a string, or the empty string if no property with that name exists.
      */
     const char* getString(const char* name = NULL) const;
-
+	bool updateString(const char* name, const char *value);
     /**
      * Interpret the value of the given property as a boolean.
      *
@@ -247,7 +247,7 @@ public:
      * @return true if the property exists and its value is "true", otherwise false.
      */
     bool getBool(const char* name = NULL, bool defaultValue = false) const;
-
+	bool updateBool(const char* name, bool value);
     /**
      * Interpret the value of the given property as an integer.
      * If the property does not exist, zero will be returned.
@@ -259,7 +259,7 @@ public:
      *   Zero if the property does not exist or could not be scanned.
      */
     int getInt(const char* name = NULL) const;
-
+	bool updateInt(const char* name, int value);
     /**
      * Interpret the value of the given property as a floating-point number.
      * If the property does not exist, zero will be returned.
@@ -271,7 +271,7 @@ public:
      *   Zero if the property does not exist or could not be scanned.
      */
     float getFloat(const char* name = NULL) const;
-
+	bool updateFloat(const char* name, float value);
     /**
      * Interpret the value of the given property as a long integer.
      * If the property does not exist, zero will be returned.
@@ -283,7 +283,7 @@ public:
      *   Zero if the property does not exist or could not be scanned.
      */
     long getLong(const char* name = NULL) const;
-
+	bool updateLong(const char* name, long value);
     /**
      * Interpret the value of the given property as a Matrix.
      * If the property does not exist, out will be set to the identity matrix.

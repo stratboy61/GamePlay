@@ -26,7 +26,8 @@ Game::Game()
       _clearDepth(1.0f), _clearStencil(0), _properties(NULL),
       _animationController(NULL), _audioController(NULL),
       _physicsController(NULL), _aiController(NULL), _audioListener(NULL),
-      _timeEvents(NULL), _scriptController(NULL), _scriptListeners(NULL)
+      _timeEvents(NULL), _scriptController(NULL), _scriptListeners(NULL),
+	  _configCallback(NULL)
 {
     GP_ASSERT(__gameInstance == NULL);
     __gameInstance = this;
@@ -684,12 +685,21 @@ bool Game::TimeEvent::operator<(const TimeEvent& v) const
     return time > v.time;
 }
 
-Properties* Game::getConfig() const
+Properties* Game::getConfig()
 {
-    if (_properties == NULL)
+    if (_properties == NULL) {
         const_cast<Game*>(this)->loadConfig();
-
+		if (_properties != NULL && _configCallback) {
+			// calls the configuration callback the first only during game initialisation
+			_configCallback(_properties);
+		}
+	}
     return _properties;
+}
+
+void Game::setConfigCallback(void (*callback)(Properties *))
+{
+	_configCallback = callback;
 }
 
 void Game::loadConfig()

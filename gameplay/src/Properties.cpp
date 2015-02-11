@@ -705,6 +705,18 @@ const char* Properties::getString(const char* name) const
     return NULL;
 }
 
+bool Properties::updateString(const char* name, const char* value)
+{
+    std::map<std::string, std::string>::iterator itr = _properties.find(name);
+    if (itr != _properties.end())
+    {
+		itr->second.assign(value);
+		return true;
+	}
+
+	return false;
+}
+
 bool Properties::getBool(const char* name, bool defaultValue) const
 {
     const char* valueString = getString(name);
@@ -714,6 +726,11 @@ bool Properties::getBool(const char* name, bool defaultValue) const
     }
 
     return defaultValue;
+}
+
+bool Properties::updateBool(const char* name, bool value)
+{
+    return updateString(name, value ? "true" : "false");
 }
 
 int Properties::getInt(const char* name) const
@@ -735,6 +752,13 @@ int Properties::getInt(const char* name) const
     return 0;
 }
 
+bool Properties::updateInt(const char* name, int value)
+{
+	char str[16];
+	sprintf(str, "%d", value);
+    return updateString(name, str);
+}
+
 float Properties::getFloat(const char* name) const
 {
     const char* valueString = getString(name);
@@ -754,6 +778,13 @@ float Properties::getFloat(const char* name) const
     return 0.0f;
 }
 
+bool Properties::updateFloat(const char* name, float value)
+{
+	char str[16];
+	sprintf(str, "%f", value);
+    return updateString(name, str);
+}
+
 long Properties::getLong(const char* name) const
 {
     const char* valueString = getString(name);
@@ -771,6 +802,13 @@ long Properties::getLong(const char* name) const
     }
 
     return 0L;
+}
+
+bool Properties::updateLong(const char* name, long value)
+{
+	char str[16];
+	sprintf(str, "%Ld", value);
+    return updateString(name, str);
 }
 
 bool Properties::getMatrix(const char* name, Matrix* out) const

@@ -451,7 +451,14 @@ LRESULT CALLBACK __WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if ((lParam & 0x40000000) == 0)
             gameplay::Platform::keyEventInternal(gameplay::Keyboard::KEY_PRESS, getKey(wParam, shiftDown ^ capsOn));
         break;
-        
+#if 0
+	case WM_SYSKEYDOWN:
+		if (((wParam == VK_RETURN) && (GetKeyState(VK_MENU) & 0x80)) || ((wParam == VK_MENU) && (GetKeyState(VK_RETURN) & 0x80))) {
+			gameplay::Platform::toggleFullScreenMode();
+			break;
+		}
+		break;
+#endif
     case WM_KEYUP:
         if (wParam == VK_SHIFT || wParam == VK_LSHIFT || wParam == VK_RSHIFT)
             shiftDown = false;
@@ -868,7 +875,7 @@ Platform* Platform::create(Game* game, void* attachToWindow)
         wc.cbWndExtra     = 0;
         wc.hInstance      = __hinstance;
         wc.hIcon          = LoadIcon(NULL, IDI_APPLICATION);
-        wc.hIconSm        = NULL;
+        wc.hIconSm        = LoadIcon(NULL, IDI_APPLICATION);
         wc.hCursor        = LoadCursor(NULL, IDC_ARROW);
         wc.hbrBackground  = NULL;  // No brush - we are going to paint our own background
         wc.lpszMenuName   = NULL;  // No default menu
@@ -939,6 +946,77 @@ error:
 
     exit(0);
     return NULL;
+}
+
+void Platform::toggleFullScreenMode(bool toFullScreen)
+{	
+	Game *game = Game::getInstance();	
+
+	// no need to toggle if already in the requested state
+	bool needToToggle = (toFullScreen ^ game->isFullScreen());
+	//if (!needToToggle)
+	//	return;
+	
+	DWORD style, styleEx;
+	RECT rect = { 0, 0, game->getWidth(), game->getHeight() };
+	//GetWindowRect(__hwnd, &rect);
+	/*DISPLAY_DEVICE displayDevice;
+	memset(&displayDevice, 0, sizeof(DISPLAY_DEVICE));
+	int i = 0;
+	while(EnumDisplayDevices(NULL, i, &displayDevice, 0) != 0) {
+        DEVMODE devMode;
+        memset(&devMode, 0, sizeof(DEVMODE));
+        devMode.dmSize = sizeof(DEVMODE);
+		EnumDisplaySettings(displayDevice.DeviceName, 0, &devMode);
+		++i;
+	}
+	*/
+	if (toFullScreen)
+	{
+        DEVMODE dm;
+        memset(&dm, 0, sizeof(dm));
+        dm.dmSize= sizeof(dm);
+		dm.dmPelsWidth  = game->getWidth();
+        dm.dmPelsHeight = game->getHeight();
+        dm.dmBitsPerPel = DEFAULT_COLOR_BUFFER_SIZE;
+        dm.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+        // Try to set selected mode and get results. NOTE: CDS_FULLSCREEN gets rid of start bar.
+        if (ChangeDisplaySettings(&dm, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+        {
+            //GP_ERROR("Failed to start game in full-screen mode with resolution %dx%d.", width, height);
+            return;
+        }
+
+        style = WS_POPUP;
+		style |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+        styleEx = WS_EX_APPWINDOW;
+		// Adjust the window rectangle so the client size is the requested size.
+		AdjustWindowRectEx(&rect, style, FALSE, styleEx);
+		SetWindowLongPtr(__hwnd, GWL_STYLE, style | WS_VISIBLE);
+		SetWindowLongPtr(__hwnd, GWL_EXSTYLE, styleEx | WS_EX_TOPMOST);
+		SetWindowPos(__hwnd, 0, 0, 0, rect.right-rect.left, rect.bottom-rect.top, SWP_NOACTIVATE); 
+	}
+	else
+	{
+		if (ChangeDisplaySettings(0, 0) != DISP_CHANGE_SUCCESSFUL) {
+			GP_ERROR("Failed to change game to windowed mode");
+			return;
+		}
+
+        style = WS_POPUP | WS_BORDER | WS_CAPTION | WS_SYSMENU;
+        styleEx = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+		// Adjust the window rectangle so the client size is the requested size.
+		AdjustWindowRectEx(&rect, style, FALSE, styleEx);
+		SetWindowLongPtr(__hwnd, GWL_STYLE, style | WS_VISIBLE);
+		SetWindowLongPtr(__hwnd, GWL_EXSTYLE, styleEx | WS_EX_TOPMOST);
+		const int screenX = (GetSystemMetrics(SM_CXSCREEN) - rect.right) / 2;
+		const int screenY = (GetSystemMetrics(SM_CYSCREEN) - rect.bottom) / 2;
+		//SetWindowPos(__hwnd, 0, screenX, screenY, rect.right-rect.left, rect.bottom-rect.top, SWP_NOACTIVATE);
+		MoveWindow(__hwnd, screenX, screenY, rect.right-rect.left, rect.bottom-rect.top, TRUE);
+	}
+	
+	game->setFullScreen(toFullScreen);
 }
 
 int Platform::enterMessagePump()

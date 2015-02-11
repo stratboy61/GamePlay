@@ -61,6 +61,13 @@ public:
      */
     int enterMessagePump();
 
+	/**
+	 * Toggles between fullscreen and windowed modes
+	 * 
+	 *
+	 */
+	static void toggleFullScreenMode(bool toFullScreen);
+
     /**
      * Swaps the frame buffer on the device.
      */

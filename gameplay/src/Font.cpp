@@ -201,7 +201,7 @@ int Font::findGlyphIndex(int unicode)
 
 	unsigned int begin = 256 - 32;
 	unsigned int end = _glyphCount-1;
-	if (unicode < _glyphs[begin].code || unicode > _glyphs[end].code) {
+	if ((unsigned int)unicode < _glyphs[begin].code || (unsigned int)unicode > _glyphs[end].code) {
 		return -1;
 	}
 	
@@ -209,10 +209,10 @@ int Font::findGlyphIndex(int unicode)
 	
 	while (unicode != _glyphs[index].code && (end > begin))
 	{
-		if (unicode < _glyphs[index].code) {
+		if ((unsigned int)unicode < _glyphs[index].code) {
 			end = index - 1;			
 		}
-		else if (unicode > _glyphs[index].code) {
+		else if ((unsigned int)unicode > _glyphs[index].code) {
 			begin = index + 1;
 		}
 
@@ -711,13 +711,13 @@ void Font::drawText(const char* text, const Rectangle& area, const Vector4& colo
             {
                 Glyph& g = _glyphs[glyphIndex];
 
-                if (xPos + (int)(g.width*scale) > area.x + area.width)
+                if (xPos + (int)(g.width*scale) > ceilf(area.x + area.width))
                 {
                     // Truncate this line and go on to the next one.
                     truncated = true;
                     break;
                 }
-                else if (xPos >= area.x)
+                else if (xPos >= floorf(area.x))
                 {
                     // Draw this character.
                     if (draw)
@@ -1291,8 +1291,15 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
                 }
 
 				unsigned int tokenLength = (unsigned int)strcspn(token, " #\r\n\t");
-				unsigned int subTokenLength = 0;
-                unsigned int subTokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, area.width, subTokenLength);
+				unsigned int subTokenLength = strlen(token);
+                unsigned int subTokenWidth = 0;
+				if (subTokenLength != tokenLength) {
+					subTokenWidth = getTokenWidth(token, tokenLength, size, scale);
+					subTokenLength = tokenLength;
+				}
+				else {
+					subTokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, area.width, subTokenLength);
+				}
 
                 // Wrap if necessary.
                 if (lineWidth + tokenWidth + subTokenWidth + delimWidth > area.width || subTokenLength < tokenLength)
@@ -1671,6 +1678,7 @@ unsigned int Font::getSubTokenWidthAndLength(const char* token, unsigned int len
 	int i = 0;
     for (; i < (int)length; ++i)
     {
+		int previous_i = i;
         int c = decodeUTF8(token, i);
         switch (c)
         {
@@ -1689,7 +1697,7 @@ unsigned int Font::getSubTokenWidthAndLength(const char* token, unsigned int len
 				tokenWidth += glyphWidth;
 				if (tokenWidth >= maxWidth) {
 					tokenWidth -= glyphWidth;
-					i -= 2;
+					i -= c < 256 ? 0 : i-previous_i;
 					subLength = (unsigned)i;
 					return tokenWidth;
 				}

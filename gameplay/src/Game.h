@@ -130,7 +130,13 @@ public:
      *
      * @return The game configuration Properties object.
      */
-    Properties* getConfig() const;
+    Properties* getConfig();
+
+	/**
+	* Set configuration override callback
+	*
+	*/
+	void setConfigCallback(void (*callback)(Properties *));
 
     /**
      * Called to initialize the game, and begin running the game.
@@ -168,6 +174,9 @@ public:
      * @return The current frame rate.
      */
     inline unsigned int getFrameRate() const;
+
+	inline void setFullScreen(bool flag) { _fullscreen = flag; }
+	inline bool isFullScreen() const { return _fullscreen; }
 
     /**
      * Gets the game window width.
@@ -755,6 +764,7 @@ private:
     void loadGamepads();
 
     bool _initialized;                          // If game has initialized yet.
+	bool _fullscreen;                           // If game is in fullscreen mode.
     State _state;                               // The game state.
     unsigned int _pausedCount;                  // Number of times pause() has been called.
     static double _pausedTimeLast;              // The last time paused.
@@ -778,6 +788,8 @@ private:
     std::priority_queue<TimeEvent, std::vector<TimeEvent>, std::less<TimeEvent> >* _timeEvents;     // Contains the scheduled time events.
     ScriptController* _scriptController;            // Controls the scripting engine.
     std::vector<ScriptListener*>* _scriptListeners; // Lua script listeners.
+
+	void (*_configCallback)(Properties* _config);
 
     // Note: Do not add STL object member variables on the stack; this will cause false memory leaks to be reported.
 
