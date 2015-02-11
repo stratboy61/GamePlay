@@ -21,7 +21,6 @@
 #include <list>
 #include <set>
 #include <stack>
-#include <cstdint>
 #include <map>
 #include <queue>
 #include <algorithm>

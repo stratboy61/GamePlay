@@ -316,6 +316,12 @@
     }
     [[NSNotificationCenter defaultCenter] postNotificationName : ProductPurchaseFailedNotification object : transaction];
     [[SKPaymentQueue defaultQueue] finishTransaction : transaction];
+
+    const std::vector<gameplay::InAppPurchaseCallback *> &callbacks = gameplay::InAppPurchaseWrapper::GetUniqueInstance().getCallbacks();
+    for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = callbacks.begin(); it != callbacks.end(); ++it)
+    {
+        (*it)->failedTransaction([transaction.error.localizedDescription UTF8String]);
+    }
 }
 
 - (void) paymentQueue : (SKPaymentQueue *) queue updatedTransactions : (NSArray *) transactions

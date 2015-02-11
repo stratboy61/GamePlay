@@ -15,7 +15,6 @@
 		0F022E981998F9CB0046495B /* InAppPurchaseMacOSX.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */; };
 		0F022E9A1998FCA30046495B /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F022E991998FCA30046495B /* StoreKit.framework */; };
 		0F022EA21998FE6E0046495B /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F022EA11998FE6E0046495B /* StoreKit.framework */; };
-		0F363F081A07937300B8EFF7 /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F363F071A07937300B8EFF7 /* FacebookSDK.framework */; };
 		3C81A95F1987DFCA001CC8BD /* FbUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */; };
 		3C81A9601987DFCA001CC8BD /* FbUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */; };
 		3C81A9611987DFCA001CC8BD /* FbUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 3C81A95E1987DFCA001CC8BD /* FbUtils.h */; };
@@ -1000,6 +999,8 @@
 		5B2BC7601512514500D176CD /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B2BC75E1512514500D176CD /* OpenGL.framework */; };
 		5B2BC7621512514D00D176CD /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B2BC7611512514D00D176CD /* QuartzCore.framework */; };
 		5B2BC7641512516B00D176CD /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B2BC7631512516B00D176CD /* libz.dylib */; };
+		5B479D9C1A77B74A00792C07 /* libgameplay-deps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B479D9B1A77B74A00792C07 /* libgameplay-deps.a */; };
+		5B479DA01A77F03B00792C07 /* FacebookSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B479D9F1A77F03B00792C07 /* FacebookSDK.framework */; };
 		5BB0823D14C6FEC40019975F /* Mouse.h in Headers */ = {isa = PBXBuildFile; fileRef = 5BB0823C14C6FEC40019975F /* Mouse.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5BB0823E14C6FEC40019975F /* Mouse.h in Headers */ = {isa = PBXBuildFile; fileRef = 5BB0823C14C6FEC40019975F /* Mouse.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5BBAD0F315F5251E004C9639 /* lua_Gesture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5BBAD0EF15F5251D004C9639 /* lua_Gesture.cpp */; };
@@ -1187,7 +1188,6 @@
 		0F022E971998F9CB0046495B /* InAppPurchaseMacOSX.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = InAppPurchaseMacOSX.mm; path = src/InAppPurchaseMacOSX.mm; sourceTree = SOURCE_ROOT; };
 		0F022E991998FCA30046495B /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		0F022EA11998FE6E0046495B /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS8.0.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
-		0F363F071A07937300B8EFF7 /* FacebookSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FacebookSDK.framework; path = "../external-deps/facebook-ios-sdk-version-3.18.1/FacebookSDK.framework"; sourceTree = "<group>"; };
 		3C81A95D1987DFCA001CC8BD /* FbUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FbUtils.cpp; path = src/FbUtils.cpp; sourceTree = SOURCE_ROOT; };
 		3C81A95E1987DFCA001CC8BD /* FbUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FbUtils.h; path = src/FbUtils.h; sourceTree = SOURCE_ROOT; };
 		4201818D14A41B18008C3F56 /* MeshBatch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MeshBatch.cpp; path = src/MeshBatch.cpp; sourceTree = SOURCE_ROOT; };
@@ -1716,6 +1716,8 @@
 		5B2BC75E1512514500D176CD /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		5B2BC7611512514D00D176CD /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		5B2BC7631512516B00D176CD /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = /usr/lib/libz.dylib; sourceTree = "<absolute>"; };
+		5B479D9B1A77B74A00792C07 /* libgameplay-deps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libgameplay-deps.a"; path = "../external-deps/lib/ios/x86/libgameplay-deps.a"; sourceTree = "<group>"; };
+		5B479D9F1A77F03B00792C07 /* FacebookSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FacebookSDK.framework; path = "../external-deps/facebook-ios-sdk-version-3.22/FacebookSDK.framework"; sourceTree = "<group>"; };
 		5B5DB92D14C25B7B007755DB /* libbullet.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbullet.a; path = "../external-deps/bullet/lib/ios/i386/libbullet.a"; sourceTree = "<group>"; };
 		5B5DB92F14C25B94007755DB /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = "../external-deps/libpng/lib/ios/armv7/libpng.a"; sourceTree = "<group>"; };
 		5B5DB93114C25BA5007755DB /* libogg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libogg.a; path = "../external-deps/oggvorbis/lib/ios/armv7/libogg.a"; sourceTree = "<group>"; };
@@ -1803,6 +1805,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0F022E9A1998FCA30046495B /* StoreKit.framework in Frameworks */,
+				5B479D9C1A77B74A00792C07 /* libgameplay-deps.a in Frameworks */,
 				5B21E99616153890006EBEAC /* IOKit.framework in Frameworks */,
 				5B2BC7641512516B00D176CD /* libz.dylib in Frameworks */,
 				5B2BC7621512514D00D176CD /* QuartzCore.framework in Frameworks */,
@@ -1821,7 +1824,7 @@
 				BD2636E616CF5B7400CFE15F /* Foundation.framework in Frameworks */,
 				BD2636E716CF5B7400CFE15F /* OpenAL.framework in Frameworks */,
 				BD2636E816CF5B7400CFE15F /* OpenGLES.framework in Frameworks */,
-				0F363F081A07937300B8EFF7 /* FacebookSDK.framework in Frameworks */,
+				5B479DA01A77F03B00792C07 /* FacebookSDK.framework in Frameworks */,
 				BD2636E916CF5B7400CFE15F /* QuartzCore.framework in Frameworks */,
 				BD2636EA16CF5B7400CFE15F /* UIKit.framework in Frameworks */,
 			);
@@ -2460,7 +2463,7 @@
 		42CCD4AF146D811D00353661 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				0F363F071A07937300B8EFF7 /* FacebookSDK.framework */,
+				5B479D9F1A77F03B00792C07 /* FacebookSDK.framework */,
 				0F022EA11998FE6E0046495B /* StoreKit.framework */,
 				0F022E991998FCA30046495B /* StoreKit.framework */,
 				5B04C5FE14BFE52F00EB0071 /* MacOSX */,
@@ -2497,6 +2500,7 @@
 		5B5ADCE014C22DBE00AC6109 /* iOS */ = {
 			isa = PBXGroup;
 			children = (
+				5B479D9B1A77B74A00792C07 /* libgameplay-deps.a */,
 				5B5DB92D14C25B7B007755DB /* libbullet.a */,
 				42B701F815B081B6002BB8C3 /* liblua.a */,
 				5B5DB93114C25BA5007755DB /* libogg.a */,
@@ -3833,7 +3837,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3867,7 +3871,10 @@
 					"../external-deps/oggvorbis/include",
 					./gameplay,
 				);
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/6l6macmini/Documents/GitHub/GamePlay/external-deps/lib/ios/x86",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
@@ -3884,7 +3891,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -3912,7 +3919,10 @@
 					"../external-deps/oggvorbis/include",
 					./gameplay,
 				);
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/6l6macmini/Documents/GitHub/GamePlay/external-deps/lib/ios/x86",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
 				PRODUCT_NAME = gameplay;
@@ -3928,14 +3938,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEPLOYMENT_LOCATION = NO;
 				EXECUTABLE_PREFIX = lib;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"../external-deps/facebook-ios-sdk-version-3.18.1",
+					"../external-deps/facebook-ios-sdk-version-3.22",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3953,12 +3963,12 @@
 				GCC_WARN_MISSING_PARENTHESES = NO;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
-					"../external-deps/bullet/include",
-					"../external-deps/lua/include",
-					"../external-deps/libpng/include",
-					"../external-deps/oggvorbis/include",
+					"../external-deps/include",
+					"../external-deps/include/lua",
+					"../external-deps/include/ogg",
+					"../external-deps/include/vorbis",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1.1;
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = NO;
@@ -3973,7 +3983,7 @@
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				USER_HEADER_SEARCH_PATHS = "";
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 arm64";
 			};
 			name = Debug;
 		};
@@ -3981,7 +3991,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -3989,7 +3999,7 @@
 				EXECUTABLE_PREFIX = lib;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"../external-deps/facebook-ios-sdk-version-3.18.1",
+					"../external-deps/facebook-ios-sdk-version-3.22",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -4004,12 +4014,12 @@
 				GCC_WARN_MISSING_PARENTHESES = NO;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
-					"../external-deps/bullet/include",
-					"../external-deps/lua/include",
-					"../external-deps/libpng/include",
-					"../external-deps/oggvorbis/include",
+					"../external-deps/include",
+					"../external-deps/include/lua",
+					"../external-deps/include/ogg",
+					"../external-deps/include/vorbis",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1.1;
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = NO;
@@ -4024,7 +4034,7 @@
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				USER_HEADER_SEARCH_PATHS = "";
-				VALID_ARCHS = "armv7 armv7s i386";
+				VALID_ARCHS = "armv7 arm64";
 			};
 			name = Release;
 		};
