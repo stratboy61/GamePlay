@@ -21,6 +21,9 @@
 #include <list>
 #include <set>
 #include <stack>
+#ifdef WIN32
+#include <cstdint>
+#endif
 #include <map>
 #include <queue>
 #include <algorithm>

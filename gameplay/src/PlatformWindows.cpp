@@ -10,6 +10,9 @@
 #include <GL/wglew.h>
 #include <windowsx.h>
 #include <shellapi.h>
+#include <shlwapi.h>
+#pragma comment(lib,"shlwapi.lib")
+#include "shlobj.h"
 #ifdef USE_XINPUT
 #include <XInput.h>
 #endif
@@ -1422,8 +1425,17 @@ static char appDocumentDirectory[MAX_PATH];
 
 const char *Platform::getAppDocumentDirectory(const char *filename2Append)
 {
-	strcpy(appDocumentDirectory, FileSystem::getResourcePath());
-	return strcat(appDocumentDirectory, filename2Append); // TODO:
+	WCHAR szPath[MAX_PATH];
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, szPath))) {
+		PathAppend(szPath, TEXT("\\6L6 Interactive\\NDE Rescue\\") );
+	}
+	// some cooking here...
+	int ret = wcstombs(appDocumentDirectory, szPath, sizeof(appDocumentDirectory));
+	if (ret == MAX_PATH) {
+		appDocumentDirectory[MAX_PATH-1]='\0';
+	}
+	strcat(appDocumentDirectory, filename2Append);
+	return appDocumentDirectory;
 }
     
     
