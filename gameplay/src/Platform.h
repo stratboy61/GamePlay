@@ -336,7 +336,10 @@ public:
     static void performFbLoginButtonClick();
     
     static bool isUserLogged();
+
+    static void fetchAcceptedRequestList();
     
+    static void deleteAcceptedRequest(const std::string &request_id);
     /**
      * For request from one user to his friends, see facebook doc for understanding how to fill the bundle.
      */

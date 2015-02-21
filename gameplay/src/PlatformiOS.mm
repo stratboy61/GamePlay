@@ -846,6 +846,8 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)stopUpdating;
 - (void)perfomFbLoginButtonClick;
 #ifdef FACEBOOK_SDK
+- (void)DeleteAcceptedRequestDetails:(NSString *)requestId;
+- (void)FetchAcceptedRequestDetails;
 - (void)FetchUserDetails;
 - (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error;
 #endif
@@ -938,12 +940,12 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error
 {
     // If the session was opened successfully
-    if (!error && state == FBSessionStateOpen){
+    if (!error && state == FBSessionStateOpen) {
 
-	// Show the user the logged-in UI
-	[self userLoggedIn];
-	safeSendMessage(SESSION_STATE_CHANGED, "Session opened");
-	return;
+        // Show the user the logged-in UI
+        [self userLoggedIn];
+        safeSendMessage(SESSION_STATE_CHANGED, "Session opened");
+        return;
     }
     if (state == FBSessionStateClosed || state == FBSessionStateClosedLoginFailed){
 	// If the session is closed
@@ -1001,6 +1003,60 @@ static void safeSendMessage(const std::string& event, const std::string& message
     }
 }
 
+- (void)DeleteAcceptedRequest: (NSString *)requestId
+{
+    [FBRequestConnection startWithGraphPath:requestId
+                                 parameters:nil
+                                 HTTPMethod:@"DELETE"
+                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+                              if (!error) {
+                                  NSLog(@"request: %@ successfully deleted!", requestId);
+                                  const std::string request_id([requestId UTF8String]);
+                                  safeSendMessage(REQUEST_REMOVED, request_id);
+                              }
+                          }];
+}
+
+- (void)FetchAcceptedRequestDetails
+{
+    [FBRequestConnection startWithGraphPath:@"me/apprequests"
+                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+                              if (!error) {
+                                  // Sucess! Include your code to handle the results here
+                                  NSLog(@"user apprequest: %@", result);
+                                  
+                                  NSArray *data_list = [result objectForKey:@"data"];
+                                  for(id single_data in data_list)
+                                  {
+                                      NSString *applicationId = [[single_data objectForKey:@"application"] objectForKey:@"id"];
+                                      if (![applicationId isEqualToString:@"337863159704473"]) {
+                                          continue;
+                                      }
+                                      NSString *userId = [[single_data objectForKey:@"to"] objectForKey:@"id"];
+                                      if (![userId isEqualToString:self.mUserID]) {
+                                          continue;
+                                      }
+                                      
+                                      NSString *requestId = [single_data objectForKey:@"id"];
+                                      const std::string request_id([requestId UTF8String]);
+                                      safeSendMessage(ADD_REQUEST, request_id);
+                                  }
+                              } else {
+                                  // An error occurred, we need to handle the error
+                                  NSLog(@"%@",[error localizedDescription]);
+                              }
+                          }];
+    
+    /*[FBRequestConnection startWithGraphPath:request
+                                 parameters:nil
+                                 HTTPMethod:@"GET"
+                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+                              if (!error) {
+                                  NSLog(@"request: %@", result);
+                              }
+                          }];*/
+}
+
 - (void)FetchUserDetails
 {
     // Start the facebook request
@@ -1023,6 +1079,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
      }];
 
     [self FetchUserPermissions];
+  
 }
 
 - (NSString*)getFbAppId {
@@ -1166,10 +1223,12 @@ static void safeSendMessage(const std::string& event, const std::string& message
 }
 
 #ifdef FACEBOOK_SDK
-- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
+/*- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
 {
     return [FBSession.activeSession handleOpenURL:url];
-}
+}*/
+
+
 
 - (void) notificationGet:(NSString *)requestid {
     [FBRequestConnection startWithGraphPath:requestid
@@ -1225,19 +1284,18 @@ static void safeSendMessage(const std::string& event, const std::string& message
     }
 }
 
-- (BOOL)application:(UIApplication *)application
-	    openURL:(NSURL *)url
-  sourceApplication:(NSString *)sourceApplication
-	 annotation:(id)annotation {
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
     // attempt to extract a token from the url
     return [FBAppCall handleOpenURL:url
 		  sourceApplication:sourceApplication
 		    fallbackHandler:^(FBAppCall *call) {
 			// If there is an active session
 			if (FBSession.activeSession.isOpen) {
+                GP_WARN("openURL - FBSession.activeSession.isOpen");
 			    // Check the incoming link
 			    [self handleAppLinkData:call.appLinkData];
 			} else if (call.accessTokenData) {
+                GP_WARN("openURL - !FBSession.activeSession.isOpen");
 			    // If token data is passed in and there's
 			    // no active session.
 			  /*  if ([self handleAppLinkToken:call.accessTokenData]) {
@@ -1277,6 +1335,13 @@ static void safeSendMessage(const std::string& event, const std::string& message
     viewController = [[ViewController alloc] init];
     [window setRootViewController:viewController];
     [window makeKeyAndVisible];
+    
+    NSURL *the_url = (NSURL *)[launchOptions valueForKey:UIApplicationLaunchOptionsURLKey];
+    if (the_url) {
+        NSString *urlString = [the_url absoluteString];
+        const std::string foo([urlString UTF8String]);
+        GP_WARN(foo.c_str());
+    }
     return YES;
 }
 
@@ -2031,7 +2096,17 @@ bool Platform::isUserLogged()
 #endif
 }
 
+void Platform::fetchAcceptedRequestList()
+{
+    [__appDelegate.viewController FetchAcceptedRequestDetails];
+}
 
+void Platform::deleteAcceptedRequest(const std::string &request_id)
+{
+    NSString *requestId =[NSString stringWithCString:request_id.c_str() encoding:[NSString defaultCStringEncoding]];
+    [__appDelegate.viewController DeleteAcceptedRequest:requestId];
+}
+    
 static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
 {
     NSMutableArray *objects = [NSMutableArray array];
@@ -2116,20 +2191,26 @@ void Platform::sendRequestDialog(const FbBundle&	bundle,
 		 // Error launching the dialog or sending the request.
 		 safeSendMessage(FACEBOOK_ERROR, "Error sending request.");
 	     } else {
-		 if (result == FBWebDialogResultDialogNotCompleted) {
-		     // User clicked the "x" icon
-		     NSLog(@"User canceled request.");
-		 } else {
-		     // Handle the send request callback
-		     NSDictionary *urlParams = [__appDelegate.viewController parseURLParams:[resultURL query]];
-		     if (![urlParams valueForKey:@"request"]) {
-			 // User clicked the Cancel button
-			 NSLog(@"User canceled request.");
-		     } else {
-			 // User clicked the Send button
-			 safeSendMessage(staticEvent);
-		     }
-		 }
+             if (result == FBWebDialogResultDialogNotCompleted) {
+                 // User clicked the "x" icon
+                 NSLog(@"User canceled request.");
+             } else {
+                 // Handle the send request callback
+                 bool requestOk = false;
+                 NSArray *urlPairResult = [[resultURL query] componentsSeparatedByString:@"&"];
+                 for (NSString *pair in urlPairResult) {
+                     
+                     NSArray *kv = [pair componentsSeparatedByString:@"="];
+                     NSLog(@"urlParams: %@, %@", kv[0], kv[1]);
+                     NSString *val = [kv[0] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+                     if ([val isEqualToString:@"request"]) {
+                         requestOk = true;
+                         continue;
+                     }
+                     const std::string recipient_id([[kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] UTF8String]);
+                     safeSendMessage(ADD_RECIPIENT, recipient_id);
+                 }
+             }
 	     }
 	 }];
 #endif
@@ -2163,7 +2244,7 @@ void Platform::updateFriendsAsync(const std::string& callbackId)
 		NSString *userId    = [[element objectForKey:@"user"] objectForKey:@"id"];
 		int	 score	    = [[element objectForKey:@"score"] intValue];
 
-		FbFriendInfo fbfriend = { std::string([name UTF8String]), std::string([userId UTF8String]), score };
+        FbFriendInfo fbfriend([name UTF8String], [userId UTF8String], score);
 		m_friendsInfo.push_back(fbfriend);
 	    }
 
