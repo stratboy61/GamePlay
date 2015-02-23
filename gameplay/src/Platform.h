@@ -69,6 +69,13 @@ public:
 	static void toggleFullScreenMode(bool toFullScreen);
 
     /**
+     * Sleeps synchronously for the given amount of time (in milliseconds).
+     *
+     * @param ms How long to sleep (in milliseconds).
+     */
+    static void sleep(long ms);
+
+	/**
      * Swaps the frame buffer on the device.
      */
     static void swapBuffers();
@@ -131,13 +138,6 @@ private:
      * @param enable true if vsync is enabled; false if not.
      */
     static void setVsync(bool enable);
-
-    /**
-     * Sleeps synchronously for the given amount of time (in milliseconds).
-     *
-     * @param ms How long to sleep (in milliseconds).
-     */
-    static void sleep(long ms);
 
     /**
      * Set if multi-sampling is enabled on the platform.
@@ -340,13 +340,8 @@ public:
     static void fetchAcceptedRequestList();
     
     static void deleteAcceptedRequest(const std::string &request_id);
-    /**
-     * For request from one user to his friends, see facebook doc for understanding how to fill the bundle.
-     */
-    static void sendRequestDialog(const FbBundle& params,
-                                  const std::string& title,
-                                  const std::string& message,
-                                  const std::string& callbackId);
+
+	static void sendRequestDialog(const FbBundle &params, const std::string &title, const std::string &message);
     
     typedef enum {
         HTTP_GET,
@@ -365,15 +360,13 @@ public:
     /**
      * Send a fb request to get friends data
      */
-    static void updateFriendsAsync(const std::string& callbackId);
+    static void updateFriendsAsync();
     
-    static void requestNewPermissionAsync(const std::string& permission,
-                                          const std::string& callbackId);
+    static void requestNewPermissionAsync(const std::string &permission);
     
     static std::string getUserId();
     static std::string getAppId();
     
-    static const std::vector<FbFriendInfo>& getFriends()        { return m_friendsInfo;     }
     static std::vector<FbBundle>&           getNotifications()  { return m_notifications;   }
     static std::vector<std::string>&        getPermissions()    { return m_permissions;     }
     static FacebookListener*                getFbListener()     { return m_fbListener;      }
@@ -382,8 +375,6 @@ private:
     
     static FacebookListener* m_fbListener;
     static MemoryWarningFunc m_memoryWarningFunc;
-    
-    static std::vector<FbFriendInfo>    m_friendsInfo;
     static std::vector<FbBundle>        m_notifications;
     static std::vector<std::string>     m_permissions;
 

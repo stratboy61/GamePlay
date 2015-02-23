@@ -1444,33 +1444,89 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
     /**FACEBOOK FUNCTIONS**/
     
 FacebookListener*            Platform::m_fbListener = NULL;
-std::vector<FbFriendInfo>    Platform::m_friendsInfo;
 std::vector<FbBundle>        Platform::m_notifications;
 std::vector<std::string>     Platform::m_permissions;
-    
-
 
     
-void Platform::performFbLoginButtonClick() { GP_WARN("Facebook not supported."); }
+void Platform::performFbLoginButtonClick()
+{
+	GP_WARN("performFbLoginButtonClick - Facebook not supported.");
+}
     
-bool Platform::isUserLogged() { return false; }
-    
+bool Platform::isUserLogged()
+{ 
+	return true; // TEST PURPOSE
+}
 
-void Platform::sendRequestDialog(const FbBundle& params,
-                                  const std::string& title,
-                                  const std::string& message,
-                                            const std::string& callbackId) {}
-    
-void Platform::sendRequest(const std::string&  graphPath,
-                            const FbBundle&     params,
-                            HTTP_METHOD         method,
-                                      const std::string&  callbackId) {}
-    
+DWORD WINAPI AcceptedRequestListProc( void* pContext )
+{
+	if (Platform::getFbListener()) {
+		Platform::getFbListener()->onFacebookEvent(FARE_ADD_REQUEST, 0L, "123_456");
+    }
+    return 0;
+}
 
-void Platform::updateFriendsAsync(const std::string& callbackId) {}
+DWORD WINAPI DeleteAcceptedRequestProc( void* pContext )
+{
+	if (Platform::getFbListener()) {
+		Platform::getFbListener()->onFacebookEvent(FARE_REMOVE_REQUEST, 0L, "123_456");
+    }
+    return 0;
+}
+
+DWORD WINAPI SendRequestDialogProc( void* pContext )
+{
+	if (Platform::getFbListener()) {
+		Platform::getFbListener()->onFacebookEvent(FARE_ADD_RECIPIENT, 1234567890L, "Johnny Mnemonic");
+    }
+    return 0;
+}
+
+DWORD WINAPI UpdateFriendsAsyncProc( void* pContext )
+{
+	if (Platform::getFbListener()) {
+		for (int i = 1; i < 7; ++i) {
+			char name[32];
+			sprintf(name, "Johnny Mnem_%d", i);
+			Platform::getFbListener()->onFacebookEvent(FARE_ADD_FRIEND, 1234567890L+i, name);
+		}
+    }
+    return 0;
+}
+
+void Platform::fetchAcceptedRequestList()
+{
+	HANDLE h = CreateThread( NULL, 0, AcceptedRequestListProc, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 666);
+}
+
+void Platform::deleteAcceptedRequest(const std::string &request_id)
+{
+	HANDLE h = CreateThread( NULL, 0, DeleteAcceptedRequestProc, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 666);
+}
+
+void Platform::sendRequestDialog(const FbBundle& params, const std::string& title, const std::string& message)
+{
+	HANDLE h = CreateThread( NULL, 0, SendRequestDialogProc, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 666);
+}
     
-void Platform::requestNewPermissionAsync(const std::string& permission,
-                                                    const std::string& callbackId) {}
+void Platform::sendRequest(const std::string &graphPath, const FbBundle &params, HTTP_METHOD method, const std::string &callbackId)
+{
+	GP_WARN("sendRequest - %s - %s - Facebook not supported.", graphPath.c_str(), callbackId.c_str());
+}
+
+void Platform::updateFriendsAsync()
+{
+	HANDLE h = CreateThread( NULL, 0, UpdateFriendsAsyncProc, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 666);
+}
+    
+void Platform::requestNewPermissionAsync(const std::string& permission)
+{
+	GP_WARN("requestNewPermissionAsync - %s - Facebook not supported.", permission.c_str());
+}
     
 std::string Platform::getUserId() { return ""; }
 std::string Platform::getAppId() { return ""; }

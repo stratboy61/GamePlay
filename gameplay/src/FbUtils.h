@@ -1,41 +1,45 @@
-
 #ifndef gameplay_FbUtils_h
 #define gameplay_FbUtils_h
 
 #include <vector>
 #include <string>
 
+#define FACEBOOK_ID long long
+
 namespace gameplay
 {
+	enum FacebookAsyncReturnEvent {
+		FARE_NONE,
+		FARE_STATE_CHANGED,
+		FARE_ADD_FRIEND,
+		FARE_ADD_RECIPIENT,
+		FARE_ADD_REQUEST,
+		FARE_REMOVE_REQUEST,
+		FARE_ERROR,
+		FARE_COUNT
+		};
     
-    class FacebookListener
-    {
+    class FacebookListener {
     public:
-        virtual void onFacebookEvent(const std::string& eventName, const std::string& message="") = 0;
+        virtual void onFacebookEvent(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const std::string &txt = "") = 0;
     };
-    
-    /* Facebook Events Names */
-    static const std::string SESSION_STATE_CHANGED  = "SESSION_STATE_CHANGED";
-    static const std::string INCOMING_NOTIFICATION  = "INCOMING_NOTIFICATION";
-    static const std::string ADD_RECIPIENT          = "ADD_RECIPIENT";
-    static const std::string ADD_REQUEST            = "ADD_REQUEST";
-    static const std::string REQUEST_REMOVED        = "REQUEST_REMOVED";
-    static const std::string FACEBOOK_ERROR         = "FACEBOOK_ERROR";
-    
     
     struct FbFriendInfo
     {
-        FbFriendInfo(const std::string &name, const std::string &id, int score) : m_name(name), m_id(id), m_score(0) {}
-        std::string m_name;
-        std::string m_id;
-        int         m_score;
+		FbFriendInfo (FACEBOOK_ID id) : m_friendId(id), m_friendName(""), m_score(0), m_requestSent(false), m_self(false) {}
+		FbFriendInfo (FACEBOOK_ID id, const std::string &name, int score, bool sent=false, bool self=false) : m_friendId(id), m_friendName(name), m_score(score), m_requestSent(sent), m_self(self) {}
+        FACEBOOK_ID m_friendId;
+        std::string m_friendName;
+        int m_score;
+		bool m_requestSent;
+		bool m_self;
     };
     
     struct FbRequestInfo
     {
-        FbRequestInfo() : m_date(0L) {}
-        std::string m_request_id;
-        unsigned long m_date;
+        FbRequestInfo(const std::string &id) : m_requestId(id) {}
+        std::string m_requestId;
+        std::string m_friendName;
     };
     
     class FbBundle
