@@ -1441,16 +1441,24 @@ const char *Platform::getAppDocumentDirectory(const char *filename2Append)
     
     
     
-    /**FACEBOOK FUNCTIONS**/
+/**FACEBOOK FUNCTIONS**/
     
 FacebookListener*            Platform::m_fbListener = NULL;
 std::vector<FbBundle>        Platform::m_notifications;
 std::vector<std::string>     Platform::m_permissions;
 
+static std::queue<std::string> g_recipientList; // TEST PURPOSE - should be lock-protected in real life
+static std::queue<std::string> g_requestList; // TEST PURPOSE - should be lock-protected in real life
     
 void Platform::performFbLoginButtonClick()
 {
 	GP_WARN("performFbLoginButtonClick - Facebook not supported.");
+	for (unsigned int i = 0; i < g_requestList.size(); ++i) {
+		g_requestList.pop();
+	}
+	for (unsigned int i = 0; i < g_recipientList.size(); ++i) {
+		g_recipientList.pop();
+	}
 }
     
 bool Platform::isUserLogged()
@@ -1461,7 +1469,10 @@ bool Platform::isUserLogged()
 DWORD WINAPI AcceptedRequestListProc( void* pContext )
 {
 	if (Platform::getFbListener()) {
-		Platform::getFbListener()->onFacebookEvent(FARE_ADD_REQUEST, 0L, "123_456");
+		if (g_requestList.size()) {
+			Platform::getFbListener()->onFacebookEvent(FARE_ADD_REQUEST, 0L, g_requestList.front());
+			g_requestList.pop();
+		}
     }
     return 0;
 }
@@ -1469,7 +1480,10 @@ DWORD WINAPI AcceptedRequestListProc( void* pContext )
 DWORD WINAPI DeleteAcceptedRequestProc( void* pContext )
 {
 	if (Platform::getFbListener()) {
-		Platform::getFbListener()->onFacebookEvent(FARE_REMOVE_REQUEST, 0L, "123_456");
+		if (g_recipientList.size()) {
+			Platform::getFbListener()->onFacebookEvent(FARE_REMOVE_REQUEST, 0L, g_recipientList.front());
+			g_recipientList.pop();
+		}
     }
     return 0;
 }
@@ -1477,7 +1491,9 @@ DWORD WINAPI DeleteAcceptedRequestProc( void* pContext )
 DWORD WINAPI SendRequestDialogProc( void* pContext )
 {
 	if (Platform::getFbListener()) {
-		Platform::getFbListener()->onFacebookEvent(FARE_ADD_RECIPIENT, 1234567890L, "Johnny Mnemonic");
+		if (g_requestList.size()) {
+			Platform::getFbListener()->onFacebookEvent(FARE_ADD_RECIPIENT, 0L, g_requestList.front());
+		}
     }
     return 0;
 }
@@ -1487,7 +1503,7 @@ DWORD WINAPI UpdateFriendsAsyncProc( void* pContext )
 	if (Platform::getFbListener()) {
 		for (int i = 1; i < 7; ++i) {
 			char name[32];
-			sprintf(name, "Johnny Mnem_%d", i);
+			sprintf(name, "Johnny Mnem_%d<|>%d", i, 39740+70*i);
 			Platform::getFbListener()->onFacebookEvent(FARE_ADD_FRIEND, 1234567890L+i, name);
 		}
     }
@@ -1508,6 +1524,9 @@ void Platform::deleteAcceptedRequest(const std::string &request_id)
 
 void Platform::sendRequestDialog(const FbBundle& params, const std::string& title, const std::string& message)
 {
+	const std::string request_id = "333444555666_" + params.getObject("to"); // TEST PURPOSE
+	g_requestList.push(request_id);
+	g_recipientList.push(request_id);
 	HANDLE h = CreateThread( NULL, 0, SendRequestDialogProc, Platform::m_fbListener, 0L, NULL );
 	WaitForSingleObject(h, 666);
 }

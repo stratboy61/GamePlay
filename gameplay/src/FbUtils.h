@@ -37,7 +37,7 @@ namespace gameplay
     
     struct FbRequestInfo
     {
-        FbRequestInfo(const std::string &id) : m_requestId(id) {}
+        FbRequestInfo(const std::string &id, const std::string &name) : m_requestId(id), m_friendName(name) {}
         std::string m_requestId;
         std::string m_friendName;
     };
