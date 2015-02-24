@@ -1447,27 +1447,43 @@ FacebookListener*            Platform::m_fbListener = NULL;
 std::vector<FbBundle>        Platform::m_notifications;
 std::vector<std::string>     Platform::m_permissions;
 
+static bool g_loggedIn = false; // TEST PURPOSE - should be lock-protected in real life
 static std::queue<std::string> g_recipientList; // TEST PURPOSE - should be lock-protected in real life
 static std::queue<std::string> g_requestList; // TEST PURPOSE - should be lock-protected in real life
-    
-void Platform::performFbLoginButtonClick()
+
+
+DWORD WINAPI UserLoggedIn( void* pContext )
 {
-	GP_WARN("performFbLoginButtonClick - Facebook not supported.");
+	Platform::sleep(667);
+	g_loggedIn = !g_loggedIn;
 	for (unsigned int i = 0; i < g_requestList.size(); ++i) {
 		g_requestList.pop();
 	}
 	for (unsigned int i = 0; i < g_recipientList.size(); ++i) {
 		g_recipientList.pop();
 	}
+	if (Platform::getFbListener()) {
+		Platform::getFbListener()->onFacebookEvent(FARE_STATE_CHANGED, 0L);
+    }
+    return 0;
+}
+
+void Platform::performFbLoginButtonClick()
+{
+	m_permissions.clear();
+	m_permissions.push_back("publish_actions");
+	HANDLE h = CreateThread( NULL, 0, UserLoggedIn, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 2000);
 }
     
 bool Platform::isUserLogged()
 { 
-	return true; // TEST PURPOSE
+	return g_loggedIn;
 }
 
 DWORD WINAPI AcceptedRequestListProc( void* pContext )
 {
+	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		if (g_requestList.size()) {
 			Platform::getFbListener()->onFacebookEvent(FARE_ADD_REQUEST, 0L, g_requestList.front());
@@ -1479,6 +1495,7 @@ DWORD WINAPI AcceptedRequestListProc( void* pContext )
 
 DWORD WINAPI DeleteAcceptedRequestProc( void* pContext )
 {
+	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		if (g_recipientList.size()) {
 			Platform::getFbListener()->onFacebookEvent(FARE_REMOVE_REQUEST, 0L, g_recipientList.front());
@@ -1490,6 +1507,7 @@ DWORD WINAPI DeleteAcceptedRequestProc( void* pContext )
 
 DWORD WINAPI SendRequestDialogProc( void* pContext )
 {
+	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		if (g_requestList.size()) {
 			Platform::getFbListener()->onFacebookEvent(FARE_ADD_RECIPIENT, 0L, g_requestList.front());
@@ -1500,6 +1518,7 @@ DWORD WINAPI SendRequestDialogProc( void* pContext )
 
 DWORD WINAPI UpdateFriendsAsyncProc( void* pContext )
 {
+	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		for (int i = 1; i < 7; ++i) {
 			char name[32];
@@ -1513,13 +1532,13 @@ DWORD WINAPI UpdateFriendsAsyncProc( void* pContext )
 void Platform::fetchAcceptedRequestList()
 {
 	HANDLE h = CreateThread( NULL, 0, AcceptedRequestListProc, Platform::m_fbListener, 0L, NULL );
-	WaitForSingleObject(h, 666);
+	WaitForSingleObject(h, 2000);
 }
 
 void Platform::deleteAcceptedRequest(const std::string &request_id)
 {
 	HANDLE h = CreateThread( NULL, 0, DeleteAcceptedRequestProc, Platform::m_fbListener, 0L, NULL );
-	WaitForSingleObject(h, 666);
+	WaitForSingleObject(h, 2000);
 }
 
 void Platform::sendRequestDialog(const FbBundle& params, const std::string& title, const std::string& message)
@@ -1528,7 +1547,7 @@ void Platform::sendRequestDialog(const FbBundle& params, const std::string& titl
 	g_requestList.push(request_id);
 	g_recipientList.push(request_id);
 	HANDLE h = CreateThread( NULL, 0, SendRequestDialogProc, Platform::m_fbListener, 0L, NULL );
-	WaitForSingleObject(h, 666);
+	WaitForSingleObject(h, 2000);
 }
     
 void Platform::sendRequest(const std::string &graphPath, const FbBundle &params, HTTP_METHOD method, const std::string &callbackId)
@@ -1539,7 +1558,7 @@ void Platform::sendRequest(const std::string &graphPath, const FbBundle &params,
 void Platform::updateFriendsAsync()
 {
 	HANDLE h = CreateThread( NULL, 0, UpdateFriendsAsyncProc, Platform::m_fbListener, 0L, NULL );
-	WaitForSingleObject(h, 666);
+	WaitForSingleObject(h, 2000);
 }
     
 void Platform::requestNewPermissionAsync(const std::string& permission)

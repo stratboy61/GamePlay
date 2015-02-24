@@ -8,6 +8,14 @@
 
 namespace gameplay
 {
+	enum FacebookFriendContext {
+		FFC_CONTEXT_NONE,
+		FFC_CONTEXT_REQUEST_SENT,
+		FFC_CONTEXT_FRIEND_READ,
+		FFC_CONTEXT_FRIEND_RECIEVED,
+		FFC_CONTEXT_COUNT
+		};
+
 	enum FacebookAsyncReturnEvent {
 		FARE_NONE,
 		FARE_STATE_CHANGED,
@@ -26,12 +34,13 @@ namespace gameplay
     
     struct FbFriendInfo
     {
-		FbFriendInfo (FACEBOOK_ID id) : m_friendId(id), m_friendName(""), m_score(0), m_requestSent(false), m_self(false) {}
-		FbFriendInfo (FACEBOOK_ID id, const std::string &name, int score, bool sent=false, bool self=false) : m_friendId(id), m_friendName(name), m_score(score), m_requestSent(sent), m_self(self) {}
+		FbFriendInfo (FACEBOOK_ID id) : m_friendId(id), m_friendName(""), m_score(0), m_requestSent(false), m_ffc(FFC_CONTEXT_NONE), m_self(false) {}
+		FbFriendInfo (FACEBOOK_ID id, const std::string &name, int score, bool sent=false, bool self=false) : m_friendId(id), m_friendName(name), m_score(score), m_requestSent(sent), m_ffc(FFC_CONTEXT_NONE), m_self(self) {}
         FACEBOOK_ID m_friendId;
         std::string m_friendName;
         int m_score;
 		bool m_requestSent;
+		FacebookFriendContext m_ffc;
 		bool m_self;
     };
     
