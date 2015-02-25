@@ -83,7 +83,6 @@ static float __pitch;
 static float __roll;
 
 
-std::vector<FbFriendInfo>   Platform::m_friendsInfo;
 std::vector<FbBundle>	    Platform::m_notifications;
 std::vector<std::string>    Platform::m_permissions;
 FacebookListener*	    Platform::m_fbListener = NULL;
@@ -828,11 +827,10 @@ int getUnicode(int key);
 @end
 
 
-static void safeSendMessage(const std::string& event, const std::string& message="")
+static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const std::string& message="")
 {
-    if(Platform::getFbListener())
-    {
-	Platform::getFbListener()->onFacebookEvent(event, message);
+    if (Platform::getFbListener()) {
+        Platform::getFbListener()->onFacebookEvent(fare, id, message);
     }
 }
 
@@ -846,6 +844,8 @@ static void safeSendMessage(const std::string& event, const std::string& message
 - (void)stopUpdating;
 - (void)perfomFbLoginButtonClick;
 #ifdef FACEBOOK_SDK
+- (NSString*)getFbAppId;
+- (void)refreshLoginStatus;
 - (void)DeleteAcceptedRequestDetails:(NSString *)requestId;
 - (void)FetchAcceptedRequestDetails;
 - (void)FetchUserDetails;
@@ -911,29 +911,28 @@ static void safeSendMessage(const std::string& event, const std::string& message
     }];
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-
+- (void)refreshLoginStatus {
 
     AppDelegate *appDelegate = __appDelegate;
     if (!appDelegate.session.isOpen) {
-	// create a fresh session object
-	appDelegate.session = [[FBSession alloc] init];
-
-	// if we don't have a cached token, a call to open here would cause UX for login to
-	// occur; we don't want that to happen unless the user clicks the login button, and so
-	// we check here to make sure we have a token before calling open
-	if (appDelegate.session.state == FBSessionStateCreatedTokenLoaded) {
-
-	    [self openSession];
-	}
+        // create a fresh session object
+        appDelegate.session = [[FBSession alloc] init];
+        
+        // if we don't have a cached token, a call to open here would cause UX for login to
+        // occur; we don't want that to happen unless the user clicks the login button, and so
+        // we check here to make sure we have a token before calling open
+        if (appDelegate.session.state == FBSessionStateCreatedTokenLoaded) {
+            
+            [self openSession];
+        }
+    } else {
+        safeSendMessage(FARE_STATE_CHANGED, 0L, "Session already opened");
     }
-
 }
 
-- (void)userLoggedIn{
-    [self FetchUserDetails];
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
 }
 
 // This method will handle ALL the session state changes in the app
@@ -942,16 +941,15 @@ static void safeSendMessage(const std::string& event, const std::string& message
     // If the session was opened successfully
     if (!error && state == FBSessionStateOpen) {
 
-        // Show the user the logged-in UI
-        [self userLoggedIn];
-        safeSendMessage(SESSION_STATE_CHANGED, "Session opened");
+        safeSendMessage(FARE_STATE_CHANGED, 0L, "Session opened");
+
+        [self FetchUserDetails];
+        
         return;
     }
     if (state == FBSessionStateClosed || state == FBSessionStateClosedLoginFailed){
-	// If the session is closed
-
-	safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
-
+        // If the session is closed
+        safeSendMessage(FARE_STATE_CHANGED, 0L, "Session closed");
     }
 
     // Handle errors
@@ -989,17 +987,16 @@ static void safeSendMessage(const std::string& event, const std::string& message
 	// Clear this token
 	[FBSession.activeSession closeAndClearTokenInformation];
 
-	safeSendMessage(FACEBOOK_ERROR, message);
-	safeSendMessage(SESSION_STATE_CHANGED, "Session closed");
+	safeSendMessage(FARE_ERROR, 0L, message);
+	safeSendMessage(FARE_STATE_CHANGED, 0L, "Session closed");
     }
 }
 
 - (void)FetchUserPermissions
 {
     Platform::getPermissions().clear();
-    for(NSString* permission in FBSession.activeSession.permissions)
-    {
-	Platform::getPermissions().push_back(std::string([permission UTF8String]));
+    for(NSString* permission in FBSession.activeSession.permissions) {
+        Platform::getPermissions().push_back(std::string([permission UTF8String]));
     }
 }
 
@@ -1012,9 +1009,17 @@ static void safeSendMessage(const std::string& event, const std::string& message
                               if (!error) {
                                   NSLog(@"request: %@ successfully deleted!", requestId);
                                   const std::string request_id([requestId UTF8String]);
-                                  safeSendMessage(REQUEST_REMOVED, request_id);
+                                  safeSendMessage(FARE_REMOVE_REQUEST, 0L, request_id);
+                              } else {
+                                  NSLog(@"%@",[error localizedDescription]);
                               }
                           }];
+}
+
+
+- (NSString*)getFbAppId
+{
+    return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"FacebookAppID"] copy];
 }
 
 - (void)FetchAcceptedRequestDetails
@@ -1029,32 +1034,25 @@ static void safeSendMessage(const std::string& event, const std::string& message
                                   for(id single_data in data_list)
                                   {
                                       NSString *applicationId = [[single_data objectForKey:@"application"] objectForKey:@"id"];
-                                      if (![applicationId isEqualToString:@"337863159704473"]) {
+                                      NSString *appId = [self getFbAppId];
+                                      if (![applicationId isEqualToString:appId]) {
                                           continue;
                                       }
                                       NSString *userId = [[single_data objectForKey:@"to"] objectForKey:@"id"];
                                       if (![userId isEqualToString:self.mUserID]) {
                                           continue;
                                       }
-                                      
                                       NSString *requestId = [single_data objectForKey:@"id"];
                                       const std::string request_id([requestId UTF8String]);
-                                      safeSendMessage(ADD_REQUEST, request_id);
+                                      
+                                      NSString *senderId = [single_data objectForKey:@"data"];
+                                      safeSendMessage(FARE_ADD_REQUEST, [senderId longLongValue], request_id);
                                   }
                               } else {
                                   // An error occurred, we need to handle the error
                                   NSLog(@"%@",[error localizedDescription]);
                               }
                           }];
-    
-    /*[FBRequestConnection startWithGraphPath:request
-                                 parameters:nil
-                                 HTTPMethod:@"GET"
-                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-                              if (!error) {
-                                  NSLog(@"request: %@", result);
-                              }
-                          }];*/
 }
 
 - (void)FetchUserDetails
@@ -1069,21 +1067,15 @@ static void safeSendMessage(const std::string& event, const std::string& message
 	     // If so we can extract out the player's Facebook ID and first name
 	     self.mUserName = [[NSString alloc] initWithString:result.first_name];
 	     self.mUserID = [[NSString alloc] initWithString:result.objectID];
-
+         safeSendMessage(FARE_USERINFO_RETRIEVED, 0L);
 	 }
-	 else
-	 {
+	 else {
 	     NSLog(@"%@",[error localizedDescription]);
-	 }
-
+     }
      }];
 
     [self FetchUserPermissions];
   
-}
-
-- (NSString*)getFbAppId {
-    return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"FacebookAppID"] copy];
 }
 #endif
 
@@ -1117,26 +1109,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
 	__view = (View*)self.view;
     }
 }
-/*
-- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation
-{
-    return UIInterfaceOrientationLandscapeRight;
-}
 
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
-{
-
-}
-
-- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
-{
-}
-
-- (UIInterfaceOrientation)interfaceOrientation
-{
-    return UIInterfaceOrientationLandscapeRight;
-}
-*/
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     // Fetch the supported orientations array
@@ -1223,13 +1196,6 @@ static void safeSendMessage(const std::string& event, const std::string& message
 }
 
 #ifdef FACEBOOK_SDK
-/*- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
-{
-    return [FBSession.activeSession handleOpenURL:url];
-}*/
-
-
-
 - (void) notificationGet:(NSString *)requestid {
     [FBRequestConnection startWithGraphPath:requestid
 			  completionHandler:^(FBRequestConnection *connection,
@@ -1251,7 +1217,7 @@ static void safeSendMessage(const std::string& event, const std::string& message
 				      Platform::getNotifications().push_back(bundle);
 				  if(Platform::getFbListener())
 				  {
-				      Platform::getFbListener()->onFacebookEvent(INCOMING_NOTIFICATION);
+				      Platform::getFbListener()->onFacebookEvent(FARE_NONE, 0L, "TODO"); //TODO:
 				  }
 
 
@@ -2068,18 +2034,13 @@ bool Platform::launchURL(const char *url)
 const char *Platform::getAppDocumentDirectory(const char *filename2Append)
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    /*NSString *appBundleID = [[NSBundle mainBundle] bundleIdentifier];
-    NSString *bundleIdPath = [[paths objectAtIndex:0] stringByAppendingPathComponent: appBundleID];
-
-    NSLog(@"Listing of %@", documentPath);
-    int fileCount;
-    NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:NULL];
-    for (fileCount = 0; fileCount < (int)[directoryContent count]; fileCount++) {
-	NSLog(@"File %d: %@", (fileCount + 1), [directoryContent objectAtIndex:fileCount]);
-    }*/
-
     NSString *documentPath = [paths objectAtIndex:0];
 	return [[documentPath stringByAppendingPathComponent: [NSString stringWithUTF8String: filename2Append]] UTF8String];
+}
+
+void Platform::refreshLoginStatus()
+{
+    [__appDelegate.viewController refreshLoginStatus];
 }
 
 void Platform::performFbLoginButtonClick()
@@ -2128,8 +2089,7 @@ static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
     return [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
 }
 
-void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method,
-			   const std::string& callbackId)
+void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method, const std::string &callbackId)
 {
 #ifdef FACEBOOK_SDK
     NSMutableDictionary* params = convertToDictionary(bundle);
@@ -2149,36 +2109,25 @@ void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle,
 	    break;
     }
 
-    static std::string staticMessage;
-
-    staticMessage = callbackId;
-
     [FBRequestConnection startWithGraphPath:path
 				 parameters:params
 				 HTTPMethod:httpMethod
 			  completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-
-	if (error) {
-	    safeSendMessage(FACEBOOK_ERROR);
-	}
-	else {
-	    safeSendMessage(staticMessage);
-	}
-
-    }];
+                  if (error) {
+                      safeSendMessage(FARE_ERROR, 0L);
+                  }
+                  else {
+                      safeSendMessage(FARE_SCORE_POSTED, 0L);
+                  }
+              }];
 #endif
 }
 
-void Platform::sendRequestDialog(const FbBundle&	bundle,
-				 const std::string&	title,
-				 const std::string&	message,
-				 const std::string&	callbackId)
+void Platform::sendRequestDialog(const FbBundle &bundle, const std::string &title, const std::string &message)
 {
     NSMutableDictionary* params = convertToDictionary(bundle);
     NSString* m =[NSString stringWithCString:message.c_str() encoding:[NSString defaultCStringEncoding]];
     NSString* t =[NSString stringWithCString:title.c_str() encoding:[NSString defaultCStringEncoding]];
-
-    static std::string staticEvent = callbackId;
 
 #ifdef FACEBOOK_SDK
 	[FBWebDialogs
@@ -2189,7 +2138,7 @@ void Platform::sendRequestDialog(const FbBundle&	bundle,
 	 handler:^(FBWebDialogResult result, NSURL *resultURL, NSError *error) {
 	     if (error) {
 		 // Error launching the dialog or sending the request.
-		 safeSendMessage(FACEBOOK_ERROR, "Error sending request.");
+		 safeSendMessage(FARE_ERROR, 0L, "Error sending request.");
 	     } else {
              if (result == FBWebDialogResultDialogNotCompleted) {
                  // User clicked the "x" icon
@@ -2207,8 +2156,10 @@ void Platform::sendRequestDialog(const FbBundle&	bundle,
                          requestOk = true;
                          continue;
                      }
-                     const std::string recipient_id([[kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] UTF8String]);
-                     safeSendMessage(ADD_RECIPIENT, recipient_id);
+                     if (requestOk) {
+                         NSString *recipient_id = [kv[1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+                         safeSendMessage(FARE_ADD_RECIPIENT, [recipient_id longLongValue], "");
+                     }
                  }
              }
 	     }
@@ -2216,49 +2167,43 @@ void Platform::sendRequestDialog(const FbBundle&	bundle,
 #endif
 }
 
-void Platform::updateFriendsAsync(const std::string& callbackId)
+void Platform::updateFriendsAsync()
 {
-    m_friendsInfo.clear();
 #ifdef FACEBOOK_SDK
-    static std::string staticString;
-    staticString = callbackId;
-
     NSString* scores = @"/scores";
 
     NSString* graphPath = [NSString stringWithFormat:@"%@%@", [__appDelegate.viewController getFbAppId] , scores ];
 
     [FBRequestConnection startWithGraphPath:graphPath parameters:nil HTTPMethod:@"GET" completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
 
-	if(error)
-	{
-	    safeSendMessage(FACEBOOK_ERROR, "error fetching friends data");
+	if(error) {
+	    safeSendMessage(FARE_ERROR, 0L, "error fetching friends data");
 	}
 
 	if (result && !error) {
 
 	    NSArray *array = [result objectForKey:@"data"];
+	    for (id element in array) {
+            NSString *name	    = [[element objectForKey:@"user"] objectForKey:@"name"];
+            NSString *userId    = [[element objectForKey:@"user"] objectForKey:@"id"];
+            int score = [[element objectForKey:@"score"] intValue];
 
-	    for(id element in array)
-	    {
-		NSString *name	    = [[element objectForKey:@"user"] objectForKey:@"name"];
-		NSString *userId    = [[element objectForKey:@"user"] objectForKey:@"id"];
-		int	 score	    = [[element objectForKey:@"score"] intValue];
-
-        FbFriendInfo fbfriend([name UTF8String], [userId UTF8String], score);
-		m_friendsInfo.push_back(fbfriend);
+            safeSendMessage(FARE_ADD_FRIEND, [userId longLongValue], [[NSString stringWithFormat: @"%@<|>%d.", name, score] UTF8String]);
 	    }
-
-	    safeSendMessage(staticString);
-
 	}
 
     }];
 #endif
 }
 
-std::string Platform::getUserId()
+FACEBOOK_ID Platform::getUserId()
 {
-    return std::string([__appDelegate.viewController.mUserID UTF8String]);
+    return [__appDelegate.viewController.mUserID longLongValue];
+}
+
+std::string Platform::getUserName()
+{
+    return std::string([__appDelegate.viewController.mUserName UTF8String]);
 }
 
 
@@ -2272,8 +2217,7 @@ std::string Platform::getAppId()
 }
 
 
-void Platform::requestNewPermissionAsync(const std::string& permission,
-					 const std::string& callbackId)
+void Platform::requestNewPermissionAsync(const std::string &permission)
 {
 
    NSString* perm = [NSString stringWithCString:permission.c_str() encoding:[NSString defaultCStringEncoding]];
@@ -2298,12 +2242,12 @@ void Platform::requestNewPermissionAsync(const std::string& permission,
 						} else {
 
 						    [__appDelegate.viewController FetchUserPermissions];
-						    safeSendMessage(callbackId);
+						    safeSendMessage(FARE_NONE, 0L, "TODO"); //TODO:
 
 						}
 
 					    } else {
-						safeSendMessage(FACEBOOK_ERROR,"error requesting additional permission");
+						safeSendMessage(FARE_ERROR, 0L, "error requesting additional permission");
 					    }
 					}];
 #endif

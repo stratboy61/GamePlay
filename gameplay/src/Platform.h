@@ -333,6 +333,8 @@ public:
      * Will log in or log out the user. 
      * This will open the facebook app or facebook webpage to let the user enter his credentials out of our app
      */
+    static void refreshLoginStatus();
+
     static void performFbLoginButtonClick();
     
     static bool isUserLogged();
@@ -364,7 +366,8 @@ public:
     
     static void requestNewPermissionAsync(const std::string &permission);
     
-    static std::string getUserId();
+    static FACEBOOK_ID getUserId();
+    static std::string getUserName();
     static std::string getAppId();
     
     static std::vector<FbBundle>&           getNotifications()  { return m_notifications;   }
