@@ -1566,7 +1566,8 @@ void Platform::requestNewPermissionAsync(const std::string& permission)
 	GP_WARN("requestNewPermissionAsync - %s - Facebook not supported.", permission.c_str());
 }
     
-std::string Platform::getUserId() { return ""; }
+FACEBOOK_ID Platform::getUserId() { return 0; }
+std::string Platform::getUserName() { return ""; }
 std::string Platform::getAppId() { return ""; }
 
 }

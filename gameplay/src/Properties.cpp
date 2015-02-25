@@ -807,7 +807,7 @@ long Properties::getLong(const char* name) const
 bool Properties::updateLong(const char* name, long value)
 {
 	char str[16];
-	sprintf(str, "%Ld", value);
+	sprintf(str, "%ld", value);
     return updateString(name, str);
 }
 

@@ -178,10 +178,10 @@ Mesh* Mesh::createUnitCubeMap()
     mesh->_primitiveType = TRIANGLES;
     mesh->setVertexData(vertices, 0, 8);
 
-	mesh->addPart(TRIANGLES, INDEX16, 36);
 
-	// faces are declared in CLOCKWISE (CW) order !
-	// this avoids changing backface culling render state.
+	// Faces are declared in CLOCKWISE (CW) order !
+	// This is done to generate Inward Normals and thus internal facing polygons.
+	// This avoids changing backface culling render state.
 	GLushort indices[] = 
 	{
 		// Right (+X)
@@ -204,7 +204,9 @@ Mesh* Mesh::createUnitCubeMap()
 		5, 6, 7
 	};
 
-	mesh->getPart(0)->setIndexData(indices, 0, 36);
+	mesh->addPart(TRIANGLES, INDEX16, sizeof(indices)/sizeof(GLushort));
+
+	mesh->getPart(0)->setIndexData(indices, 0, sizeof(indices)/sizeof(GLushort));
 
     return mesh;
 }

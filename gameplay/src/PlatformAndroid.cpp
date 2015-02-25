@@ -1555,7 +1555,6 @@ bool Platform::getAndroidExpansionFileStream(const char *filename, std::string &
 
 Platform::MemoryWarningFunc	 Platform::m_memoryWarningFunc = NULL;
 FacebookListener*            Platform::m_fbListener = NULL;
-std::vector<FbFriendInfo>    Platform::m_friendsInfo;
 std::vector<FbBundle>        Platform::m_notifications;
 std::vector<std::string>     Platform::m_permissions;
     
@@ -1563,12 +1562,14 @@ std::vector<std::string>     Platform::m_permissions;
 
     
 bool Platform::isUserLogged() { GP_WARN("please implement :)"); return false; }
-    
+
+void Platform::fetchAcceptedRequestList() { GP_WARN("please implement :)"); }
+
+void Platform::deleteAcceptedRequest(const std::string &request_id) { GP_WARN("please implement :)"); }
 
 void Platform::sendRequestDialog(const FbBundle& params,
                                   const std::string& title,
-                                  const std::string& message,
-                                            const std::string& callbackId) { GP_WARN("please implement :)");}
+                                  const std::string& message) { GP_WARN("please implement :)");}
     
 void Platform::sendRequest(const std::string&  graphPath,
                             const FbBundle&     params,
@@ -1576,12 +1577,12 @@ void Platform::sendRequest(const std::string&  graphPath,
                                       const std::string&  callbackId) { GP_WARN("please implement :)");}
     
 
-void Platform::updateFriendsAsync(const std::string& callbackId) { GP_WARN("please implement :)");}
+void Platform::updateFriendsAsync() { GP_WARN("please implement :)");}
     
-void Platform::requestNewPermissionAsync(const std::string& permission,
-                                                    const std::string& callbackId) { GP_WARN("please implement :)");}
+void Platform::requestNewPermissionAsync(const std::string& permission) { GP_WARN("please implement :)");}
     
-std::string Platform::getUserId() { GP_WARN("please implement :)"); return ""; }
+FACEBOOK_ID Platform::getUserId() { return 0; }
+std::string Platform::getUserName() { GP_WARN("please implement :)"); return ""; }
 std::string Platform::getAppId() { GP_WARN("please implement :)"); return ""; }
 
 void Platform::performFbLoginButtonClick()

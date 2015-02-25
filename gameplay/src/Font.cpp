@@ -1301,6 +1301,10 @@ void Font::getMeasurementInfo(const char* text, const Rectangle& area, unsigned 
 					subTokenWidth = getSubTokenWidthAndLength(token, tokenLength, size, scale, area.width, subTokenLength);
 				}
 
+				if (subTokenWidth == 0) {
+					break;
+				}
+
                 // Wrap if necessary.
                 if (lineWidth + tokenWidth + subTokenWidth + delimWidth > area.width || subTokenLength < tokenLength)
                 {
