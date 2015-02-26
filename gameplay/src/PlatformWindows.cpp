@@ -1475,7 +1475,23 @@ void Platform::performFbLoginButtonClick()
 	HANDLE h = CreateThread( NULL, 0, UserLoggedIn, Platform::m_fbListener, 0L, NULL );
 	WaitForSingleObject(h, 2000);
 }
-    
+
+DWORD WINAPI RefreshLoginProc( void* pContext )
+{
+	g_loggedIn = true;
+	if (Platform::getFbListener()) {
+		Platform::getFbListener()->onFacebookEvent(FARE_USERINFO_RETRIEVED, 0L);
+		Platform::getFbListener()->onFacebookEvent(FARE_STATE_CHANGED, 0L);
+    }
+	return 0;
+}
+
+void Platform::refreshLoginStatus()
+{
+	HANDLE h = CreateThread( NULL, 0, RefreshLoginProc, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 2000);
+}
+
 bool Platform::isUserLogged()
 { 
 	return g_loggedIn;
@@ -1510,7 +1526,11 @@ DWORD WINAPI SendRequestDialogProc( void* pContext )
 	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		if (g_requestList.size()) {
-			Platform::getFbListener()->onFacebookEvent(FARE_ADD_RECIPIENT, 0L, g_requestList.front());
+			FACEBOOK_ID id;
+			std::stringstream strstream;
+			strstream << g_requestList.front();
+			strstream >> id;
+			Platform::getFbListener()->onFacebookEvent(FARE_ADD_RECIPIENT, id, g_requestList.front());
 		}
     }
     return 0;
@@ -1543,7 +1563,7 @@ void Platform::deleteAcceptedRequest(const std::string &request_id)
 
 void Platform::sendRequestDialog(const FbBundle& params, const std::string& title, const std::string& message)
 {
-	const std::string request_id = "333444555666_" + params.getObject("to"); // TEST PURPOSE
+	const std::string request_id = params.getObject("to");
 	g_requestList.push(request_id);
 	g_recipientList.push(request_id);
 	HANDLE h = CreateThread( NULL, 0, SendRequestDialogProc, Platform::m_fbListener, 0L, NULL );
@@ -1566,8 +1586,8 @@ void Platform::requestNewPermissionAsync(const std::string& permission)
 	GP_WARN("requestNewPermissionAsync - %s - Facebook not supported.", permission.c_str());
 }
     
-FACEBOOK_ID Platform::getUserId() { return 0; }
-std::string Platform::getUserName() { return ""; }
+FACEBOOK_ID Platform::getUserId() { return 132435465678L; }
+std::string Platform::getUserName() { return "John Carmack"; }
 std::string Platform::getAppId() { return ""; }
 
 }
