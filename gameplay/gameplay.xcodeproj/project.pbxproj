@@ -1210,7 +1210,7 @@
 		421FBD5B1602827C00A61BC0 /* lua_PhysicsVehicleWheel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lua_PhysicsVehicleWheel.h; sourceTree = "<group>"; };
 		422260D41537790F0011E3AB /* Bundle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Bundle.cpp; path = src/Bundle.cpp; sourceTree = SOURCE_ROOT; };
 		422260D51537790F0011E3AB /* Bundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Bundle.h; path = src/Bundle.h; sourceTree = SOURCE_ROOT; };
-		4234D99A14686C52003031B3 /* libgameplay.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgameplay.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4234D99A14686C52003031B3 /* libgameplay-osx.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libgameplay-osx.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4234D99D14686C52003031B3 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		4239DDE9157545A1005EA3F6 /* Joystick.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Joystick.cpp; path = src/Joystick.cpp; sourceTree = SOURCE_ROOT; };
 		4239DDEA157545A1005EA3F6 /* Joystick.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Joystick.h; path = src/Joystick.h; sourceTree = SOURCE_ROOT; };
@@ -1244,7 +1244,6 @@
 		42A5031616E8F08900F0246C /* lua_ImageControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lua_ImageControl.h; sourceTree = "<group>"; };
 		42A5031B16E8F0B800F0246C /* lua_TerrainListener.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lua_TerrainListener.cpp; sourceTree = "<group>"; };
 		42A5031C16E8F0B800F0246C /* lua_TerrainListener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lua_TerrainListener.h; sourceTree = "<group>"; };
-		42B701F615B08177002BB8C3 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = "../external-deps/lua/lib/macosx/liblua.a"; sourceTree = "<group>"; };
 		42B701F815B081B6002BB8C3 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = "../external-deps/lua/lib/ios/armv7/liblua.a"; sourceTree = "<group>"; };
 		42B7FADD15B08049002BB8C3 /* ScreenDisplayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ScreenDisplayer.cpp; path = src/ScreenDisplayer.cpp; sourceTree = SOURCE_ROOT; };
 		42B7FADE15B08049002BB8C3 /* ScriptController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ScriptController.cpp; path = src/ScriptController.cpp; sourceTree = SOURCE_ROOT; };
@@ -1564,12 +1563,6 @@
 		42BCD45715EFD0F300C0E076 /* lua_VerticalLayout.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lua_VerticalLayout.cpp; sourceTree = "<group>"; };
 		42BCD45815EFD0F300C0E076 /* lua_VerticalLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lua_VerticalLayout.h; sourceTree = "<group>"; };
 		42C932AF14919FD10098216A /* Game.inl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Game.inl; path = src/Game.inl; sourceTree = SOURCE_ROOT; };
-		42CCD555146EC1EB00353661 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = "../external-deps/libpng/lib/macosx/libpng.a"; sourceTree = "<group>"; };
-		42CD0DA6147D8EA80000361E /* libbullet.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbullet.a; path = "../external-deps/bullet/lib/macosx/libbullet.a"; sourceTree = "<group>"; };
-		42CD0DA7147D8EA80000361E /* libogg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libogg.a; path = "../external-deps/oggvorbis/lib/macosx/libogg.a"; sourceTree = "<group>"; };
-		42CD0DA8147D8EA80000361E /* libvorbis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbis.a; path = "../external-deps/oggvorbis/lib/macosx/libvorbis.a"; sourceTree = "<group>"; };
-		42CD0DA9147D8EA80000361E /* libvorbisenc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisenc.a; path = "../external-deps/oggvorbis/lib/macosx/libvorbisenc.a"; sourceTree = "<group>"; };
-		42CD0DAA147D8EA80000361E /* libvorbisfile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisfile.a; path = "../external-deps/oggvorbis/lib/macosx/libvorbisfile.a"; sourceTree = "<group>"; };
 		42CD0DB1147D8FF50000361E /* Animation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Animation.cpp; path = src/Animation.cpp; sourceTree = SOURCE_ROOT; };
 		42CD0DB2147D8FF50000361E /* Animation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Animation.h; path = src/Animation.h; sourceTree = SOURCE_ROOT; };
 		42CD0DB3147D8FF50000361E /* AnimationClip.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AnimationClip.cpp; path = src/AnimationClip.cpp; sourceTree = SOURCE_ROOT; };
@@ -1847,7 +1840,7 @@
 		4234D99B14686C52003031B3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4234D99A14686C52003031B3 /* libgameplay.a */,
+				4234D99A14686C52003031B3 /* libgameplay-osx.a */,
 				5B04C5CA14BFCFE100EB0071 /* libgameplay.a */,
 			);
 			name = Products;
@@ -2516,13 +2509,6 @@
 		5B5ADCE114C22DC700AC6109 /* MacOSX */ = {
 			isa = PBXGroup;
 			children = (
-				42CD0DA6147D8EA80000361E /* libbullet.a */,
-				42B701F615B08177002BB8C3 /* liblua.a */,
-				42CD0DA7147D8EA80000361E /* libogg.a */,
-				42CD0DA8147D8EA80000361E /* libvorbis.a */,
-				42CD0DA9147D8EA80000361E /* libvorbisenc.a */,
-				42CD0DAA147D8EA80000361E /* libvorbisfile.a */,
-				42CCD555146EC1EB00353661 /* libpng.a */,
 				5B2BC7631512516B00D176CD /* libz.dylib */,
 			);
 			name = MacOSX;
@@ -3167,7 +3153,7 @@
 			);
 			name = "gameplay-macosx";
 			productName = gameplay;
-			productReference = 4234D99A14686C52003031B3 /* libgameplay.a */;
+			productReference = 4234D99A14686C52003031B3 /* libgameplay-osx.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		5B04C52B14BFCFE100EB0071 /* gameplay-ios */ = {
@@ -3843,8 +3829,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"../external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3865,20 +3850,21 @@
 				GCC_WARN_MISSING_PARENTHESES = NO;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
-					"../external-deps/bullet/include",
-					"../external-deps/lua/include",
-					"../external-deps/libpng/include",
-					"../external-deps/oggvorbis/include",
+					"../external-deps/include",
+					"../external-deps/include/lua",
+					"../external-deps/include/libpng",
+					"../external-deps/include/vorbis",
+					"../external-deps/include/ogg",
 					./gameplay,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/6l6macmini/Documents/GitHub/GamePlay/external-deps/lib/ios/x86",
+					"../external-deps/lib/macosx/x86_64",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
-				PRODUCT_NAME = gameplay;
+				PRODUCT_NAME = "gameplay-osx";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(PROJECT_NAME)_include";
 				SHARED_PRECOMPS_DIR = "";
 				SUPPORTED_PLATFORMS = macosx;
@@ -3898,8 +3884,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"/Users/stratboy61/Documents/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/stratboy61/GitHub/GamePlay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
-					"/Users/mac6l6/Documents/GitHub/Gameplay/external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
+					"../external-deps/facebook-ios-sdk-sdk-version-3.15.0/build",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -3913,19 +3898,20 @@
 				GCC_WARN_MISSING_PARENTHESES = NO;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
-					"../external-deps/bullet/include",
-					"../external-deps/lua/include",
-					"../external-deps/libpng/include",
-					"../external-deps/oggvorbis/include",
+					"../external-deps/include",
+					"../external-deps/include/lua",
+					"../external-deps/include/libpng",
+					"../external-deps/include/vorbis",
+					"../external-deps/include/ogg",
 					./gameplay,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/6l6macmini/Documents/GitHub/GamePlay/external-deps/lib/ios/x86",
+					"../external-deps/lib/macosx/x86_64",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
-				PRODUCT_NAME = gameplay;
+				PRODUCT_NAME = "gameplay-osx";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(PROJECT_NAME)_include";
 				SHARED_PRECOMPS_DIR = "";
 				SUPPORTED_PLATFORMS = macosx;
