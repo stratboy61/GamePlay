@@ -56,6 +56,11 @@ static bool __multiSampling = false;
 static bool __cursorVisible = true;
 static View* __view = NULL;
 
+std::vector<FbBundle>	    Platform::m_notifications;
+std::vector<std::string>    Platform::m_permissions;
+FacebookListener*	    Platform::m_fbListener = NULL;
+Platform::MemoryWarningFunc Platform::m_memoryWarningFunc = NULL;
+
 static NSMutableDictionary *__activeGamepads = NULL;
 static NSMutableArray *__gamepads = NULL;
 static IOHIDManagerRef __hidManagerRef = NULL;
@@ -1698,7 +1703,7 @@ int Platform::enterMessagePump()
     {
         window = [[NSWindow alloc]
                    initWithContentRect:centered
-                  styleMask:NSTitledWindowMask | NSClosableWindowMask | NSResizableWindowMask
+                  styleMask:NSTitledWindowMask | NSClosableWindowMask | (__resizable ? NSResizableWindowMask : 0)
                    backing:NSBackingStoreBuffered
                    defer:NO];
     }
@@ -2288,5 +2293,93 @@ bool Platform::launchURL(const char *url)
     CFRelease(urlRef);
     return (err == noErr);
 }
+
+
+const char *Platform::getAppDocumentDirectory(const char *filename2Append)
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentPath = [paths objectAtIndex:0];
+    return [[documentPath stringByAppendingPathComponent: [NSString stringWithUTF8String: filename2Append]] UTF8String];
+}
+
+void Platform::refreshLoginStatus()
+{
+
+}
+
+void Platform::performFbLoginButtonClick()
+{
+
+}
+
+bool Platform::isUserLogged()
+{
+    return false;
+}
+
+void Platform::fetchAcceptedRequestList()
+{
+
+}
+
+void Platform::deleteAcceptedRequest(const std::string &request_id)
+{
+}
+
+static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
+{
+    NSMutableArray *objects = [NSMutableArray array];
+    NSMutableArray *keys = [NSMutableArray array];
+    
+    const std::vector<std::string>& bundle = fbBundle.getData();
+    
+    if(!bundle.size()) return nil;
+    
+    for(int i=0; i<bundle.size(); i+=2)
+    {
+        NSString* object = [NSString stringWithCString:bundle[i].c_str() encoding:[NSString defaultCStringEncoding]];
+        NSString* key = [NSString stringWithCString:bundle[i+1].c_str() encoding:[NSString defaultCStringEncoding]];
+        
+        [objects addObject:object];
+        [keys addObject:key];
+    }
+    
+    return [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
+}
+
+void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method, const std::string &callbackId)
+{
+}
+
+void Platform::sendRequestDialog(const FbBundle &bundle, const std::string &title, const std::string &message)
+{
+}
+
+void Platform::updateFriendsAsync()
+{
+}
+
+FACEBOOK_ID Platform::getUserId()
+{
+    return 0L;
+}
+
+std::string Platform::getUserName()
+{
+    return "";
+}
+
+
+std::string Platform::getAppId()
+{
+    return "";
+}
+
+
+void Platform::requestNewPermissionAsync(const std::string &permission)
+{
+}
+
+
 
 #endif
