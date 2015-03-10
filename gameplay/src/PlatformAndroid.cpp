@@ -44,6 +44,10 @@ static bool __multiTouch = false;
 static int __primaryTouchId = -1;
 static bool __displayKeyboard = false;
 
+static bool __isUserLogged = false;
+static FACEBOOK_ID m_userId = 0L;
+static std::string m_username;
+
 // OpenGL VAO functions.
 static const char* __glExtensions;
 PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray = NULL;
@@ -1558,73 +1562,207 @@ FacebookListener*            Platform::m_fbListener = NULL;
 std::vector<FbBundle>        Platform::m_notifications;
 std::vector<std::string>     Platform::m_permissions;
     
+FACEBOOK_ID Platform::getUserId() { return m_userId; }
+bool Platform::isUserLogged() { return __isUserLogged; }
+std::string Platform::getUserName() { return m_username; }
+std::string Platform::getAppId() { 
+	GP_ERROR("should not be called. aborting."); return "";
+}
 
-
-    
-bool Platform::isUserLogged() { GP_WARN("please implement :)"); return false; }
-
-void Platform::fetchAcceptedRequestList() { GP_WARN("please implement :)"); }
-
-void Platform::deleteAcceptedRequest(const std::string &request_id) { GP_WARN("please implement :)"); }
-
-void Platform::sendRequestDialog(const FbBundle& params,
-                                  const std::string& title,
-                                  const std::string& message) { GP_WARN("please implement :)");}
-    
-void Platform::sendRequest(const std::string&  graphPath,
-                            const FbBundle&     params,
-                            HTTP_METHOD         method,
-                                      const std::string&  callbackId) { GP_WARN("please implement :)");}
-    
-
-void Platform::updateFriendsAsync() { GP_WARN("please implement :)");}
-    
-void Platform::requestNewPermissionAsync(const std::string& permission) { GP_WARN("please implement :)");}
-    
-FACEBOOK_ID Platform::getUserId() { return 0; }
-std::string Platform::getUserName() { GP_WARN("please implement :)"); return ""; }
-std::string Platform::getAppId() { GP_WARN("please implement :)"); return ""; }
-
-void Platform::performFbLoginButtonClick()
+static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const std::string& message="")
 {
-	ANativeActivity* activity = __state->activity;
-    JavaVM* jvm = __state->activity->vm;
-    JNIEnv* env = NULL;
-    jvm->GetEnv((void **)&env, JNI_VERSION_1_6);
-    jint res = jvm->AttachCurrentThread(&env, NULL);
-    if (res == JNI_ERR)
-    {
-        GP_ERROR("Failed to retrieve JVM environment when entering message pump.");
-        return; 
+    if (Platform::getFbListener()) {
+        Platform::getFbListener()->onFacebookEvent(fare, id, message);
     }
-    GP_ASSERT(env);
+}
+
+JNIEnv *getJavaEnv()
+{
+    JavaVM *jvm = __state->activity->vm;
+    JNIEnv *java_env = NULL;
+    jvm->GetEnv((void **)&java_env, JNI_VERSION_1_6);
+    jint res = jvm->AttachCurrentThread(&java_env, NULL);
+    if (res == JNI_ERR) {
+        GP_ERROR("Failed to retrieve JVM environment when entering message pump.");
+    }
+    GP_ASSERT(java_env);
+	return java_env;
+}
+
+jclass callJavaMethod(const char *methodName, const char *methodSignature)
+{
+    ANativeActivity *activity = __state->activity;
+	JNIEnv *env = getJavaEnv();
+    jclass ClassNativeActivity = env->GetObjectClass(activity->clazz);
+    GP_ASSERT(ClassNativeActivity != NULL);
 
 	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
     GP_ASSERT(nativeActivityClass != NULL);
 
-    jmethodID methodid = env->GetMethodID(nativeActivityClass, "calledFromCpp", "()V");
-	env->CallVoidMethod(activity->clazz, methodid);
+    jmethodID mid = env->GetMethodID(nativeActivityClass, methodName, methodSignature);
+	env->CallVoidMethod(activity->clazz, mid);
+}
 
-	//jobject arg;
+void Platform::deleteAcceptedRequest(const std::string &request_id)
+{
+    ANativeActivity *activity = __state->activity;
+	JNIEnv *env = getJavaEnv();
+	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
+    GP_ASSERT(nativeActivityClass != NULL);
 
-	//jobject result = env->CallObjectMethod(activity->clazz, methodid, arg);
+	jstring js_request_id = env->NewStringUTF(request_id.c_str());
+    jmethodID mid_deleteAcceptedRequest = env->GetMethodID(nativeActivityClass, "deleteAcceptedRequest", "(Ljava/lang/String;)V");
+	env->CallVoidMethod(activity->clazz, mid_deleteAcceptedRequest, js_request_id);
+}
 
-	GP_WARN("testField =");
+void Platform::sendRequestDialog(const FbBundle &params, const std::string &title, const std::string &message)
+{
+	const std::string &friend_id = params.getObject("to");
+	const std::string &action_type = params.getObject("action_type");
+	const std::string &object_id = params.getObject("object_id");
+	
+    ANativeActivity *activity = __state->activity;
+	JNIEnv *env = getJavaEnv();
+	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
+    GP_ASSERT(nativeActivityClass != NULL);
 
+	jstring js_action_type = env->NewStringUTF(action_type.c_str());
+	jstring js_object_id = env->NewStringUTF(object_id.c_str());
+	jstring js_friend_id = env->NewStringUTF(friend_id.c_str());
+	jstring js_title = env->NewStringUTF(title.c_str());
+	jstring js_message = env->NewStringUTF(message.c_str());
+	
+    jmethodID mid_sendRequestDialog = env->GetMethodID(nativeActivityClass, "sendRequestDialog", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+	env->CallVoidMethod(activity->clazz, mid_sendRequestDialog, js_action_type, js_object_id, js_friend_id, js_title, js_message);
+}
+    
+void Platform::sendRequest(const std::string &graphPath, const FbBundle &params, HTTP_METHOD method, const std::string &callbackId)
+{
+	if (!callbackId.compare("SCORE_POSTED")) {
 
-	jclass cls= env->GetObjectClass(activity->clazz);
+		const std::string &score_str = params.getObject("score");
 
-	jfieldID fid = env->GetFieldID(cls,"testField","I");
+		ANativeActivity *activity = __state->activity;
+		JNIEnv *env = getJavaEnv();
+		jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
+		GP_ASSERT(nativeActivityClass != NULL);
+	
+		jmethodID mid_postPlayerScore = env->GetMethodID(nativeActivityClass, "postPlayerScore", "(Ljava/lang/String;Ljava/lang/String;)V");
+		jstring js_graphPath = env->NewStringUTF(graphPath.c_str());
+		jstring js_score = env->NewStringUTF(score_str.c_str());
+		env->CallVoidMethod(activity->clazz, mid_postPlayerScore, js_graphPath, js_score);
+	}
+}
+    
+void Platform::fetchAcceptedRequestList() {
 
-	int i = env->GetIntField(activity->clazz, fid);
+	callJavaMethod("fetchAcceptedRequestDetails", "()V");
+}
 
-	std::stringstream ss; ss << i;
+void Platform::updateFriendsAsync()
+{
+	callJavaMethod("updateFriendsAsync", "()V");
+}
+    
+void Platform::requestNewPermissionAsync(const std::string& permission) { GP_WARN("please implement :)");}
+    
+void Platform::refreshLoginStatus()
+{
+	callJavaMethod("refreshLoginStatus", "()V");
+}
 
-	GP_WARN(ss.str().c_str());
-
+void Platform::performFbLoginButtonClick()
+{
+	callJavaMethod("wantsFacebookLogin", "()V");
+}
 
 }
 
+extern "C" {
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_setPlayerDetails(JNIEnv *env, jobject this_object, jlong userid, jstring username)
+{
+	m_userId = userid;
+    jboolean isCopy;
+	const char *nativeUsername = env->GetStringUTFChars(username, &isCopy);
+	m_username = nativeUsername;
+	env->ReleaseStringUTFChars(username, nativeUsername);
+	safeSendMessage(gameplay::FARE_USERINFO_RETRIEVED, 0L);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_setPlayerPermissions(JNIEnv *env, jobject this_object, jobjectArray permissionList)
+{
+	gameplay::Platform::getPermissions().clear();
+
+	int stringCount = env->GetArrayLength(permissionList);
+    for (int i=0; i<stringCount; ++i) {
+
+		jboolean isCopy;
+        jstring string = (jstring)env->GetObjectArrayElement(permissionList, i);
+        const char *rawString = env->GetStringUTFChars(string, &isCopy);
+		gameplay::Platform::getPermissions().push_back(rawString);
+		env->ReleaseStringUTFChars(string, rawString);
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_sessionChanged(JNIEnv *env, jobject this_object, jboolean open)
+{
+//GP_WARN("-> Java_org_gameplay3d_cockfosters10_MyActivity_sessionChanged called...");
+	__isUserLogged = open;
+	ANativeActivity* activity = __state->activity;
+	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
+    GP_ASSERT(nativeActivityClass);
+
+	if (open) {
+		safeSendMessage(gameplay::FARE_STATE_CHANGED, 0L, "Session opened");
+		jmethodID mid_FetchUserDetails = env->GetMethodID(nativeActivityClass, "fetchUserDetails", "()V");
+		GP_ASSERT(mid_FetchUserDetails);
+		env->CallVoidMethod(activity->clazz, mid_FetchUserDetails);
+
+	} else {
+		safeSendMessage(gameplay::FARE_STATE_CHANGED, 0L, "Session closed");
+	}
+//GP_WARN("<- Java_org_gameplay3d_cockfosters10_MyActivity_sessionChanged called done.");
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneFriend(JNIEnv *env, jobject this_object, jlong userid, jstring friends_name_and_score)
+{
+    jboolean isCopy;
+	const char *nativeFriendsInfo = env->GetStringUTFChars(friends_name_and_score, &isCopy);
+	const std::string friends_info = nativeFriendsInfo;
+	env->ReleaseStringUTFChars(friends_name_and_score, nativeFriendsInfo);
+
+	safeSendMessage(gameplay::FARE_ADD_FRIEND, userid, friends_info);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_playerPostedScore(JNIEnv *env, jobject this_object)
+{
+	safeSendMessage(gameplay::FARE_SCORE_POSTED, 0L);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneRecipient(JNIEnv *env, jobject this_object, jlong recipientid)
+{
+	safeSendMessage(gameplay::FARE_ADD_RECIPIENT, recipientid);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneRequest(JNIEnv *env, jobject this_object, jlong userid, jstring requestId)
+{
+    jboolean isCopy;
+	const char *nativeRequestId = env->GetStringUTFChars(requestId, &isCopy);
+	const std::string request_id = nativeRequestId;
+	env->ReleaseStringUTFChars(requestId, nativeRequestId);
+
+	safeSendMessage(gameplay::FARE_ADD_REQUEST, userid, request_id);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_removeOneRequest(JNIEnv *env, jobject this_object, jstring requestId)
+{
+    jboolean isCopy;
+	const char *nativeRequestId = env->GetStringUTFChars(requestId, &isCopy);
+	const std::string request_id = nativeRequestId;
+	env->ReleaseStringUTFChars(requestId, nativeRequestId);
+
+	safeSendMessage(gameplay::FARE_REMOVE_REQUEST, 0L, request_id);
+}
 }
 
 #endif
