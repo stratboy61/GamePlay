@@ -1576,7 +1576,7 @@ static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const
     }
 }
 
-JNIEnv *getJavaEnv()
+static JNIEnv *getJavaEnv()
 {
     JavaVM *jvm = __state->activity->vm;
     JNIEnv *java_env = NULL;
@@ -1589,7 +1589,7 @@ JNIEnv *getJavaEnv()
 	return java_env;
 }
 
-jclass callJavaMethod(const char *methodName, const char *methodSignature)
+static jclass callJavaMethod(const char *methodName, const char *methodSignature)
 {
     ANativeActivity *activity = __state->activity;
 	JNIEnv *env = getJavaEnv();

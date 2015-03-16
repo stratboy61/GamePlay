@@ -13,7 +13,7 @@ namespace gameplay
     {
         InAppPurchaseWrapper::GetUniqueInstance().addCallback(this);
     }
-    
+
     InAppPurchaseCallback &InAppPurchaseCallback::operator=(const InAppPurchaseCallback &)
     {
         return *this;

@@ -37,6 +37,7 @@ namespace gameplay
         InAppPurchaseCallback &operator=(const InAppPurchaseCallback &);
         ~InAppPurchaseCallback(void);
         
+		virtual void checkRestorePurchase(std::vector<std::string> &skuName) const = 0;
         virtual void failedTransaction(const std::string &errorMsg) = 0;
         virtual void productsIdentifiersRetrieved(const std::vector<std::string> &productsIdentifiers) = 0;
         virtual void productsRetrieved(const std::map<std::string, InAppPurchaseItem> &products) = 0;

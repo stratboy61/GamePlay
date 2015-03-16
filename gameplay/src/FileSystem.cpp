@@ -101,13 +101,10 @@ static std::map<std::string, std::string> __aliases;
  */
 static void getFullPath(const char* path, const std::string &resourceLocation, std::string& fullPath)
 {
-    if (FileSystem::isAbsolutePath(path))
-    {
+    if (FileSystem::isAbsolutePath(path)) {
         fullPath.assign(path);
     }
-    else
-    {
-        //fullPath.assign(__resourcePath);
+    else {
 		fullPath.assign(resourceLocation);
         fullPath += FileSystem::resolvePath(path);
     }
@@ -357,13 +354,6 @@ bool FileSystem::listFiles(const char* dirPath, std::vector<std::string>& files)
 bool FileSystem::fileExists(const char* filePath)
 {
     GP_ASSERT(filePath);
-
-#ifdef __ANDROID__
-    if (androidFileExists(resolvePath(filePath)))
-    {
-        return true;
-    }
-#endif
 	bool bFound = false;
 	for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
 
@@ -390,7 +380,12 @@ bool FileSystem::fileExists(const char* filePath)
 			break;
 		}
 	}
-    return bFound;
+#ifdef __ANDROID__
+    if (!bFound && androidFileExists(resolvePath(filePath))) {
+        return true;
+    }
+#endif
+	return bFound;
 }
 
 Stream* FileSystem::open(const char* path, size_t mode)
@@ -421,19 +416,25 @@ Stream* FileSystem::open(const char* path, size_t mode)
     }
     else
     {
-        // Open a file in the read-only asset directory
-		FileStreamAndroid *a_stream = FileStreamAndroid::create(resolvePath(path), modeStr);
+		std::string fullPath = FileSystem::resolvePath(path);
+		Stream *a_stream = FileStreamAndroid::create(fullPath.c_str(), modeStr);
 		if (!a_stream) {
-GP_WARN("could not find %s in apk. trying to locate it in %s", resolvePath(path), m_resourcePathList.front().c_str());
-			std::string fullPath(m_resourcePathList.front());
-			fullPath += resolvePath(path);
-		    FileStream* n_stream = FileStream::create(fullPath.c_str(), modeStr);
-			if (!n_stream) {
-GP_WARN("no luck with %s. returning NULL", resolvePath(path));
+			bool bFound = false;
+			for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
+
+				getFullPath(path, *cit, fullPath);
+
+				gp_stat_struct s;
+				bFound |= (stat(fullPath.c_str(), &s) == 0);
+				if (bFound) {
+					break;
+				}
 			}
-			return n_stream;
+			if (bFound) {
+				a_stream = FileStream::create(fullPath.c_str(), modeStr);
+			}
 		}
-        return a_stream;
+		return a_stream;
     }
 #else
 	std::string fullPath = FileSystem::resolvePath(path);
@@ -485,38 +486,43 @@ FILE* FileSystem::openFile(const char* filePath, const char* mode)
     GP_ASSERT(filePath);
     GP_ASSERT(mode);
 
-	std::string fullPath(filePath);
+    const std::string resolvedPath = FileSystem::resolvePath(filePath);
+	std::string fullPath(resolvedPath);
 	const char c = *mode;
-	if (c == 'r') {
-		bool bFound = false;
-		for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
-			getFullPath(filePath, *cit, fullPath);
-GP_WARN("searching %s in %s", filePath, fullPath.c_str());
-			gp_stat_struct s;
-			bFound |= (stat(fullPath.c_str(), &s) == 0);
-			if (bFound) {
-				break;
-			}
+	if (c != 'r') {
+		GP_ERROR("seriously?");
+	}
+	
+	bool bFound = false;
+	for (std::vector<std::string>::const_iterator cit = m_resourcePathList.begin(); cit != m_resourcePathList.end(); ++cit) {
+	
+		getFullPath(filePath, *cit, fullPath);
+		gp_stat_struct s;
+GP_WARN("stat-ing %s", fullPath.c_str());
+		bFound |= (stat(fullPath.c_str(), &s) == 0);
+		if (bFound) {
+			break;
 		}
-#ifndef __ANDROID__
-		if (!bFound) {
-			GP_WARN("could not find %s in resourcePathList. returning NULL.", filePath);
-			return NULL;
-		}
-#endif
+	}
+	if (!bFound) {
+		GP_WARN("could not find %s in resourcePathList. returning NULL.", filePath);
+		createFileFromAsset(resolvedPath.c_str());
+		fullPath = m_resourcePathList.front()+resolvedPath; // assume the first path is where createFileFromAsset saves the file
+	} else {
+		GP_WARN("found %s in resourcePathList", filePath);
 	}
 
-	createFileFromAsset(filePath);
+GP_WARN("fullPath before createFileFromAsset() = %s", fullPath.c_str());
     
     FILE* fp = fopen(fullPath.c_str(), mode);
     
 #ifdef WIN32
-    if (fp == NULL && !isAbsolutePath(filePath))
+    if (fp == NULL && !isAbsolutePath(resolvedPath.c_str()))
     {
         //fullPath = __resourcePath;
 		fullPath = m_resourcePathList.front();
         fullPath += "../../gameplay/";
-        fullPath += filePath;
+        fullPath += resolvedPath.c_str();
         
         fp = fopen(fullPath.c_str(), mode);
         if (!fp)
@@ -524,7 +530,7 @@ GP_WARN("searching %s in %s", filePath, fullPath.c_str());
 		    //fullPath = __resourcePath;
 			fullPath = m_resourcePathList.front();
             fullPath += "../gameplay/";
-            fullPath += filePath;
+            fullPath += resolvedPath.c_str();
             fp = fopen(fullPath.c_str(), mode);
         }
     }
@@ -582,56 +588,56 @@ bool FileSystem::isAbsolutePath(const char* filePath)
 #endif
 }
 
-void FileSystem::createFileFromAsset(const char* path)
+void FileSystem::createFileFromAsset(const char *resolvedPath)
 {
 #ifdef __ANDROID__
-GP_WARN("createFileFromAsset - %s", path);
     static std::set<std::string> upToDateAssets;
-
-    GP_ASSERT(path);
-    //std::string fullPath(__resourcePath);
-    std::string fullPath(m_resourcePathList.front());
-    std::string resolvedPath = FileSystem::resolvePath(path);
-    fullPath += resolvedPath;
-
-    std::string directoryPath = fullPath.substr(0, fullPath.rfind('/'));
-    struct stat s;
-    if (stat(directoryPath.c_str(), &s) != 0)
-        makepath(directoryPath, 0777);
 
     // To ensure that the files on the file system corresponding to the assets in the APK bundle
     // are always up to date (and in sync), we copy them from the APK to the file system once
     // for each time the process (game) runs.
-    if (upToDateAssets.find(fullPath) == upToDateAssets.end())
-    {
-        AAsset* asset = AAssetManager_open(__assetManager, resolvedPath.c_str(), AASSET_MODE_RANDOM);
-        if (asset)
-        {
-            const void* data = AAsset_getBuffer(asset);
-            int length = AAsset_getLength(asset);
-            FILE* file = fopen(fullPath.c_str(), "wb");
-            if (file != NULL)
-            {
-                int ret = fwrite(data, sizeof(unsigned char), length, file);
-                if (fclose(file) != 0)
-                {
-                    GP_ERROR("Failed to close file on file system created from APK asset '%s'.", path);
-                    return;
-                }
-                if (ret != length)
-                {
-                    GP_ERROR("Failed to write all data from APK asset '%s' to file on file system.", path);
-                    return;
-                }
-            }
-            else
-            {
-                GP_ERROR("Failed to create file on file system from APK asset '%s'.", path);
-                return;
-            }
+    if (upToDateAssets.find(resolvedPath) == upToDateAssets.end()) {
 
-            upToDateAssets.insert(fullPath);
+        AAsset* asset = AAssetManager_open(__assetManager, resolvedPath, AASSET_MODE_RANDOM);
+        if (!asset) {
+			GP_WARN("could not find %s in APK. file must already be on disk.");
+			return;
+		}
+
+		// we found resolvedPath in APK
+		const void* data = AAsset_getBuffer(asset);
+		int length = AAsset_getLength(asset);
+		const std::string fullPath = m_resourcePathList.front() + resolvedPath;
+
+        size_t index = fullPath.rfind('/');
+        if (index != std::string::npos)
+        {
+            std::string directoryPath = fullPath.substr(0, index);
+            struct stat s;
+            if (stat(directoryPath.c_str(), &s) != 0) {
+				GP_WARN("creating %s", directoryPath.c_str());
+                makepath(directoryPath, 0777);
+			}
         }
+		FILE *file = fopen(fullPath.c_str(), "wb");
+		if (file != NULL) {
+
+			int ret = fwrite(data, sizeof(unsigned char), length, file);
+			if (fclose(file) != 0) {
+				GP_ERROR("Failed to close file on file system created from APK asset '%s'.", resolvedPath);
+				return;
+			}
+			if (ret != length) {
+				GP_ERROR("Failed to write all data from APK asset '%s' to file on file system.", resolvedPath);
+				return;
+			}
+		}
+		else {
+			GP_ERROR("Failed to create %s on file system. aborting.", resolvedPath);
+			return;
+		}
+		GP_WARN("adding %s to upToDateAssets set", resolvedPath);
+		upToDateAssets.insert(resolvedPath);
     }
 #endif
 }

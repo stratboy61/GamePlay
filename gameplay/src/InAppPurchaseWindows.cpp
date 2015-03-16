@@ -1,3 +1,4 @@
+#ifdef WIN32
 #include "InAppPurchase.h"
 
 namespace gameplay
@@ -68,3 +69,4 @@ namespace gameplay
         return "";
     }
 }
+#endif
