@@ -269,6 +269,16 @@ JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_contentDownl
     }
 	env->ReleaseStringUTFChars(contentPath, nativeContentPath);
 }
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_contentDownloading(JNIEnv *env, jobject this_object, jint numBytes)
+{
+	static gameplay::InAppPurchaseContent iapc;
+	iapc.progress = numBytes;
+	gameplay::InAppPurchaseWrapper &the_inAppPurchaseWrapper = gameplay::InAppPurchaseWrapper::GetUniqueInstance();
+    for (std::vector<gameplay::InAppPurchaseCallback *>::const_iterator it = the_inAppPurchaseWrapper.getCallbacks().begin(); it != the_inAppPurchaseWrapper.getCallbacks().end(); ++it) {
+		(*it)->productDownloading(iapc);
+	}
+}
 }
 
 #endif
