@@ -1473,6 +1473,11 @@ bool Platform::launchURL(const char *url)
     return result;
 }
 
+bool Platform::canChangeResolution()
+{
+	return true;
+}
+
 static char appDocumentDirectory[PATH_MAX];
 
 const char *Platform::getAppDocumentDirectory(const char *filename2Append)

@@ -65,9 +65,23 @@ namespace gameplay
         return;
     }
     
-    void InAppPurchaseWrapper::buyProduct(const InAppPurchaseItem &/*product*/) const
+	DWORD WINAPI buyProductThread(void* pContext)
+	{
+		InAppPurchaseItem iapi;
+		iapi.downloable = false;
+		iapi.productIdentifier = "com.sl6interactive.nderescue.newteam";
+
+		InAppPurchaseWrapper &the_inAppPurchaseWrapper = InAppPurchaseWrapper::GetUniqueInstance();
+		for (std::vector<InAppPurchaseCallback *>::const_iterator it = the_inAppPurchaseWrapper.getCallbacks().begin(); it != the_inAppPurchaseWrapper.getCallbacks().end(); ++it) {
+			(*it)->productBought(iapi);
+		}
+		return 0;
+	}
+
+    void InAppPurchaseWrapper::buyProduct(const InAppPurchaseItem &product) const
     {
-        return;
+		HANDLE h = CreateThread( NULL, 0, buyProductThread, NULL, 0L, NULL );
+		WaitForSingleObject(h, 2000);
     }
     
     bool InAppPurchaseWrapper::isProductPurchased(const std::string &/*productIdentifier*/) const
@@ -84,7 +98,7 @@ namespace gameplay
 	{
 		InAppPurchaseContent iapc;
 		InAppPurchaseWrapper &the_inAppPurchaseWrapper = InAppPurchaseWrapper::GetUniqueInstance();
-		for (int i = 0; i < 15722; ++i) {
+		for (int i = 0; i < 1722; ++i) {
 
 			Platform::sleep(9);
 			for (std::vector<InAppPurchaseCallback *>::const_iterator it = the_inAppPurchaseWrapper.getCallbacks().begin(); it != the_inAppPurchaseWrapper.getCallbacks().end(); ++it) {

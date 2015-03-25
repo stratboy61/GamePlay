@@ -1022,6 +1022,11 @@ void Platform::toggleFullScreenMode(bool toFullScreen)
 	game->setFullScreen(toFullScreen);
 }
 
+bool Platform::canChangeResolution()
+{
+	return true;
+}
+
 int Platform::enterMessagePump()
 {
     GP_ASSERT(_game);

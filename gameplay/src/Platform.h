@@ -68,6 +68,8 @@ public:
 	 */
 	static void toggleFullScreenMode(bool toFullScreen);
 
+	static bool canChangeResolution();
+
     /**
      * Sleeps synchronously for the given amount of time (in milliseconds).
      *
