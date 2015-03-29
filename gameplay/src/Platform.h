@@ -341,9 +341,11 @@ public:
     
     static bool isUserLogged();
 
+    static void acceptRequest(const std::string &sender_id, const std::string &request_id);
     static void fetchAcceptedRequestList();
-    
     static void deleteAcceptedRequest(const std::string &request_id);
+	static void fetchPendingRequestList();
+    static void deletePendingRequest(const std::string &request_id);
 
 	static void sendRequestDialog(const FbBundle &params, const std::string &title, const std::string &message);
     

@@ -1594,13 +1594,10 @@ static JNIEnv *getJavaEnv()
 	return java_env;
 }
 
-static jclass callJavaMethod(const char *methodName, const char *methodSignature)
+static void callJavaMethod(const char *methodName, const char *methodSignature)
 {
     ANativeActivity *activity = __state->activity;
 	JNIEnv *env = getJavaEnv();
-    jclass ClassNativeActivity = env->GetObjectClass(activity->clazz);
-    GP_ASSERT(ClassNativeActivity != NULL);
-
 	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
     GP_ASSERT(nativeActivityClass != NULL);
 
@@ -1608,7 +1605,17 @@ static jclass callJavaMethod(const char *methodName, const char *methodSignature
 	env->CallVoidMethod(activity->clazz, mid);
 }
 
-void Platform::deleteAcceptedRequest(const std::string &request_id)
+void Platform::fetchAcceptedRequestList() {
+
+	callJavaMethod("fetchAcceptedRequestDetails", "()V");
+}
+
+void Platform::fetchPendingRequestList() {
+
+	callJavaMethod("fetchPendingRequestDetails", "()V");
+}
+
+static void callJavaRequestIdParamMethod(const char *methodName, const char *methodSignature, const std::string &request_id)
 {
     ANativeActivity *activity = __state->activity;
 	JNIEnv *env = getJavaEnv();
@@ -1616,8 +1623,33 @@ void Platform::deleteAcceptedRequest(const std::string &request_id)
     GP_ASSERT(nativeActivityClass != NULL);
 
 	jstring js_request_id = env->NewStringUTF(request_id.c_str());
-    jmethodID mid_deleteAcceptedRequest = env->GetMethodID(nativeActivityClass, "deleteAcceptedRequest", "(Ljava/lang/String;)V");
-	env->CallVoidMethod(activity->clazz, mid_deleteAcceptedRequest, js_request_id);
+	jmethodID mid = env->GetMethodID(nativeActivityClass, methodName, methodSignature);
+	env->CallVoidMethod(activity->clazz, mid, js_request_id);
+}
+
+void Platform::acceptRequest(const std::string &sender_id, const std::string &request_id)
+{
+    ANativeActivity *activity = __state->activity;
+	JNIEnv *env = getJavaEnv();
+	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
+    GP_ASSERT(nativeActivityClass);
+
+	jstring js_sender_id = env->NewStringUTF(sender_id.c_str());
+	jstring js_username = env->NewStringUTF(m_username.c_str());
+	jstring js_request_id = env->NewStringUTF(request_id.c_str());
+	jmethodID mid_acceptRequest = env->GetMethodID(nativeActivityClass, "acceptRequest", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)V");
+    GP_ASSERT(mid_acceptRequest);
+	env->CallVoidMethod(activity->clazz, mid_acceptRequest, js_sender_id, js_username, js_request_id, m_userId);
+}
+
+void Platform::deleteAcceptedRequest(const std::string &request_id)
+{
+	callJavaRequestIdParamMethod("deleteAcceptedRequest", "(Ljava/lang/String;)V", request_id);
+}
+
+void Platform::deletePendingRequest(const std::string &request_id)
+{
+	callJavaRequestIdParamMethod("deletePendingRequest", "(Ljava/lang/String;)V", request_id);
 }
 
 void Platform::sendRequestDialog(const FbBundle &params, const std::string &title, const std::string &message)
@@ -1659,11 +1691,6 @@ void Platform::sendRequest(const std::string &graphPath, const FbBundle &params,
 	}
 }
     
-void Platform::fetchAcceptedRequestList() {
-
-	callJavaMethod("fetchAcceptedRequestDetails", "()V");
-}
-
 void Platform::updateFriendsAsync()
 {
 	callJavaMethod("updateFriendsAsync", "()V");
@@ -1711,7 +1738,6 @@ JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_setPlayerPer
 
 JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_sessionChanged(JNIEnv *env, jobject this_object, jboolean open)
 {
-//GP_WARN("-> Java_org_gameplay3d_cockfosters10_MyActivity_sessionChanged called...");
 	__isUserLogged = open;
 	ANativeActivity* activity = __state->activity;
 	jclass nativeActivityClass = env->GetObjectClass(activity->clazz);
@@ -1726,7 +1752,6 @@ JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_sessionChang
 	} else {
 		safeSendMessage(gameplay::FARE_STATE_CHANGED, 0L, "Session closed");
 	}
-//GP_WARN("<- Java_org_gameplay3d_cockfosters10_MyActivity_sessionChanged called done.");
 }
 
 JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneFriend(JNIEnv *env, jobject this_object, jlong userid, jstring friends_name_and_score)
@@ -1749,24 +1774,44 @@ JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneRecipi
 	safeSendMessage(gameplay::FARE_ADD_RECIPIENT, recipientid);
 }
 
-JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneRequest(JNIEnv *env, jobject this_object, jlong userid, jstring requestId)
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOneAcceptedRequest(JNIEnv *env, jobject this_object, jlong userid, jstring requestId)
 {
     jboolean isCopy;
 	const char *nativeRequestId = env->GetStringUTFChars(requestId, &isCopy);
 	const std::string request_id = nativeRequestId;
 	env->ReleaseStringUTFChars(requestId, nativeRequestId);
 
-	safeSendMessage(gameplay::FARE_ADD_REQUEST, userid, request_id);
+	safeSendMessage(gameplay::FARE_ADD_ACCEPTED_REQUEST, userid, request_id);
 }
 
-JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_removeOneRequest(JNIEnv *env, jobject this_object, jstring requestId)
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_removeOneAcceptedRequest(JNIEnv *env, jobject this_object, jstring requestId)
 {
     jboolean isCopy;
 	const char *nativeRequestId = env->GetStringUTFChars(requestId, &isCopy);
 	const std::string request_id = nativeRequestId;
 	env->ReleaseStringUTFChars(requestId, nativeRequestId);
 
-	safeSendMessage(gameplay::FARE_REMOVE_REQUEST, 0L, request_id);
+	safeSendMessage(gameplay::FARE_REMOVE_ACCEPTED_REQUEST, 0L, request_id);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_addOnePendingRequest(JNIEnv *env, jobject this_object, jlong userid, jstring requestId)
+{
+    jboolean isCopy;
+	const char *nativeRequestId = env->GetStringUTFChars(requestId, &isCopy);
+	const std::string request_id = nativeRequestId;
+	env->ReleaseStringUTFChars(requestId, nativeRequestId);
+
+	safeSendMessage(gameplay::FARE_ADD_PENDING_REQUEST, userid, request_id);
+}
+
+JNIEXPORT void JNICALL Java_org_gameplay3d_cockfosters10_MyActivity_removeOnePendingRequest(JNIEnv *env, jobject this_object, jstring requestId)
+{
+    jboolean isCopy;
+	const char *nativeRequestId = env->GetStringUTFChars(requestId, &isCopy);
+	const std::string request_id = nativeRequestId;
+	env->ReleaseStringUTFChars(requestId, nativeRequestId);
+
+	safeSendMessage(gameplay::FARE_REMOVE_PENDING_REQUEST, 0L, request_id);
 }
 }
 

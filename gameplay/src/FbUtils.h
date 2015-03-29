@@ -21,8 +21,10 @@ namespace gameplay
 		FARE_STATE_CHANGED,
 		FARE_ADD_FRIEND,
 		FARE_ADD_RECIPIENT,
-		FARE_ADD_REQUEST,
-		FARE_REMOVE_REQUEST,
+		FARE_ADD_ACCEPTED_REQUEST,
+		FARE_REMOVE_ACCEPTED_REQUEST,
+		FARE_ADD_PENDING_REQUEST,
+		FARE_REMOVE_PENDING_REQUEST,
 		FARE_SCORE_POSTED,
 		FARE_USERINFO_RETRIEVED,
 		FARE_ERROR,
@@ -49,8 +51,10 @@ namespace gameplay
     struct FbRequestInfo
     {
         FbRequestInfo(const std::string &id, const std::string &name) : m_requestId(id), m_friendName(name) {}
+        FbRequestInfo(const std::string &id, const std::string &name, const std::string &from) : m_requestId(id), m_friendName(name), m_fromId(from) {}
         std::string m_requestId;
         std::string m_friendName;
+        std::string m_fromId;
     };
     
     class FbBundle

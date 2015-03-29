@@ -1507,7 +1507,7 @@ DWORD WINAPI AcceptedRequestListProc( void* pContext )
 	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		if (g_requestList.size()) {
-			Platform::getFbListener()->onFacebookEvent(FARE_ADD_REQUEST, 0L, g_requestList.front());
+			Platform::getFbListener()->onFacebookEvent(FARE_ADD_ACCEPTED_REQUEST, 0L, g_requestList.front());
 			g_requestList.pop();
 		}
     }
@@ -1519,9 +1519,18 @@ DWORD WINAPI DeleteAcceptedRequestProc( void* pContext )
 	Platform::sleep(667);
 	if (Platform::getFbListener()) {
 		if (g_recipientList.size()) {
-			Platform::getFbListener()->onFacebookEvent(FARE_REMOVE_REQUEST, 0L, g_recipientList.front());
+			Platform::getFbListener()->onFacebookEvent(FARE_REMOVE_ACCEPTED_REQUEST, 0L, g_recipientList.front());
 			g_recipientList.pop();
 		}
+    }
+    return 0;
+}
+
+DWORD WINAPI PendingRequestListProc( void* pContext )
+{
+	Platform::sleep(667);
+	if (Platform::getFbListener()) {
+		Platform::getFbListener()->onFacebookEvent(FARE_ADD_PENDING_REQUEST, 1234567892L, "some name");
     }
     return 0;
 }
@@ -1566,6 +1575,20 @@ void Platform::deleteAcceptedRequest(const std::string &request_id)
 	WaitForSingleObject(h, 2000);
 }
 
+void Platform::acceptRequest(const std::string &sender_id, const std::string &request_id)
+{
+}
+
+void Platform::fetchPendingRequestList()
+{
+	HANDLE h = CreateThread( NULL, 0, PendingRequestListProc, Platform::m_fbListener, 0L, NULL );
+	WaitForSingleObject(h, 2000);
+}
+
+void Platform::deletePendingRequest(const std::string &request_id)
+{
+}
+
 void Platform::sendRequestDialog(const FbBundle& params, const std::string& title, const std::string& message)
 {
 	const std::string request_id = params.getObject("to");
@@ -1588,7 +1611,7 @@ void Platform::updateFriendsAsync()
     
 void Platform::requestNewPermissionAsync(const std::string& permission)
 {
-	GP_WARN("requestNewPermissionAsync - %s - Facebook not supported.", permission.c_str());
+	m_permissions.push_back(permission);
 }
     
 FACEBOOK_ID Platform::getUserId() { return 132435465678L; }
