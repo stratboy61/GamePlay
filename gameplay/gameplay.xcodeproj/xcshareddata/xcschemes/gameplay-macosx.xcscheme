@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4234D99914686C52003031B3"
-               BuildableName = "libgameplay.a"
+               BuildableName = "libgameplay-osx.a"
                BlueprintName = "gameplay-macosx"
                ReferencedContainer = "container:gameplay.xcodeproj">
             </BuildableReference>
@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4234D99914686C52003031B3"
-            BuildableName = "libgameplay.a"
+            BuildableName = "libgameplay-osx.a"
             BlueprintName = "gameplay-macosx"
             ReferencedContainer = "container:gameplay.xcodeproj">
          </BuildableReference>

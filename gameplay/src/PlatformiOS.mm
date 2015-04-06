@@ -294,8 +294,9 @@ int getUnicode(int key);
     GL_ASSERT( glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &framebufferWidth) );
     GL_ASSERT( glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &framebufferHeight) );
 
+#ifdef DEBUG
     NSLog(@"width: %d, height: %d", framebufferWidth, framebufferHeight);
-
+#endif
     // If multisampling is enabled in config, create and setup a multisample buffer
     Properties* config = Game::getInstance()->getConfig()->getNamespace("window", true);
     int samples = config ? config->getInt("samples") : 0;
@@ -846,8 +847,11 @@ static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const
 #ifdef FACEBOOK_SDK
 - (NSString*)getFbAppId;
 - (void)refreshLoginStatus;
-- (void)DeleteAcceptedRequestDetails:(NSString *)requestId;
-- (void)FetchAcceptedRequestDetails;
+
+- (void)acceptedRequest:(NSString *)senderId requestId:(NSString *) requestId;
+- (void)DeleteAcceptedRequest:(NSString *)requestId;
+- (void)DeletePendingRequest:(NSString *)requestId;
+- (void)FetchRequestDetails:(bool)pending;
 - (void)FetchUserDetails;
 - (void)sessionStateChanged:(FBSession *)session state:(FBSessionState) state error:(NSError *)error;
 #endif
@@ -1000,6 +1004,65 @@ static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const
     }
 }
 
+static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
+{
+    NSMutableArray *objects = [NSMutableArray array];
+    NSMutableArray *keys = [NSMutableArray array];
+    
+    const std::vector<std::string>& bundle = fbBundle.getData();
+    
+    if(!bundle.size()) return nil;
+    
+    for(int i=0; i<bundle.size(); i+=2)
+    {
+        NSString* object = [NSString stringWithCString:bundle[i].c_str() encoding:[NSString defaultCStringEncoding]];
+        NSString* key = [NSString stringWithCString:bundle[i+1].c_str() encoding:[NSString defaultCStringEncoding]];
+        
+        [objects addObject:object];
+        [keys addObject:key];
+    }
+    
+    return [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
+}
+
+- (void)acceptedRequest: (NSString *)senderId requestId:(NSString *) requestId
+{
+    NSString *accessToken = [[[FBSession activeSession] accessTokenData] accessToken];
+    NSDictionary *params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                            senderId, @"from_id",
+                            accessToken, @"access_token", nil];
+    NSMutableArray *pairs = [[NSMutableArray alloc] initWithCapacity:0];
+    for (NSString *key in params) {
+        [pairs addObject:[NSString stringWithFormat:@"%@=%@", key, params[key]]];
+    }
+    // We finally join the pairs of our array using the '&'
+    NSString *requestParams = [pairs componentsJoinedByString:@"&"];
+    
+    NSMutableURLRequest *phpRequest = [NSMutableURLRequest requestWithURL:[NSURL
+                                            URLWithString:[NSString stringWithFormat:@"%@?%@", @"http://www.nderescue.com/facebook/request.php", requestParams]]
+                                            cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                            timeoutInterval:20.0];
+    
+    [phpRequest setHTTPMethod:@"GET"];
+#ifdef DEBUG
+    NSLog(@"%@", phpRequest);
+#endif
+
+    NSHTTPURLResponse *response = nil;
+    NSError *error = nil;
+    NSData *returnData = [NSURLConnection sendSynchronousRequest:phpRequest
+                                          returningResponse:&response
+                                                error:&error];
+    if (error == nil) {
+        const std::string request_id([requestId UTF8String]);
+        safeSendMessage(FARE_REMOVE_PENDING_REQUEST, 0L, request_id);
+
+    } else {
+        NSLog(@"%@",[error localizedDescription]);
+        NSLog(@"%zd",[response statusCode]);
+    }
+}
+
 - (void)DeleteAcceptedRequest: (NSString *)requestId
 {
     [FBRequestConnection startWithGraphPath:requestId
@@ -1009,27 +1072,42 @@ static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const
                               if (!error) {
                                   NSLog(@"request: %@ successfully deleted!", requestId);
                                   const std::string request_id([requestId UTF8String]);
-                                  safeSendMessage(FARE_REMOVE_REQUEST, 0L, request_id);
+                                  safeSendMessage(FARE_REMOVE_ACCEPTED_REQUEST, 0L, request_id);
                               } else {
                                   NSLog(@"%@",[error localizedDescription]);
                               }
                           }];
 }
 
+- (void)DeletePendingRequest: (NSString *)requestId
+{
+    [FBRequestConnection startWithGraphPath:requestId
+                                 parameters:nil
+                                 HTTPMethod:@"DELETE"
+                          completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
+                              if (!error) {
+                                  NSLog(@"request: %@ successfully deleted!", requestId);
+                                  const std::string request_id([requestId UTF8String]);
+                                  safeSendMessage(FARE_REMOVE_PENDING_REQUEST, 0L, request_id);
+                              } else {
+                                  NSLog(@"%@",[error localizedDescription]);
+                              }
+                          }];
+}
 
 - (NSString*)getFbAppId
 {
     return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"FacebookAppID"] copy];
 }
 
-- (void)FetchAcceptedRequestDetails
+- (void)FetchRequestDetails:(bool)pending;
 {
     [FBRequestConnection startWithGraphPath:@"me/apprequests"
                           completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
                               if (!error) {
-                                  // Sucess! Include your code to handle the results here
+#ifdef DEBUG
                                   NSLog(@"user apprequest: %@", result);
-                                  
+#endif
                                   NSArray *data_list = [result objectForKey:@"data"];
                                   for(id single_data in data_list)
                                   {
@@ -1044,9 +1122,19 @@ static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const
                                       }
                                       NSString *requestId = [single_data objectForKey:@"id"];
                                       const std::string request_id([requestId UTF8String]);
-                                      
+
                                       NSString *senderId = [single_data objectForKey:@"data"];
-                                      safeSendMessage(FARE_ADD_REQUEST, [senderId longLongValue], request_id);
+                                      if (pending) {
+                                          if (!senderId) {
+                                              NSString *fromId = [[single_data objectForKey:@"from"] objectForKey:@"id"];
+                                              safeSendMessage(FARE_ADD_PENDING_REQUEST, [fromId longLongValue], request_id);
+                                          }
+                                      } else {
+                                          if (senderId) {
+                                            // we send a message *only if* there is a senderId
+                                            safeSendMessage(FARE_ADD_ACCEPTED_REQUEST, [senderId longLongValue], request_id);
+                                        }
+                                      }
                                   }
                               } else {
                                   // An error occurred, we need to handle the error
@@ -1255,6 +1343,14 @@ static void safeSendMessage(FacebookAsyncReturnEvent fare, FACEBOOK_ID id, const
     return [FBAppCall handleOpenURL:url
 		  sourceApplication:sourceApplication
 		    fallbackHandler:^(FBAppCall *call) {
+                
+               
+            // Retrieve the link associated with the post
+            NSURL *targetURL = [[call appLinkData] targetURL];
+                
+            const std::string foo([[targetURL absoluteString] UTF8String]);
+GP_WARN("targetURL=%s", foo.c_str());
+                
 			// If there is an active session
 			if (FBSession.activeSession.isOpen) {
                 GP_WARN("openURL - FBSession.activeSession.isOpen");
@@ -1876,9 +1972,15 @@ void Platform::swapBuffers()
     if (__view)
 	[__view swapBuffers];
 }
+
 void Platform::sleep(long ms)
 {
     usleep(ms * 1000);
+}
+
+bool Platform::canChangeResolution()
+{
+    return false;
 }
 
 bool Platform::hasAccelerometer()
@@ -2057,36 +2159,31 @@ bool Platform::isUserLogged()
 #endif
 }
 
-void Platform::fetchAcceptedRequestList()
+void Platform::acceptRequest(const std::string &sender_id, const std::string &request_id)
 {
-    [__appDelegate.viewController FetchAcceptedRequestDetails];
+    [__appDelegate.viewController acceptedRequest: [NSString stringWithUTF8String: sender_id.c_str()] requestId:[NSString stringWithUTF8String: request_id.c_str()]];
 }
 
+void Platform::fetchAcceptedRequestList()
+{
+    [__appDelegate.viewController FetchRequestDetails:false];
+}
+   
+void Platform::fetchPendingRequestList()
+{
+    [__appDelegate.viewController FetchRequestDetails:true];
+}
+    
 void Platform::deleteAcceptedRequest(const std::string &request_id)
 {
     NSString *requestId =[NSString stringWithCString:request_id.c_str() encoding:[NSString defaultCStringEncoding]];
     [__appDelegate.viewController DeleteAcceptedRequest:requestId];
 }
-    
-static NSMutableDictionary* convertToDictionary(const FbBundle& fbBundle)
+
+void Platform::deletePendingRequest(const std::string &request_id)
 {
-    NSMutableArray *objects = [NSMutableArray array];
-    NSMutableArray *keys = [NSMutableArray array];
-
-    const std::vector<std::string>& bundle = fbBundle.getData();
-
-    if(!bundle.size()) return nil;
-
-    for(int i=0; i<bundle.size(); i+=2)
-    {
-	NSString* object = [NSString stringWithCString:bundle[i].c_str() encoding:[NSString defaultCStringEncoding]];
-	NSString* key = [NSString stringWithCString:bundle[i+1].c_str() encoding:[NSString defaultCStringEncoding]];
-
-	[objects addObject:object];
-	[keys addObject:key];
-    }
-
-    return [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
+    NSString *requestId =[NSString stringWithCString:request_id.c_str() encoding:[NSString defaultCStringEncoding]];
+    [__appDelegate.viewController DeletePendingRequest:requestId];
 }
 
 void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle, HTTP_METHOD method, const std::string &callbackId)
@@ -2114,6 +2211,7 @@ void Platform::sendRequest(const std::string& graphPath, const FbBundle& bundle,
 				 HTTPMethod:httpMethod
 			  completionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
                   if (error) {
+                      NSLog(@"%@",[error localizedDescription]);
                       safeSendMessage(FARE_ERROR, 0L);
                   }
                   else {
@@ -2150,7 +2248,9 @@ void Platform::sendRequestDialog(const FbBundle &bundle, const std::string &titl
                  for (NSString *pair in urlPairResult) {
                      
                      NSArray *kv = [pair componentsSeparatedByString:@"="];
+#ifdef DEBUG
                      NSLog(@"urlParams: %@, %@", kv[0], kv[1]);
+#endif
                      NSString *val = [kv[0] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
                      if ([val isEqualToString:@"request"]) {
                          requestOk = true;
