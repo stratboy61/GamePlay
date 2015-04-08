@@ -199,7 +199,7 @@ int Font::findGlyphIndex(int unicode)
 		return unicode - 32; // hack 
 	}
 
-	unsigned int begin = 256 - 32;
+	unsigned int begin = 127 - 32;
 	unsigned int end = _glyphCount-1;
 	if ((unsigned int)unicode < _glyphs[begin].code || (unsigned int)unicode > _glyphs[end].code) {
 		return -1;

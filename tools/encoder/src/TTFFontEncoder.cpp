@@ -134,8 +134,8 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 {
     std::vector<Glyph> glyphArray;
 	std::vector<Glyph> additionalGlyphArray;
-
-	unsigned int latinExtendedRange = (END_INDEX - START_INDEX)+1;
+	unsigned int LastIndex = inAdditionalPath[0] ? 126 : END_INDEX;
+	unsigned int latinExtendedRange = (LastIndex - START_INDEX)+1;
 	glyphArray.reserve(latinExtendedRange);
 	Glyph tempGlyph;
 	memset(&tempGlyph, 0, sizeof(Glyph));
@@ -293,19 +293,22 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
     unsigned int imageWidth = 0;
     unsigned int imageHeight = 0;
     bool textureSizeFound = false;
-
+	bool processAdditional = false;
+	int previousPenY = 0;
     int advance;
     int i;
 
-	bool processAdditional = false;
-
     while (textureSizeFound == false)
     {
+		penX = 0;
+		penY = 0;
+		row = 0;
+		if (!processAdditional) {
+			previousPenY = 0;
+		}
+
         imageWidth =  (unsigned int)pow(2.0, powerOf2);
         imageHeight = (unsigned int)pow(2.0, powerOf2);
-        penX = 0;
-        penY = 0;
-        row = 0;
 
 		FT_Face currentFace = !processAdditional ? face : additionalFace;
 		slot = currentFace->glyph;
@@ -339,8 +342,15 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
                 penX = 0;
                 row += 1;
                 penY = row * rowSize;
+				if (!processAdditional) {
+					previousPenY = penY;
+				}
+				else {
+					penY += previousPenY;
+				}
                 if (penY + rowSize > (int)imageHeight)
                 {
+					processAdditional = false;					
                     powerOf2++;
                     break;
                 }
@@ -375,7 +385,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
     powerOf2 = 1;
     for (;;)
     {
-        if ((penY + rowSize) >= pow(2.0, powerOf2))
+        if ((penY + previousPenY + rowSize) >= pow(2.0, powerOf2))
         {
             powerOf2++;
         }
