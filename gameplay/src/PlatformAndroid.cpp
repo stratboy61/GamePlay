@@ -21,6 +21,8 @@ static EGLDisplay __eglDisplay = EGL_NO_DISPLAY;
 static EGLContext __eglContext = EGL_NO_CONTEXT;
 static EGLSurface __eglSurface = EGL_NO_SURFACE;
 static EGLConfig __eglConfig = 0;
+static int __native_width;
+static int __native_height;
 static int __width;
 static int __height;
 static struct timespec __timespec;
@@ -159,14 +161,23 @@ static int getRotation()
     return rotation;
 }
 
+Vector2 Platform::getMobileNativeResolution()
+{
+	return Vector2(__native_width, __native_height);
+}
 
 // Initialized EGL resources.
 static bool initEGL()
 {
+GP_WARN("->initEGL()");
+	__native_width = ANativeWindow_getWidth(__state->window);
+	__native_height = ANativeWindow_getHeight(__state->window);
+
     int samples = 0;
     Properties* config = Game::getInstance()->getConfig()->getNamespace("window", true);
-    if (config)
-    {
+    if (config) {
+		Platform::m_mobileScale = config->getFloat("scale");
+		GP_WARN("  native resolution is %dx%d - m_mobileScale = %f", __native_width, __native_height, Platform::m_mobileScale);
         samples = std::max(config->getInt("samples"), 0);
     }
 
@@ -203,6 +214,9 @@ static bool initEGL()
         EGL_NONE
     };
 
+	int scaledWidth = 0;
+	int scaledHeight = 0;
+	
     if (__eglDisplay == EGL_NO_DISPLAY && __eglContext == EGL_NO_CONTEXT)
     {
         // Get the EGL display and initialize.
@@ -282,7 +296,26 @@ static bool initEGL()
     // ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID.
     EGLint format;
     eglGetConfigAttrib(__eglDisplay, __eglConfig, EGL_NATIVE_VISUAL_ID, &format);
-    ANativeWindow_setBuffersGeometry(__state->window, 0, 0, format);
+
+	if (Platform::m_mobileScale < MATH_EPSILON)  {
+
+		Platform::m_mobileScale = 1.0f;
+		// we try to determine a default scale factor for the first use... and we target 960 for the height
+		if (__native_height > 960) {
+			Platform::m_mobileScale = 960.0f / (float)__native_height;
+		}
+	}
+
+	if (Platform::m_mobileScale >= 1.0f) {
+		Platform::m_mobileScale = 1.0f; // and we leave scaledWidth & scaledHeight to zero
+	} else {
+		scaledWidth = __native_width * Platform::m_mobileScale;
+		scaledHeight = __native_height * Platform::m_mobileScale;
+		GP_WARN("  setting window size to %dx%d", scaledWidth, scaledHeight);
+	}
+	GP_WARN("  Platform::m_mobileScale = %f", Platform::m_mobileScale);
+
+    ANativeWindow_setBuffersGeometry(__state->window, scaledWidth, scaledHeight, format);
     
     __eglSurface = eglCreateWindowSurface(__eglDisplay, __eglConfig, __state->window, eglSurfaceAttrs);
     if (__eglSurface == EGL_NO_SURFACE)
@@ -299,7 +332,8 @@ static bool initEGL()
     
     eglQuerySurface(__eglDisplay, __eglSurface, EGL_WIDTH, &__width);
     eglQuerySurface(__eglDisplay, __eglSurface, EGL_HEIGHT, &__height);
-
+	GP_WARN("  __width & __height = %dx%d", __width, __height);
+	
     __orientationAngle = getRotation() * 90;
     
     // Set vsync.
@@ -317,6 +351,8 @@ static bool initEGL()
         glIsVertexArray = (PFNGLISVERTEXARRAYOESPROC)eglGetProcAddress("glIsVertexArrayOES");
     }
     
+	Game::getInstance()->callPostConfigCallback();
+GP_WARN("<-initEGL()");
     return true;
     
 error:
@@ -1006,13 +1042,24 @@ int Platform::enterMessagePump()
     jboolean isCopy;
 
     jclass clazz = env->GetObjectClass(activity->clazz);
-    jmethodID methodGetExternalStorage = env->GetMethodID(clazz, "getExternalFilesDir", "(Ljava/lang/String;)Ljava/io/File;");
+    jmethodID methodIsExternalStorageWritable = env->GetMethodID(clazz, "isExternalStorageWritable", "()Z");
+    GP_ASSERT(methodIsExternalStorageWritable);
+    jboolean isExternalStorageWritable = env->CallBooleanMethod(activity->clazz, methodIsExternalStorageWritable);
+
+    jmethodID methodGetInternalOrExternalStorage = NULL;
+	if (isExternalStorageWritable) {
+		methodGetInternalOrExternalStorage = env->GetMethodID(clazz, "getExternalFilesDir", "(Ljava/lang/String;)Ljava/io/File;");
+	} else {
+		GP_WARN("External Storage cannot be written. Using Internal Storage instead.");
+		methodGetInternalOrExternalStorage = env->GetMethodID(clazz, "getFilesDir", "()Ljava/io/File;");
+	}
+    GP_ASSERT(methodGetInternalOrExternalStorage);
 
     jclass clazzFile = env->FindClass("java/io/File");
     jmethodID methodGetPath = env->GetMethodID(clazzFile, "getPath", "()Ljava/lang/String;");
 
     // Now has java.io.File object pointing to directory
-    jobject objectFile  = env->CallObjectMethod(activity->clazz, methodGetExternalStorage, NULL);
+    jobject objectFile = env->CallObjectMethod(activity->clazz, methodGetInternalOrExternalStorage, NULL);
     
     // Now has String object containing path to directory
     jstring stringExternalPath = static_cast<jstring>(env->CallObjectMethod(objectFile, methodGetPath));

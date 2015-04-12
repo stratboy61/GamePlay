@@ -27,7 +27,7 @@ Game::Game()
       _animationController(NULL), _audioController(NULL),
       _physicsController(NULL), _aiController(NULL), _audioListener(NULL),
       _timeEvents(NULL), _scriptController(NULL), _scriptListeners(NULL),
-	  _configCallback(NULL)
+	  _preConfigCallback(NULL), _postConfigCallback(NULL)
 {
     GP_ASSERT(__gameInstance == NULL);
     __gameInstance = this;
@@ -689,17 +689,22 @@ Properties* Game::getConfig()
 {
     if (_properties == NULL) {
         const_cast<Game*>(this)->loadConfig();
-		if (_properties != NULL && _configCallback) {
+		if (_properties != NULL && _preConfigCallback) {
 			// calls the configuration callback the first only during game initialisation
-			_configCallback(_properties);
+			_preConfigCallback(_properties);
 		}
 	}
     return _properties;
 }
 
-void Game::setConfigCallback(void (*callback)(Properties *))
+void Game::setPreConfigCallback(void (*callback)(Properties *))
 {
-	_configCallback = callback;
+	_preConfigCallback = callback;
+}
+
+void Game::setPostConfigCallback(void (*callback)())
+{
+	_postConfigCallback = callback;
 }
 
 void Game::loadConfig()

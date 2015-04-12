@@ -7,9 +7,11 @@
 
 namespace gameplay
 {
+float Platform::m_mobileScale = 1.0f;
 
 void Platform::touchEventInternal(Touch::TouchEvent evt, int x, int y, unsigned int contactIndex, bool actuallyMouse)
 {
+	x *= m_mobileScale;	y *= m_mobileScale;
     if (actuallyMouse || !Form::touchEventInternal(evt, x, y, contactIndex))
     {
         Game::getInstance()->touchEvent(evt, x, y, contactIndex);
@@ -44,6 +46,7 @@ bool Platform::mouseEventInternal(Mouse::MouseEvent evt, int x, int y, int wheel
 
 void Platform::gestureSwipeEventInternal(int x, int y, int direction)
 {
+	x *= m_mobileScale;	y *= m_mobileScale;
     // TODO: Add support to Form for gestures
     Game::getInstance()->gestureSwipeEvent(x, y, direction);
     Game::getInstance()->getScriptController()->gestureSwipeEvent(x, y, direction);
@@ -51,6 +54,7 @@ void Platform::gestureSwipeEventInternal(int x, int y, int direction)
 
 void Platform::gesturePinchEventInternal(int x, int y, float scale)
 {
+	x *= m_mobileScale;	y *= m_mobileScale;
     // TODO: Add support to Form for gestures
     Game::getInstance()->gesturePinchEvent(x, y, scale);
     Game::getInstance()->getScriptController()->gesturePinchEvent(x, y, scale);
@@ -63,11 +67,13 @@ void Platform::deviceShaken()
 
 void Platform::gestureDoubleTapEventInternal(int x, int y)
 {
+	x *= m_mobileScale;	y *= m_mobileScale;
     Game::getInstance()->gestureDoubleTapEvent(x, y);
 }
     
 void Platform::gestureTapEventInternal(int x, int y)
 {
+	x *= m_mobileScale;	y *= m_mobileScale;
     // TODO: Add support to Form for gestures
     Game::getInstance()->gestureTapEvent(x, y);
     Game::getInstance()->getScriptController()->gestureTapEvent(x, y);

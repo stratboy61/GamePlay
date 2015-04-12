@@ -136,7 +136,9 @@ public:
 	* Set configuration override callback
 	*
 	*/
-	void setConfigCallback(void (*callback)(Properties *));
+	void setPreConfigCallback(void (*callback)(Properties *));
+
+	void setPostConfigCallback(void (*callback)());
 
     /**
      * Called to initialize the game, and begin running the game.
@@ -595,6 +597,11 @@ public:
      */
     void schedule(float timeOffset, const char* function);
 
+	void callPostConfigCallback() {
+		if (_postConfigCallback) {
+			_postConfigCallback();
+		}
+	}
     /**
      * Opens an URL in an external browser, if available.
      *
@@ -662,7 +669,6 @@ protected:
      * @param elapsedTime The elapsed game time.
      */
     virtual void postFrameUpdate(float elapsedTime) = 0;
-
 
     /**
      * Renders a single frame once and then swaps it to the display.
@@ -789,7 +795,8 @@ private:
     ScriptController* _scriptController;            // Controls the scripting engine.
     std::vector<ScriptListener*>* _scriptListeners; // Lua script listeners.
 
-	void (*_configCallback)(Properties* _config);
+	void (*_preConfigCallback)(Properties* _config);
+	void (*_postConfigCallback)();
 
     // Note: Do not add STL object member variables on the stack; this will cause false memory leaks to be reported.
 

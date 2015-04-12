@@ -388,6 +388,10 @@ private:
 
 /********************* END FACEBOOK STUFF *********************/
 public:
+	static float m_mobileScale;
+
+	static gameplay::Vector2 getMobileNativeResolution();
+
     /**
      * Internal method used only from static code in various platform implementation.
      *

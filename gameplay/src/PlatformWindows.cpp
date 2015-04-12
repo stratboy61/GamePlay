@@ -320,6 +320,10 @@ static void WarpMouse(int clientX, int clientY)
     SetCursorPos(p.x, p.y);
 }
 
+gameplay::Vector2 gameplay::Platform::getMobileNativeResolution()
+{
+	return gameplay::Vector2::zero();
+}
 
 /**
  * Gets the width and height of the screen in pixels.
