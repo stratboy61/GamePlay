@@ -123,6 +123,7 @@ public:
         friend class AnimationTarget;
 	public:
         Curve* getCurve() const;
+		int getPropertyId() const {return _propertyId;}
 
     private:
 
