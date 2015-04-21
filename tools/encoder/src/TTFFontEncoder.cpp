@@ -134,14 +134,24 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 {
     std::vector<Glyph> glyphArray;
 	std::vector<Glyph> additionalGlyphArray;
-	unsigned int LastIndex = inAdditionalPath[0] ? 126 : END_INDEX;
-	unsigned int latinExtendedRange = (LastIndex - START_INDEX)+1;
-	glyphArray.reserve(latinExtendedRange);
+	const unsigned int LastIndex = inFileLocale[0] ? 126 : END_INDEX; // inAdditionalPath[0]
+	const unsigned int latinExtendedRange = (LastIndex - START_INDEX)+1;	
+	static const unsigned short currencies[] = { 0x20a4, 0x20aa, 0x20ac };
+	const unsigned int currenciesRange = sizeof(currencies)/sizeof(unsigned short);//(0x20B9 - 0x20A0)+1;
+	const unsigned int totalMandatoryGlyphCount = latinExtendedRange + currenciesRange;
+	glyphArray.reserve(totalMandatoryGlyphCount);
 	Glyph tempGlyph;
 	memset(&tempGlyph, 0, sizeof(Glyph));
+	// Ansi or Latin
+	tempGlyph.index = 32; 
 	for (unsigned int index = 0; index < latinExtendedRange; ++index)
-	{
-		tempGlyph.index = index+32;
+	{		 
+		glyphArray.push_back(tempGlyph);
+		tempGlyph.index++;
+	}
+	// add Yen symbol if required
+	if (LastIndex == 126) {
+		tempGlyph.index = 0x00a5;
 		glyphArray.push_back(tempGlyph);
 	}
 
@@ -154,12 +164,33 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         return -1;
     }
 
-	if (inFileLocale[0] && !parseLocalisedText(inFileLocale, additionalGlyphArray))
+	if (inFileLocale[0])
 	{
-		LOG(1, "parseLocalisedText error!\n");
-		return -1;
+		if (!parseLocalisedText(inFileLocale, additionalGlyphArray)) {
+			LOG(1, "parseLocalisedText error!\n");
+			return -1;
+		}
 	}
    
+	if (!additionalGlyphArray.size() || additionalGlyphArray[0].index > currencies[0])
+	{
+		// when currencies' range is lower than additional glyphs range, add them to glyph array
+		for (unsigned int index = 0; index < currenciesRange; ++index)
+		{		
+			tempGlyph.index = currencies[index];
+			glyphArray.push_back(tempGlyph);		
+		}
+	}
+	else if (additionalGlyphArray.size() && additionalGlyphArray[0].index < currencies[0])
+	{
+		// when currencies' range is higher than additional glyphs range, add them to additional array
+		for (unsigned int index = 0; index < currenciesRange; ++index)
+		{		
+			tempGlyph.index = currencies[index];
+			additionalGlyphArray.push_back(tempGlyph);		
+		}
+	}
+
     // Initialize font face.
     FT_Face face;	
 
@@ -252,10 +283,12 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         rowSize = (rowSize < bitmapRows) ? bitmapRows : rowSize;
     }
 
-	if (inAdditionalPath[0])
-	{
-		slot = additionalFace->glyph;
-
+	// When no additional fonts, this means the user request a font that only includes Ansi+Currencies+used characters
+	if (additionalGlyphArray.size())
+	{	
+		FT_Face currentFace = inAdditionalPath[0] ? additionalFace : face;
+		slot = currentFace->glyph;
+		
 		iter = additionalGlyphArray.begin();
 		iter_end = additionalGlyphArray.end();
 		while (iter != iter_end)
@@ -264,7 +297,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 			++iter;
 
 			// Load glyph image into the slot (erase previous one)
-			error = FT_Load_Char(additionalFace, ascii, FT_LOAD_RENDER);
+			error = FT_Load_Char(currentFace, ascii, FT_LOAD_RENDER);
 			if (error)
 			{
 				LOG(1, "FT_Load_Char error : %d \n", error);
@@ -310,7 +343,12 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         imageWidth =  (unsigned int)pow(2.0, powerOf2);
         imageHeight = (unsigned int)pow(2.0, powerOf2);
 
-		FT_Face currentFace = !processAdditional ? face : additionalFace;
+		FT_Face currentFace = face;
+		if (additionalGlyphArray.size()) {
+			if (processAdditional && inAdditionalPath[0]) {
+				currentFace = additionalFace;
+			}
+		}
 		slot = currentFace->glyph;
 
         // Find out the squared texture size that would fit all the require font glyphs.
@@ -362,7 +400,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 
             if (iter == iter_end)// (ascii == (END_INDEX-1))
             {
-				if (!inAdditionalPath[0]) {
+				if (additionalGlyphArray.size() == 0) {
 					textureSizeFound = true;
 				}
 				else {
@@ -460,10 +498,11 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
         i++;
     }
 	
-	if (inAdditionalPath[0])
+	if (additionalGlyphArray.size())
 	{
 		i = 0;
-		slot = additionalFace->glyph;
+		FT_Face currentFace = inAdditionalPath[0] ? additionalFace : face;
+		slot = currentFace->glyph;
 
 		iter = additionalGlyphArray.begin();
 		iter_end = additionalGlyphArray.end();
@@ -473,7 +512,7 @@ int writeFont(const char* inFilePath, const char* outFilePath, const char *inAdd
 			++iter;
 
 			// Load glyph image into the slot (erase the previous one).
-			error = FT_Load_Char(additionalFace, ascii, FT_LOAD_RENDER);
+			error = FT_Load_Char(currentFace, ascii, FT_LOAD_RENDER);
 			if (error)
 			{
 				LOG(1, "FT_Load_Char error : %d \n", error);
