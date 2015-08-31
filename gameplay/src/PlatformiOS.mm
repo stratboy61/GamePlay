@@ -21,30 +21,12 @@
 #import <FacebookSDK/FacebookSDK.h>
 #endif
 
-//#define UIScreenMainScreenScale     [[UIScreen mainScreen] scale]
-#define UIScreenMainScreenScale     ([[UIScreen mainScreen] scale] > 1.0 ? ([[UIScreen mainScreen] bounds].size.height < 768 ? 2.0 : 1.25) : 1.0)
-
 #define UIInterfaceOrientationEnum(x) ([x isEqualToString:@"UIInterfaceOrientationPortrait"]?UIInterfaceOrientationPortrait:			    \
 				      ([x isEqualToString:@"UIInterfaceOrientationPortraitUpsideDown"]?UIInterfaceOrientationPortraitUpsideDown:    \
 				      ([x isEqualToString:@"UIInterfaceOrientationLandscapeLeft"]?UIInterfaceOrientationLandscapeLeft:		    \
 					UIInterfaceOrientationLandscapeRight)))
-#define DeviceOrientedSize(o)	      ( ( ( [[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending ) ? \
-					    ( (o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?			   \
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale):	\
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale) )  \
-					: \
-					    ( (o == UIInterfaceOrientationPortrait || o == UIInterfaceOrientationPortraitUpsideDown)?			   \
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale):	\
-					    CGSizeMake([[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale, [[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale) )  \
-					) )
 
-using namespace std;
 using namespace gameplay;
-
-// UIScreen bounds are provided as if device was in portrait mode Gameplay defaults to landscape
-extern const int WINDOW_WIDTH  = [[UIScreen mainScreen] bounds].size.height * UIScreenMainScreenScale;
-extern const int WINDOW_HEIGHT = [[UIScreen mainScreen] bounds].size.width * UIScreenMainScreenScale;
-extern const float WINDOW_SCALE = UIScreenMainScreenScale;
 
 int __argc = 0;
 char** __argv = 0;
@@ -175,68 +157,80 @@ int getUnicode(int key);
 {
     if ((self = [super initWithFrame:frame]))
     {
-	// A system version of 3.1 or greater is required to use CADisplayLink.
-	NSString *reqSysVer = @"3.1";
-	NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
-	if ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending)
-	{
-	    // Log the system version
-	    NSLog(@"System Version: %@", currSysVer);
-	}
-	else
-	{
-	    GP_ERROR("Invalid OS Version: %s\n", (currSysVer == NULL?"NULL":[currSysVer cStringUsingEncoding:NSASCIIStringEncoding]));
-	    [self release];
-	    return nil;
-	}
+        // A system version of 3.1 or greater is required to use CADisplayLink.
+        NSString *reqSysVer = @"3.1";
+        NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
+        if ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending) {
+            // Log the system version
+            NSLog(@"System Version: %@", currSysVer);
+        }
+        else {
+            GP_ERROR("Invalid OS Version: %s\n", (currSysVer == NULL?"NULL":[currSysVer cStringUsingEncoding:NSASCIIStringEncoding]));
+            [self release];
+            return nil;
+        }
 
-	// Check for OS 4.0+ features
-	if ([currSysVer compare:@"4.0" options:NSNumericSearch] != NSOrderedAscending)
-	{
-	    oglDiscardSupported = YES;
-	}
-	else
-	{
-	    oglDiscardSupported = NO;
-	}
+        // Check for OS 4.0+ features
+        if ([currSysVer compare:@"4.0" options:NSNumericSearch] != NSOrderedAscending) {
+            oglDiscardSupported = YES;
+        } else {
+            oglDiscardSupported = NO;
+        }
 
-	// Configure the CAEAGLLayer and setup out the rendering context
-	CGFloat scale = UIScreenMainScreenScale;
-	CAEAGLLayer* layer = (CAEAGLLayer *)self.layer;
-	layer.opaque = TRUE;
-	layer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
-				   [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking,
-				    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
-	self.contentScaleFactor = scale;
-	layer.contentsScale = scale;
+        NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingString:@"/"];
+        FileSystem::setResourcePath([bundlePath fileSystemRepresentation]);
+        
+        const CGFloat mainScreenScale = [[UIScreen mainScreen] scale];
+        if (mainScreenScale > 1.0) {
+            
+            const Vector2 deviceOrientedSize = Platform::getMobileNativeResolution();
+            Properties *config = Game::getInstance()->getConfig()->getNamespace("window", true); // this will read the player.config file for preferred resolution
+            Platform::m_mobileScale = mainScreenScale * config->getFloat("scale");
+            if (Platform::m_mobileScale < MATH_EPSILON)  {
+                
+                Platform::m_mobileScale = mainScreenScale;
+                // we determine a default scale factor for the first use... and we target 960 for the height
+                if (deviceOrientedSize.y > 960) {
+                    const float scaled_height = deviceOrientedSize.y / Platform::m_mobileScale;
+                    Platform::m_mobileScale = 960.0 / scaled_height;
+                }
+            }
+            NSLog(@"Platform::m_mobileScale = %f", Platform::m_mobileScale);
+        }
+        
+        // Configure the CAEAGLLayer and setup out the rendering context
+        CAEAGLLayer* layer = (CAEAGLLayer *)self.layer;
+        layer.opaque = TRUE;
+        layer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+                       [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking,
+                        kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
+        self.contentScaleFactor = Platform::m_mobileScale;
+        layer.contentsScale = Platform::m_mobileScale;
 
-	context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-	if (!context || ![EAGLContext setCurrentContext:context])
-	{
-	    GP_ERROR("Failed to make context current.");
-	    [self release];
-	    return nil;
-	}
+        context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+        if (!context || ![EAGLContext setCurrentContext:context]) {
+            GP_ERROR("Failed to make context current.");
+            [self release];
+            return nil;
+        }
 
-	// Initialize Internal Defaults
-	displayLink = nil;
-	updateFramebuffer = YES;
-	defaultFramebuffer = 0;
-	colorRenderbuffer = 0;
-	depthRenderbuffer = 0;
-	stencilRenderbuffer = 0;
-	framebufferWidth = 0;
-	framebufferHeight = 0;
-	multisampleFramebuffer = 0;
-	multisampleRenderbuffer = 0;
-	multisampleDepthbuffer = 0;
-	swapInterval = 1;
-	updating = FALSE;
-	game = nil;
-
-	// Set the resource path and initalize the game
-	NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingString:@"/"];
-	FileSystem::setResourcePath([bundlePath fileSystemRepresentation]);
+        // Initialize Internal Defaults
+        displayLink = nil;
+        updateFramebuffer = YES;
+        defaultFramebuffer = 0;
+        colorRenderbuffer = 0;
+        depthRenderbuffer = 0;
+        stencilRenderbuffer = 0;
+        framebufferWidth = 0;
+        framebufferHeight = 0;
+        multisampleFramebuffer = 0;
+        multisampleRenderbuffer = 0;
+        multisampleDepthbuffer = 0;
+        swapInterval = 1;
+        updating = FALSE;
+        game = nil;
+        
+        Game::getInstance()->callPostConfigCallback();
     }
     return self;
 }
@@ -612,8 +606,8 @@ int getUnicode(int key);
 	if (i < TOUCH_POINTS_MAX)
 	{
 	    __touchPoints[i].hashId = touchID;
-	    __touchPoints[i].x = touchPoint.x * WINDOW_SCALE;
-	    __touchPoints[i].y = touchPoint.y * WINDOW_SCALE;
+	    __touchPoints[i].x = touchPoint.x;
+	    __touchPoints[i].y = touchPoint.y;
 	    __touchPoints[i].down = true;
 
 	    Platform::touchEventInternal(Touch::TOUCH_PRESS, __touchPoints[i].x, __touchPoints[i].y, i);
@@ -641,7 +635,7 @@ int getUnicode(int key);
 	    if (__touchPoints[i].down && __touchPoints[i].hashId == touchID)
 	    {
 		__touchPoints[i].down = false;
-		Platform::touchEventInternal(Touch::TOUCH_RELEASE, touchPoint.x * WINDOW_SCALE, touchPoint.y * WINDOW_SCALE, i);
+		Platform::touchEventInternal(Touch::TOUCH_RELEASE, touchPoint.x, touchPoint.y, i);
 		found = true;
 	    }
 	}
@@ -682,8 +676,8 @@ int getUnicode(int key);
 	{
 	    if (__touchPoints[i].down && __touchPoints[i].hashId == touchID)
 	    {
-		__touchPoints[i].x = touchPoint.x * WINDOW_SCALE;
-		__touchPoints[i].y = touchPoint.y * WINDOW_SCALE;
+		__touchPoints[i].x = touchPoint.x;
+		__touchPoints[i].y = touchPoint.y;
 		Platform::touchEventInternal(Touch::TOUCH_MOVE, __touchPoints[i].x, __touchPoints[i].y, i);
 		break;
 	    }
@@ -1934,16 +1928,40 @@ bool Platform::canExit()
     return false;
 }
 
+static CGSize getDeviceOrientedSize(UIInterfaceOrientation uiio)
+{
+    CGFloat localWidth = [[UIScreen mainScreen] bounds].size.width;
+    CGFloat localHeight = [[UIScreen mainScreen] bounds].size.height;
+    
+    if ([[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending ) {
+        if ((uiio != UIInterfaceOrientationPortrait) && (uiio != UIInterfaceOrientationPortraitUpsideDown)) {
+            localWidth = [[UIScreen mainScreen] bounds].size.height;
+            localHeight = [[UIScreen mainScreen] bounds].size.width;
+        }
+    } else if ((uiio == UIInterfaceOrientationPortrait) || (uiio == UIInterfaceOrientationPortraitUpsideDown)) {
+        localWidth = [[UIScreen mainScreen] bounds].size.height;
+        localHeight = [[UIScreen mainScreen] bounds].size.width;
+    }
+    return CGSizeMake(localWidth, localHeight);
+}
+
+gameplay::Vector2 Platform::getMobileNativeResolution()
+{
+    const CGSize size = getDeviceOrientedSize([__appDelegate.viewController interfaceOrientation]);
+    const float scale = [[UIScreen mainScreen] scale];
+    return Vector2(scale*size.width, scale*size.height);
+}
+
 unsigned int Platform::getDisplayWidth()
 {
-    CGSize size = DeviceOrientedSize([__appDelegate.viewController interfaceOrientation]);
-    return size.width;
+    const CGSize size = getDeviceOrientedSize([__appDelegate.viewController interfaceOrientation]);
+    return Platform::m_mobileScale * size.width;
 }
 
 unsigned int Platform::getDisplayHeight()
 {
-    CGSize size = DeviceOrientedSize([__appDelegate.viewController interfaceOrientation]);
-    return size.height;
+    const CGSize size = getDeviceOrientedSize([__appDelegate.viewController interfaceOrientation]);
+    return Platform::m_mobileScale * size.height;
 }
 
 double Platform::getAbsoluteTime()
@@ -1980,7 +1998,7 @@ void Platform::sleep(long ms)
 
 bool Platform::canChangeResolution()
 {
-    return false;
+    return true;
 }
 
 bool Platform::hasAccelerometer()

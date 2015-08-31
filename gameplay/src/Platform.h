@@ -71,6 +71,20 @@ public:
 	static bool canChangeResolution();
 
     /**
+     * Gets the display width.
+     *
+     * @return The display width.
+     */
+    static unsigned int getDisplayWidth();
+    
+    /**
+     * Gets the display height.
+     *
+     * @return The display height.
+     */
+    static unsigned int getDisplayHeight();
+    
+    /**
      * Sleeps synchronously for the given amount of time (in milliseconds).
      *
      * @param ms How long to sleep (in milliseconds).
@@ -99,20 +113,6 @@ private:
      */
     static bool canExit();
     
-    /**
-     * Gets the display width.
-     * 
-     * @return The display width.
-     */
-    static unsigned int getDisplayWidth();
-    
-    /**
-     * Gets the display height.
-     * 
-     * @return The display height.
-     */
-    static unsigned int getDisplayHeight();
-
     /**
      * Gets the absolute platform time starting from when the message pump was started.
      *
