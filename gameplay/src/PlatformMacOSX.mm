@@ -1733,6 +1733,11 @@ bool Platform::canExit()
 {
     return true;
 }
+
+Vector2 Platform::getMobileNativeResolution()
+{
+    return Vector2(__width, __height);
+}
     
 unsigned int Platform::getDisplayWidth()
 {
