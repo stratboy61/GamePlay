@@ -128,11 +128,29 @@ void AnimationController::update(float elapsedTime)
 					if (clipSynch->_synchronized)
 					{
 						clipSynch->onEnd();
+
+						AnimationClip *cftc = clipSynch->_crossFadeToClip;
+						if (cftc) {
+							cftc->_blendWeight = 1.0f;
+							cftc->resetClipStateBit(AnimationClip::CLIP_IS_MARKED_FOR_REMOVAL_BIT);
+						}
+
 						clipSynch->release();
 						clipIter2 = _runningClips.erase(clipIter2);
 					}
 
 					clipIter2++;
+				}
+			}
+
+			short count = 0;
+			AnimationClip *cftc = clip->_crossFadeToClip;
+			while (cftc) {
+				cftc->_blendWeight = 1.0f;
+				cftc->resetClipStateBit(AnimationClip::CLIP_IS_MARKED_FOR_REMOVAL_BIT);
+				cftc = cftc->_crossFadeToClip;
+				if (++count > 2) {
+					break;
 				}
 			}
 
